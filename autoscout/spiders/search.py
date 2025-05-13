@@ -12,7 +12,7 @@ class SearchSpider(scrapy.Spider):
 
     def __init__(self,
                  lang, make, model, fuel,
-                 no_accidents=True, mileage_to=None, price_to=None, cylinders_to=None, registration=None,
+                 no_accidents=True, mileage_to=None, price_to=None, cylinders_to=None, registration_from=None,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.base_url = f'https://www.autoscout24.ch/{lang}/s/mo-{model}/mk-{make}/ft-{fuel}'
@@ -21,7 +21,7 @@ class SearchSpider(scrapy.Spider):
             'mileageTo': mileage_to,
             'priceTo': price_to,
             'cylindersTo': cylinders_to,
-            'firstRegistrationYearFrom': registration,
+            'firstRegistrationYearFrom': registration_from,
         }
 
     async def start(self):
@@ -53,8 +53,9 @@ class SearchSpider(scrapy.Spider):
         loader.add_xpath('price', '//main/div[3]/div[2]/div/div[1]/div/p/text()')
         loader.add_xpath('location', '//a[@href="#seller-map"]/span/text()')
 
-        seller = response.xpath('//main/div[3]/div[2]/div/div[5]/div/p/text()').get() or response.get(
-            '//main/div[3]/div[2]/div/div[5]/div/div[1]/p[2]/text()').get()
+        garage_seller_xpath = '//main/div[3]/div[2]/div/div[5]/div/p/text()'
+        private_seller_xpath = '//a[@href="#seller-map"]/../preceding-sibling::div[1]/p[2]/text()'
+        seller = response.xpath(private_seller_xpath).get() or response.xpath(garage_seller_xpath).get()
         loader.add_value('seller', seller)
 
         yield loader.load_item()

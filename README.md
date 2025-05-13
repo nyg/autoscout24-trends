@@ -26,16 +26,17 @@ scrapy crawl search -a lang=fr -a make=audi -a model=rs4 -a fuel=petrol \
 
 ```sql
 CREATE TABLE IF NOT EXISTS cars (
-    id SERIAL PRIMARY KEY,
-    url TEXT UNIQUE,
-    title TEXT NOT NULL,
-    subtitle TEXT,
-    mileage INTEGER CHECK (mileage >= 0),
-    price INTEGER CHECK (price >= 0),
+    id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title       TEXT NOT NULL,
+    subtitle    TEXT,
+    mileage     INTEGER,
+    price       INTEGER NOT NULL,
     registration_date DATE,
-    seller TEXT,
-    location TEXT,
-    first_seen TIMESTAMP DEFAULT CURRENT_DATE,
-    last_seen TIMESTAMP DEFAULT CURRENT_DATE
+    seller      TEXT,
+    location    TEXT,
+    url         TEXT NOT NULL,
+    date_in     TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT cars_mileage_check CHECK ((mileage >= 0)),
+    CONSTRAINT cars_price_check CHECK ((price >= 0))
 );
 ```

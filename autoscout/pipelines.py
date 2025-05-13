@@ -50,16 +50,8 @@ class AutoscoutPipeline:
             return
 
         insert_query = sql.SQL('''
-            INSERT INTO cars (title, subtitle, mileage, price, registration_date, seller, location, url, first_seen, last_seen)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            ON CONFLICT (url) DO UPDATE
-            SET
-                price = EXCLUDED.price,
-                mileage = EXCLUDED.mileage,
-                registration_date = EXCLUDED.registration_date,
-                seller = EXCLUDED.seller,
-                location = EXCLUDED.location,
-                last_seen = CURRENT_TIMESTAMP
+            INSERT INTO cars (title, subtitle, mileage, price, registration_date, seller, location, url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         ''')
 
         self.cursor.executemany(insert_query, self.buffer)
