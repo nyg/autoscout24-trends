@@ -1,7 +1,6 @@
-from typing import Any
 from urllib.parse import urlencode
+
 import scrapy
-from scrapy.http import Response
 
 from autoscout.items import CarItem
 from autoscout.loaders import CarLoader
@@ -12,18 +11,10 @@ class SearchSpider(scrapy.Spider):
     allowed_domains = ['autoscout24.ch']
 
     def __init__(self,
-                 lang,
-                 make,
-                 model,
-                 fuel,
-                 no_accidents=True,
-                 mileage_to=None,
-                 price_to=None,
-                 cylinders_to=None,
-                 registration=None,
+                 lang, make, model, fuel,
+                 no_accidents=True, mileage_to=None, price_to=None, cylinders_to=None, registration=None,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.base_url = f'https://www.autoscout24.ch/{lang}/s/mo-{model}/mk-{make}/ft-{fuel}'
         self.search_params = {
             'hadNoAccidentOnly': no_accidents,
@@ -32,14 +23,6 @@ class SearchSpider(scrapy.Spider):
             'cylindersTo': cylinders_to,
             'firstRegistrationYearFrom': registration,
         }
-
-    custom_settings = {
-        'USER_AGENT': None,
-        'DOWNLOAD_HANDLERS': {
-            'https': 'scrapy_impersonate.ImpersonateDownloadHandler',
-        },
-        'TWISTED_REACTOR': 'twisted.internet.asyncioreactor.AsyncioSelectorReactor',
-    }
 
     async def start(self):
         yield scrapy.Request(url=self.url(), callback=self.parse, meta={'impersonate': 'chrome', 'page': 0})
@@ -62,6 +45,7 @@ class SearchSpider(scrapy.Spider):
     def parse_car(response):
         loader = CarLoader(item=CarItem(), response=response)
 
+        loader.add_value('url', response.url)
         loader.add_xpath('title', '//main/div[3]/div[1]/h1/text()')
         loader.add_xpath('subtitle', '//main/div[3]/div[1]/p/text()', default=None)
         loader.add_xpath('registration_date', '//main/div[3]/div[3]/div/div[2]/div[1]/div/p/text()')

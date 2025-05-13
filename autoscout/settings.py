@@ -7,10 +7,14 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "autoscout"
+from dotenv import load_dotenv
 
-SPIDER_MODULES = ["autoscout.spiders"]
-NEWSPIDER_MODULE = "autoscout.spiders"
+load_dotenv()
+
+BOT_NAME = 'autoscout'
+
+SPIDER_MODULES = ['autoscout.spiders']
+NEWSPIDER_MODULE = 'autoscout.spiders'
 
 ADDONS = {}
 
@@ -32,31 +36,37 @@ DOWNLOAD_DELAY = 3
 COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
-# TELNETCONSOLE_ENABLED = False
+TELNETCONSOLE_ENABLED = False
 
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # SPIDER_MIDDLEWARES = {
-#    "autoscout.middlewares.AutoscoutSpiderMiddleware": 543,
+#    'autoscout.middlewares.AutoscoutSpiderMiddleware': 543,
 # }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 # DOWNLOADER_MIDDLEWARES = {
-#    "autoscout.middlewares.AutoscoutDownloaderMiddleware": 543,
+#    'autoscout.middlewares.AutoscoutDownloaderMiddleware': 543,
 # }
+
+# Bypass CloudFlare protection
+USER_AGENT = None
+DOWNLOAD_HANDLERS = {
+    'https': 'scrapy_impersonate.ImpersonateDownloadHandler',
+}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
 # EXTENSIONS = {
-#    "scrapy.extensions.telnet.TelnetConsole": None,
+#    'scrapy.extensions.telnet.TelnetConsole': None,
 # }
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    "autoscout.pipelines.AutoscoutPipeline": 300,
-# }
+ITEM_PIPELINES = {
+    'autoscout.pipelines.AutoscoutPipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -75,9 +85,9 @@ COOKIES_ENABLED = False
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 # HTTPCACHE_ENABLED = True
 # HTTPCACHE_EXPIRATION_SECS = 0
-# HTTPCACHE_DIR = "httpcache"
+# HTTPCACHE_DIR = 'httpcache'
 # HTTPCACHE_IGNORE_HTTP_CODES = []
-# HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
+# HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 # Set settings whose default value is deprecated to a future-proof value
-FEED_EXPORT_ENCODING = "utf-8"
+FEED_EXPORT_ENCODING = 'utf-8'

@@ -7,6 +7,7 @@ from scrapy import Item, Field
 
 
 class CarItem(Item):
+    url = Field()
     title = Field()
     subtitle = Field()
     mileage = Field(serializer=int)

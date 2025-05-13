@@ -1,8 +1,8 @@
+import re
 from datetime import datetime
 
 from itemloaders.processors import TakeFirst, MapCompose
 from scrapy.loader import ItemLoader
-import re
 
 
 def parse_price(value):
@@ -14,7 +14,7 @@ def parse_mileage(value):
 
 
 def parse_registration_date(value):
-    return datetime.strptime(value, "%m.%Y")
+    return datetime.strptime(value, '%m.%Y')
 
 
 class CarLoader(ItemLoader):

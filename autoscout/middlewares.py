@@ -5,9 +5,6 @@
 
 from scrapy import signals
 
-# useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
-
 
 class AutoscoutSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -50,7 +47,7 @@ class AutoscoutSpiderMiddleware:
             yield item_or_request
 
     def spider_opened(self, spider):
-        spider.logger.info("Spider opened: %s" % spider.name)
+        spider.logger.info(f'Spider opened: {spider.name}')
 
 
 class AutoscoutDownloaderMiddleware:
@@ -101,4 +98,4 @@ class AutoscoutDownloaderMiddleware:
         pass
 
     def spider_opened(self, spider):
-        spider.logger.info("Spider opened: %s" % spider.name)
+        spider.logger.info(f'Spider opened: {spider.name}')
