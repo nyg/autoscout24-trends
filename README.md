@@ -3,7 +3,7 @@
 This crawler periodically scraps and stores into database the cars returned by
 a set of search parameters, with the goal of being able to extract statistics
 about these cars (price evolution, duration of listing, kms per year, km/price
-ratio, etc.)
+ratio, etc.).
 
 ## Install
 
@@ -11,15 +11,17 @@ ratio, etc.)
 pip install -r requirements.txt
 ```
 
-Create a `.env` file and set the PGSQL_URL variable to point to your PostgreSQL database.
+Create an `.env` file and set the `PGSQL_URL` variable to point to your PostgreSQL
+database. Also create a free [resend.dev][1] API key `RESEND_API_KEY` to be able to
+receive results by email.
 
 ## Run
 
+Create as many `*.env` file as you want in the `searches` directory and run the
+extraction with the following command:
+
 ```sh
-# example
-scrapy crawl search -a lang=fr -a make=audi -a model=rs4 -a fuel=petrol \
-                    -a mileage_to=80000 -a price_to=60000 -a cylinders_to=6 \
-                    -a registration=2010 -o cars.json
+scrapy crawl search -a config_file=rs6.env
 ```
 
 ## Database schema
@@ -40,3 +42,5 @@ CREATE TABLE IF NOT EXISTS cars (
     CONSTRAINT cars_price_check CHECK ((price >= 0))
 );
 ```
+
+[1]: https://resend.dev

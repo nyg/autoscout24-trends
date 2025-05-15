@@ -1,5 +1,7 @@
+from os.path import join
 from urllib.parse import urlencode
 
+from dotenv import dotenv_values
 from scrapy import Spider, Request
 
 from autoscout.items import CarItem
@@ -10,22 +12,16 @@ class SearchSpider(Spider):
     name = 'search'
     allowed_domains = ['autoscout24.ch']
 
-    def __init__(self,
-                 lang, make, model, fuel,
-                 no_accidents=True, mileage_to=None, price_to=None, cylinders_to=None, registration_from=None,
-                 *args, **kwargs):
+    def __init__(self, config_file, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.base_url = f'https://www.autoscout24.ch/{lang}/s/mo-{model}/mk-{make}/ft-{fuel}'
-        self.search_params = {
-            'hadNoAccidentOnly': no_accidents,
-            'mileageTo': mileage_to,
-            'priceTo': price_to,
-            'cylindersTo': cylinders_to,
-            'firstRegistrationYearFrom': registration_from,
-        }
+
+        config = dotenv_values(join('searches', config_file))
+        self.description = config['description']
+        self.emails = [e.strip() for e in config['emails'].split(',')]
+        self.url = config['url']
 
     async def start(self):
-        yield Request(url=self.url(), callback=self.parse, meta={'impersonate': 'chrome', 'page': 0})
+        yield Request(url=self.build_url(), callback=self.parse, meta={'impersonate': 'chrome', 'page': 0})
 
     def parse(self, response, **kwargs):
         # for each car url, call parse_car
@@ -39,7 +35,7 @@ class SearchSpider(Spider):
 
         if next_page < page_count:
             self.logger.info(f'Next page: {next_page}')
-            yield Request(url=self.url(next_page), callback=self.parse, meta={'impersonate': 'chrome', 'page': next_page})
+            yield Request(url=self.build_url(next_page), callback=self.parse, meta={'impersonate': 'chrome', 'page': next_page})
 
     @staticmethod
     def parse_car(response):
@@ -60,7 +56,5 @@ class SearchSpider(Spider):
 
         yield loader.load_item()
 
-    def url(self, page=0):
-        self.search_params['pagination[page]'] = page
-        query_string = urlencode(self.search_params)
-        return f'{self.base_url}?{query_string}'
+    def build_url(self, page=0):
+        return f'{self.url}&{urlencode({'pagination[page]': page})}'

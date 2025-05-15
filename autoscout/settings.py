@@ -38,6 +38,16 @@ COOKIES_ENABLED = False
 # Disable Telnet Console (enabled by default)
 TELNETCONSOLE_ENABLED = False
 
+# Output cars into a CSV file
+FEEDS = {
+    'cars.csv': {
+        'format': 'csv',
+        'encoding': 'utf8',
+        'overwrite': True,
+        'store_empty': True,
+    },
+}
+
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # SPIDER_MIDDLEWARES = {
@@ -58,9 +68,9 @@ DOWNLOAD_HANDLERS = {
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-# EXTENSIONS = {
-#    'scrapy.extensions.telnet.TelnetConsole': None,
-# }
+EXTENSIONS = {
+    'autoscout.extensions.EmailOnClose': 1,
+}
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
@@ -88,6 +98,3 @@ ITEM_PIPELINES = {
 # HTTPCACHE_DIR = 'httpcache'
 # HTTPCACHE_IGNORE_HTTP_CODES = []
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
-
-# Set settings whose default value is deprecated to a future-proof value
-FEED_EXPORT_ENCODING = 'utf-8'

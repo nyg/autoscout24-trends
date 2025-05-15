@@ -1,4 +1,6 @@
 curl_cffi>=0.11.0b1
 psycopg-binary>=3.2.8
+python-dotenv==1.1.0
+resend==2.9.0
 Scrapy>=2.13.0
 scrapy-impersonate>=1.5.0
