@@ -1,12 +1,12 @@
 from urllib.parse import urlencode
 
-import scrapy
+from scrapy import Spider, Request
 
 from autoscout.items import CarItem
 from autoscout.loaders import CarLoader
 
 
-class SearchSpider(scrapy.Spider):
+class SearchSpider(Spider):
     name = 'search'
     allowed_domains = ['autoscout24.ch']
 
@@ -25,13 +25,13 @@ class SearchSpider(scrapy.Spider):
         }
 
     async def start(self):
-        yield scrapy.Request(url=self.url(), callback=self.parse, meta={'impersonate': 'chrome', 'page': 0})
+        yield Request(url=self.url(), callback=self.parse, meta={'impersonate': 'chrome', 'page': 0})
 
     def parse(self, response, **kwargs):
         # for each car url, call parse_car
         for car_url in response.xpath('//a[contains(@data-testid, "listing-card-")]/@href'):
             self.logger.info(car_url.get())
-            yield scrapy.Request(url=response.urljoin(car_url.get()), callback=self.parse_car, meta={'impersonate': 'chrome'})
+            yield Request(url=response.urljoin(car_url.get()), callback=self.parse_car, meta={'impersonate': 'chrome'})
 
         # fetch next page, if any
         page_count = len(response.xpath('//button[contains(@aria-label, "go to page")]'))
@@ -39,7 +39,7 @@ class SearchSpider(scrapy.Spider):
 
         if next_page < page_count:
             self.logger.info(f'Next page: {next_page}')
-            yield scrapy.Request(url=self.url(next_page), callback=self.parse, meta={'impersonate': 'chrome', 'page': next_page})
+            yield Request(url=self.url(next_page), callback=self.parse, meta={'impersonate': 'chrome', 'page': next_page})
 
     @staticmethod
     def parse_car(response):
