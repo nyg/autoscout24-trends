@@ -6,6 +6,7 @@ class CarItem(Item):
     title = Field()
     subtitle = Field()
     mileage = Field(serializer=int)
+    power = Field(serializer=int)
     price = Field(serializer=int)
     registration_date = Field()
     seller = Field()

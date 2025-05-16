@@ -26,6 +26,7 @@ class AutoscoutPipeline:
             item.get('subtitle'),
             item.get('mileage'),
             item.get('price'),
+            item.get('power'),
             item.get('registration_date'),
             item.get('seller'),
             item.get('location'),
@@ -46,8 +47,8 @@ class AutoscoutPipeline:
             return
 
         insert_query = sql.SQL('''
-            INSERT INTO cars (title, subtitle, mileage, price, registration_date, seller, location, url)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO cars (title, subtitle, mileage, price, power, registration_date, seller, location, url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''')
 
         self.cursor.executemany(insert_query, self.buffer)

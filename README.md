@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS cars (
     subtitle    TEXT,
     mileage     INTEGER,
     price       INTEGER NOT NULL,
+    power       INTEGER,
     registration_date DATE,
     seller      TEXT,
     location    TEXT,

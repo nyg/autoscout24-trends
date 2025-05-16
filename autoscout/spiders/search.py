@@ -47,6 +47,7 @@ class SearchSpider(Spider):
         loader.add_xpath('registration_date', '//main/div[3]/div[3]/div/div[2]/div[1]/div/p/text()')
         loader.add_xpath('mileage', '//main/div[3]/div[3]/div/div[2]/div[3]/div/p/text()')
         loader.add_xpath('price', '//main/div[3]/div[2]/div/div[1]/div/p/text()')
+        loader.add_xpath('power', '//main/div[3]/div[3]/div/div[2]/div[4]/div/p/text()')
         loader.add_xpath('location', '//a[@href="#seller-map"]/span/text()')
 
         garage_seller_xpath = '//main/div[3]/div[2]/div/div[5]/div/p/text()'
