@@ -12,7 +12,7 @@ pip install -r requirements.txt
 ```
 
 Create an `.env` file and set the `PGSQL_URL` variable to point to your PostgreSQL
-database. Also create a free [resend.dev][1] API key `RESEND_API_KEY` to be able to
+database. Also create a free [resend.com][1] API key `RESEND_API_KEY` to be able to
 receive results by email.
 
 ## Run
@@ -44,4 +44,4 @@ CREATE TABLE IF NOT EXISTS cars (
 );
 ```
 
-[1]: https://resend.dev
+[1]: https://resend.com
