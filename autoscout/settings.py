@@ -39,6 +39,7 @@ COOKIES_ENABLED = False
 TELNETCONSOLE_ENABLED = False
 
 # Output cars into a CSV file
+FEED_EXPORT_FIELDS = ['title', 'price', 'mileage', 'registration_date', 'power', 'subtitle', 'seller', 'location', 'url']
 FEEDS = {
     'cars.csv': {
         'format': 'csv',
