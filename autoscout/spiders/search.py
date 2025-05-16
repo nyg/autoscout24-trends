@@ -50,8 +50,11 @@ class SearchSpider(Spider):
         loader.add_xpath('location', '//a[@href="#seller-map"]/span/text()')
 
         garage_seller_xpath = '//main/div[3]/div[2]/div/div[5]/div/p/text()'
+        garage_seller_without_warranty_or_expertise_xapth = '//main/div[3]/div[2]/div/div[4]/div/p/text()'
         private_seller_xpath = '//a[@href="#seller-map"]/../preceding-sibling::div[1]/p[2]/text()'
-        seller = response.xpath(private_seller_xpath).get() or response.xpath(garage_seller_xpath).get()
+        seller = (response.xpath(private_seller_xpath).get()
+                  or response.xpath(garage_seller_xpath).get()
+                  or response.xpath(garage_seller_without_warranty_or_expertise_xapth).get())
         loader.add_value('seller', seller)
 
         yield loader.load_item()
