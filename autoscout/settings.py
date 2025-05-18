@@ -9,7 +9,6 @@ NEWSPIDER_MODULE = 'autoscout.spiders'
 
 ADDONS = {}
 
-# Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
@@ -30,7 +29,10 @@ COOKIES_ENABLED = False
 TELNETCONSOLE_ENABLED = False
 
 # Output cars into a CSV file
-FEED_EXPORT_FIELDS = ['title', 'price', 'mileage', 'registration_date', 'power', 'subtitle', 'seller', 'location', 'url']
+FEED_EXPORTERS = {
+    'csv': 'autoscout.exporters.CarWithSellerCsvItemExporter'
+}
+
 FEEDS = {
     'cars.csv': {
         'format': 'csv',
@@ -61,13 +63,14 @@ DOWNLOAD_HANDLERS = {
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
 EXTENSIONS = {
-    'autoscout.extensions.EmailOnClose': 1,
+    'autoscout.extensions.EmailAfterFeedExport': 1,
 }
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'autoscout.pipelines.AutoscoutPipeline': 300,
+    'autoscout.pipelines.ItemTypeStatsPipeline': 200,
+    'autoscout.pipelines.PostgreSQLPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

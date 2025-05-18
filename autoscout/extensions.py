@@ -10,7 +10,7 @@ from scrapy import signals
 logger = logging.getLogger(__name__)
 
 template = Template(dedent('''
-    {{ stats.item_scraped_count }} cars extracted, please see the attached file.
+    {{ stats['item_scraped_count/CarItem'] }} car(s) extracted, please see the attached file.
     {% if failed_requests %}
     Warning: {{ failed_requests }} request(s) failed!
     {% endif %}
@@ -27,7 +27,7 @@ template = Template(dedent('''
 ''').strip())
 
 
-class EmailOnClose:
+class EmailAfterFeedExport:
 
     def __init__(self, stats):
         self.spider = None
@@ -51,7 +51,7 @@ class EmailOnClose:
         email = Emails.send({
             'from': 'AutoScout24 Crawler <autscout24-crawler@resend.dev>',
             'to': self.spider.emails,
-            'subject': f'Car extraction - {self.spider.description}{warning_subject}',
+            'subject': f'Car extraction - {self.spider.search_name}{warning_subject}',
             'text': template.render(stats=self.stats.get_stats(), failed_requests=failed_requests, responses_by_status=responses_by_status),
             'attachments': self.create_attachments()
         })
@@ -59,7 +59,7 @@ class EmailOnClose:
         logger.info(f'Email sent: {email}')
 
     def create_attachments(self):
-        filename = f'extract-{self.spider.description.lower().replace(' ', '-')}.csv'
+        filename = f'extract-{self.spider.search_name.lower().replace(' ', '-')}.csv'
         file = open('cars.csv', 'rb').read()
         return [{'content': list(file), 'filename': filename}]
 
