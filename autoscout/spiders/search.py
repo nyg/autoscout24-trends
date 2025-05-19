@@ -1,5 +1,5 @@
 import json
-from os.path import join
+from os import path
 from urllib.parse import urlencode
 
 from dotenv import dotenv_values
@@ -15,7 +15,14 @@ class SearchSpider(Spider):
     def __init__(self, config_file, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        search_config = dotenv_values(join('searches', config_file))
+        filepath = path.join('searches', config_file)
+        if not path.exists(filepath):
+            raise FileNotFoundError(f'Search file {filepath} could not be found')
+
+        search_config = dotenv_values(filepath)
+        if any(k not in search_config for k in ('name', 'emails', 'url')):
+            raise ValueError('Missing keys in search file, check example')
+
         self.search_name = search_config['name']
         self.emails = [e.strip() for e in search_config['emails'].split(',')]
         self.url = search_config['url']
