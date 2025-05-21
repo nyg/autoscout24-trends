@@ -10,7 +10,7 @@ from autoscout.items import CarItem, SellerItem
 
 class SearchSpider(Spider):
     name = 'search'
-    allowed_domains = ['autoscout24.ch']
+    allowed_domains = ['www.autoscout24.ch', 'autoscout24.ch']
 
     def __init__(self, config_file, *args, **kwargs):
         super().__init__(*args, **kwargs)
