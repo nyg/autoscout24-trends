@@ -1,7 +1,17 @@
+# os
 .DS_Store
+
+# ide
 .idea
-*.json
+
+# js
+node_modules
+.next
+
+# python
 __pycache__
-.env
-cars.csv
-*.env
+
+# misc
+*.csv
+*.env*
+!rs6.env
