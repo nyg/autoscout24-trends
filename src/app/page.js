@@ -4,7 +4,7 @@ import Cars from '@/components/cars'
 
 
 export default function Home() {
-   const pgSql = postgres(process.env.POSTGRES_URL)
+   const pgSql = postgres(process.env.PGSQL_URL)
    const cars = pgSql`
       select c.*,
              s.*,
