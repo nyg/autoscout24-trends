@@ -4,33 +4,36 @@ import { asDecimal, asLongDate, asShortDate } from '@/lib/format'
 import { use } from 'react'
 
 
-export default function Cars({ carPromise }) {
+export default function Cars({ name, carPromise }) {
    const cars = use(carPromise)
 
    return (
-      <div className="h-96 overflow-x-auto">
-         <table className="table table-xs table-pin-rows tabular-nums text-right">
+      <div>
+         <h2>{name}: {cars.length} cars</h2>
+         <table className="table table-xs table-pin-rows tabular-nums overflow-x-auto">
             <thead>
                <tr>
-                  <th className="text-left">Title</th>
-                  <th>Year</th>
-                  <th>Price</th>
-                  <th>Mileage</th>
-                  <th>Km / year</th>
-                  <th>Location</th>
-                  <th>Listed since</th>
+                  <th>Title</th>
+                  <th className="text-right">Year</th>
+                  <th className="text-right">Price</th>
+                  <th className="text-right">Mileage</th>
+                  <th className="text-right">km / year</th>
+                  <th className="text-right">Location</th>
+                  <th className="text-right">Seller</th>
+                  <th className="text-right">Listed since</th>
                </tr>
             </thead>
             <tbody>
                {cars.map(car => (
                   <tr key={car.id}>
-                     <td className="text-left"><a href={car.url} className="link">{car.title}</a></td>
-                     <td>{asShortDate(car.first_registration_date)}</td>
-                     <td suppressHydrationWarning>{asDecimal(car.price)}</td>
-                     <td suppressHydrationWarning>{asDecimal(car.mileage)}</td>
-                     <td suppressHydrationWarning>{asDecimal(car.km_year)}</td>
-                     <td>{car.zip_code} {car.city}</td>
-                     <td suppressHydrationWarning>{asLongDate(car.created_date)}</td>
+                     <td><a href={car.url} target="_blank">{car.title}</a></td>
+                     <td className="text-right" suppressHydrationWarning>{asShortDate(car.first_registration_date)}</td>
+                     <td className="text-right" suppressHydrationWarning>{asDecimal(car.price)}</td>
+                     <td className="text-right" suppressHydrationWarning>{asDecimal(car.mileage)}</td>
+                     <td className="text-right" suppressHydrationWarning>{asDecimal(car.km_year)}</td>
+                     <td className="text-right">{car.zip_code} {car.city}</td>
+                     <td className="text-right">{car.name}</td>
+                     <td className="text-right" suppressHydrationWarning>{asLongDate(car.created_date)}</td>
                   </tr>
                ))}
             </tbody>
