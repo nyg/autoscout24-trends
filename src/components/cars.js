@@ -4,8 +4,8 @@ import { asDecimal, asLongDate, asShortDate } from '@/lib/format'
 import { use } from 'react'
 
 
-export default function Cars({ name, carPromise }) {
-   const cars = use(carPromise)
+export default function Cars({ name, data }) {
+   const cars = use(data)
 
    return (
       <div>

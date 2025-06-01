@@ -1,9 +1,9 @@
-# autoscout24-crawler
+# autoscout24-vizualizer
 
-This crawler periodically scraps and stores into database the cars returned by
-a set of search parameters, with the goal of being able to extract statistics
-about these cars (price evolution, duration of listing, kms per year, km/price
-ratio, etc.).
+
+AutoScout vizualizer is composed of a crawler that periodically scraps and
+stores into database the cars returned by a set of search parameters, and a
+Next.js webapp that allows visualizing the stored data.
 
 ## Install
 
