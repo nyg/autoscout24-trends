@@ -9,8 +9,13 @@ from scrapy import signals
 
 logger = logging.getLogger(__name__)
 
+output_filename = 'cars.csv'
 template = Template(dedent('''
+    {% if stats.get('item_scraped_count/CarItem', 0) == 0 %}
+    No cars extracted, check logs for errors or change search parameters.
+    {%- else %}
     {{ stats['item_scraped_count/CarItem'] }} car(s) extracted, please see the attached file.
+    {% endif %}
     {% if failed_requests %}
     Warning: {{ failed_requests }} request(s) failed!
     {% endif %}
@@ -59,9 +64,12 @@ class EmailAfterFeedExport:
         logger.info(f'Email sent: {email}')
 
     def create_attachments(self):
-        filename = f'extract-{self.spider.search_name.lower().replace(' ', '-')}.csv'
-        file = open('cars.csv', 'rb').read()
-        return [{'content': list(file), 'filename': filename}]
+        if not os.path.exists(output_filename) or os.stat(output_filename).st_size == 0:
+            return []
+
+        attachment_content = open(output_filename, 'rb').read()
+        attachment_filename = f'extract-{self.spider.search_name.lower().replace(' ', '-')}.csv'
+        return [{'content': list(attachment_content), 'filename': attachment_filename}]
 
     def compute_stats(self):
         failed_requests = 0
