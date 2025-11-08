@@ -4,5 +4,6 @@ psycopg==3.2.12
 python-dotenv==1.2.1
 resend==2.19.0
 scrapy==2.13.3
-scrapy_seleniumbase==0.0.1
+git+https://github.com/Quartz-Core/scrapy-seleniumbase.git
+seleniumbase==4.44.8
 selenium==4.38.0
