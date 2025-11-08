@@ -1,5 +1,5 @@
 curl_cffi>=0.11.2
-psycopg-binary>=3.2.9
+psycopg>=3.2.12
 python-dotenv>=1.1.0
 resend>=2.10.0
 Scrapy>=2.13.1

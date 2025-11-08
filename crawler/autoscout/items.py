@@ -128,10 +128,10 @@ class SellerItem(Item):
     @staticmethod
     def parse_response(json_response):
         seller = SellerItem()
-        seller['id'] = json_response['seller']['id']
-        seller['type'] = json_response['seller']['type']
-        seller['name'] = json_response['seller']['name']
-        seller['address'] = json_response['seller']['address']
-        seller['zip_code'] = json_response['seller']['zipCode']
-        seller['city'] = json_response['seller']['city']
+        seller['id'] = json_response['id']
+        seller['type'] = json_response['type']
+        seller['name'] = json_response['name']
+        seller['address'] = json_response['address']
+        seller['zip_code'] = json_response['zipCode']
+        seller['city'] = json_response['city']
         return seller
