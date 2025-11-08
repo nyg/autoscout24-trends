@@ -25,7 +25,7 @@ export default async function Home() {
                  from cars_with_batch_number
                 where reverse_batch_number = 1)
       select c.*,
-             s.*,
+             s.type seller_type, s.name seller_name, s.address seller_address, s.zip_code, s.city,
              365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year
         from last_appearance_by_car c
        inner join sellers s on c.seller_id = s.id`
@@ -41,7 +41,7 @@ export default async function Home() {
        order by date_trunc('day', date_in)`
 
    const searches = await pgSql`select distinct(search_name) name from cars`
-   const previousListings = cars.then(cars => cars.filter(car => !car.last_batch).sort((a, b) => a.created_date - b.created_date))
+   const previousListings = cars.then(cars => cars.filter(car => !car.last_batch).sort((a, b) => a.date_in - b.date_in))
    const activeListings = cars.then(cars => cars.filter(car => car.last_batch).sort((a, b) => a.price - b.price))
 
    return (
@@ -65,7 +65,7 @@ export default async function Home() {
                   <DailyListingCount data={dailyListingCount} />
                   <MileagePriceComparison data={activeListings} />
                </div>
-               <Cars name="Previous listings" data={previousListings} />
+               <Cars name="Previous listings" data={previousListings} options={{ listingEnded: true }} />
                <Cars name="Active listings" data={activeListings} />
             </Suspense>
          </div>

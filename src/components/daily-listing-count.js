@@ -2,7 +2,7 @@
 
 import { asLongDate, asDecimal } from '@/lib/format'
 import { use } from 'react'
-import { CartesianGrid, Tooltip, Line, ResponsiveContainer, XAxis, YAxis, Legend, ComposedChart, Bar } from 'recharts'
+import { CartesianGrid, Tooltip, Line, XAxis, YAxis, Legend, ComposedChart, Bar } from 'recharts'
 
 
 export default function DailyListingCount({ data }) {
@@ -17,7 +17,7 @@ export default function DailyListingCount({ data }) {
       Math.max(...listings.map(l => l.car_count)) + 1]
 
    return (
-      <div className="flex-1 border border-gray-400 rounded">
+      <div className="flex-1 border-0 border-gray-400 rounded">
          <ComposedChart data={listings} responsive margin={{
             top: 20,
             right: 30,
