@@ -31,15 +31,8 @@ FEEDS = {
     },
 }
 
-SELENIUMBASE_DRIVER_KWARGS = {
-    'browser': 'chrome',
-    'uc': True,
-    'headless': True,
-    'block_images': True
-}
-
 DOWNLOADER_MIDDLEWARES = {
-    'scrapy_seleniumbase.SeleniumBaseMiddleware': 800
+    'autoscout.middlewares.SeleniumBaseAsyncCDPMiddleware': 800
 }
 
 EXTENSIONS = {

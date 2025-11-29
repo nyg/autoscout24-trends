@@ -1,9 +1,9 @@
 Jinja2==3.1.6
 njsparser==2.14
-psycopg==3.2.12
+psycopg==3.2.13
 python-dotenv==1.2.1
 resend==2.19.0
 scrapy==2.13.4
 git+https://github.com/Quartz-Core/scrapy-seleniumbase.git
-seleniumbase==4.44.8
+seleniumbase==4.44.20
 selenium==4.38.0
