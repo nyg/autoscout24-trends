@@ -1,3 +1,6 @@
+import re
+from datetime import datetime
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,16 +20,25 @@ DOWNLOAD_DELAY = 3
 COOKIES_ENABLED = False
 TELNETCONSOLE_ENABLED = False
 
-# Output cars into a CSV file
+LOG_LEVEL = 'INFO'
+
+
+def customize_params(params, spider):
+    params['search_name'] = re.sub(r'\W+', '_', params['search_name']).lower().strip('_')
+    params['time'] = datetime.now().strftime('%Y-%m-%dT%H-%M-%SZ')
+    return params
+
+
+FEED_URI_PARAMS = customize_params
+
 FEED_EXPORTERS = {
     'csv': 'autoscout.exporters.CarWithSellerCsvItemExporter'
 }
 
 FEEDS = {
-    'cars.csv': {
+    'output/%(name)s_%(search_name)s_%(time)s.csv': {
         'format': 'csv',
         'encoding': 'utf8',
-        'overwrite': True,
         'store_empty': True,
     },
 }

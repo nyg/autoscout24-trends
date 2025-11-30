@@ -13,10 +13,10 @@ class SearchSpider(Spider):
     name = 'search'
     allowed_domains = ['www.autoscout24.ch', 'autoscout24.ch']
 
-    def __init__(self, config_file, *args, **kwargs):
+    def __init__(self, search_file, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        filepath = path.join('searches', config_file)
+        filepath = path.join('searches', search_file)
         if not path.exists(filepath):
             raise FileNotFoundError(f'Search file {filepath} could not be found')
 
