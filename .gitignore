@@ -16,3 +16,4 @@ __pycache__
 *.csv
 *.env*
 !rs6.env
+!.env.example
