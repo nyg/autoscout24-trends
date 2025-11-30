@@ -8,7 +8,8 @@
 #
 # Based on https://github.com/Quartz-Core/scrapy-seleniumbase.
 #
-# Doc: https://github.com/seleniumbase/SeleniumBase/blob/master/help_docs/syntax_formats.md#sb_sf_24
+# Doc: https://github.com/seleniumbase/SeleniumBase/blob/master/help_docs/syntax_formats.md#sb_sf_25
+#      https://github.com/seleniumbase/SeleniumBase/discussions/3955
 
 from importlib import import_module
 

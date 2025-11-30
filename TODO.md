@@ -2,6 +2,8 @@
 
 * Improve readme
 * Crawler
+    * Add instruction for venv
+    * Improve CDP middleware and create PR for upstream
     * Add car details:
         * cm3
         * cylinder arrangment
