@@ -37,7 +37,9 @@ class CarItem(Item):
 
     fuel_type = Field()
     kilo_watts = Field()
+    cm3 = Field()
     cylinders = Field()
+    cylinder_layout = Field()
     avg_consumption = Field()
     co2_emission = Field()
 
@@ -93,7 +95,9 @@ class CarItem(Item):
 
         car['fuel_type'] = json_response['listing']['fuelType']
         car['kilo_watts'] = json_response['listing']['kiloWatts']
+        car['cm3'] = json_response['listing']['cubicCapacity']
         car['cylinders'] = json_response['listing']['cylinders']
+        car['cylinder_layout'] = json_response['listing']['cylinderArrangement']
         car['avg_consumption'] = json_response['listing']['consumption']['combined']
         car['co2_emission'] = json_response['listing']['co2Emission']
 
