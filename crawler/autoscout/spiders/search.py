@@ -53,6 +53,7 @@ class SearchSpider(Spider):
                                       wait_until='h1.chakra-text')
 
     def parse_car(self, response):
+        self.logger.info(f'Parsing car: {response}')
         fd = njsparser.BeautifulFD(response.body)
         for data in fd.find_iter([njsparser.T.Data]):
             if 'children' in data.content and 'referer' in data.content:
