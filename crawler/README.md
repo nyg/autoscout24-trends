@@ -36,6 +36,19 @@ scrapy crawl search -a search_file=rs6.env
 deactivate
 ```
 
+## Cron job
+
+```shell
+# edit the crontab file
+crontab -e
+
+# add this line to run the spiders daily, change path if needed
+0 0 * * * ~/.local/share/autoscout24-trends/crawler/run-spiders.sh
+
+# list jobs in crontab file
+crontab -l
+```
+
 ## Database schema
 
 See [SCHEMA.sql](SCHEMA.sql).
