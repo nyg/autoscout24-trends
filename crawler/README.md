@@ -13,7 +13,7 @@ list of email addresses. The spider will perform the following steps:
 The spider uses [SeleniumBase](https://seleniumbase.io/)'s pure CDP mode to
 bypass AutoScout24's anti-bot protections (currently CloudFlare).
 
-## Run the spider
+## Running the spider
 
 `venv` is optional but creates an isolated Python environment to avoid conflicts
 between projects.
@@ -36,7 +36,7 @@ scrapy crawl search -a search_file=rs6.env
 deactivate
 ```
 
-## Cron job
+## Adding a cron job
 
 ```shell
 # edit the crontab file
@@ -47,6 +47,12 @@ crontab -e
 
 # list jobs in crontab file
 crontab -l
+```
+
+## Linux dependencies
+
+```shell
+sudo apt install chromium xvfb
 ```
 
 ## Database schema

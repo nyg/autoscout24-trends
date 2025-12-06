@@ -44,7 +44,7 @@ FEEDS = {
 }
 
 DOWNLOADER_MIDDLEWARES = {
-    'autoscout.middlewares.SeleniumBaseAsyncCDPMiddleware': 800
+    'scrapy_seleniumbase_cdp.SeleniumBaseAsyncCDPMiddleware': 800
 }
 
 EXTENSIONS = {
