@@ -9,7 +9,7 @@ log() {
 
 log "Running all autoscout24-trends spiders"
 
-cd "$(dirname "$0")/crawler" || { log "ERROR: Failed to cd into crawler directory"; exit 1; }
+cd "$(dirname "$0")" || { log "ERROR: Failed to cd into crawler directory"; exit 1; }
 . venv/bin/activate
 
 for f in searches/*.env ; do
