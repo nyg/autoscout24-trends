@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 import njsparser
 from dotenv import dotenv_values
 from scrapy import Spider
-from scrapy_seleniumbase import SeleniumBaseRequest
+from scrapy_seleniumbase_cdp import SeleniumBaseRequest
 
 from autoscout.items import CarItem, SellerItem
 

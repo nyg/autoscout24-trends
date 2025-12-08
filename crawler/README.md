@@ -39,11 +39,14 @@ deactivate
 ## Adding a cron job
 
 ```shell
+# create directory for log file
+mkdir -p $HOME/.local/state/autoscout24-trends
+
 # edit the crontab file
 crontab -e
 
-# add this line to run the spiders daily, change path if needed
-0 0 * * * ~/.local/share/autoscout24-trends/crawler/run-spiders.sh
+# add this line to run the spiders daily at midnight, change paths if needed
+0 0 * * * $HOME/.local/share/autoscout24-trends/crawler/run-spiders.sh >> $HOME/.local/state/autoscout24-trends/cron.log 2>&1
 
 # list jobs in crontab file
 crontab -l
