@@ -18,3 +18,4 @@ __pycache__
 !rs6.env
 !.env.example
 downloaded_files
+output

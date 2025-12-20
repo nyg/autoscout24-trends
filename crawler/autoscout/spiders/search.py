@@ -1,3 +1,5 @@
+import re
+from datetime import datetime
 from os import path
 from urllib.parse import urlencode
 
@@ -29,7 +31,11 @@ class SearchSpider(Spider):
         self.url = search_config['url']
 
     async def start(self):
-        yield SeleniumBaseRequest(url=self.build_url(), callback=self.parse, meta={'page': 0}, wait_time=10, wait_until='h1.chakra-text')
+        yield SeleniumBaseRequest(url=self.build_url(),
+                                  callback=self.parse,
+                                  meta={'page': 0},
+                                  wait_time=10,
+                                  wait_until='h1.chakra-text')
 
     def parse(self, response, **kwargs):
         self.logger.info(f'Parsing page: {response.meta.get('page')}')
@@ -37,7 +43,11 @@ class SearchSpider(Spider):
         # for each car url, call parse_car
         for car_url in response.xpath('//a[contains(@data-testid, "listing-card-")]/@href').getall():
             self.logger.info(f'Car found: {car_url}')
-            yield SeleniumBaseRequest(url=response.urljoin(car_url), callback=self.parse_car, wait_time=10, wait_until='h1.chakra-text')
+            yield SeleniumBaseRequest(url=response.urljoin(car_url),
+                                      callback=self.parse_car,
+                                      wait_time=10,
+                                      wait_until='h1.chakra-text',
+                                      screenshot=True)
 
         # fetch next page, if any
         go_to_page_links = response.xpath('//button[contains(@aria-label, "go to page")]').getall()
@@ -58,13 +68,29 @@ class SearchSpider(Spider):
         for data in fd.find_iter([njsparser.T.Data]):
             if 'children' in data.content and 'referer' in data.content:
                 page_view_tracking = data.content['children'][3]['children'][3]['children'][3]['pageViewTracking']
-                listing = data.content['children'][3]['children'][3]['children'][3]['children'][1][3]['children'][0][3]['listing']
-                seller = data.content['children'][3]['children'][3]['children'][3]['children'][1][3]['children'][0][3]['seller']
+                listing = data.content['children'][3]['children'][3]['children'][3]['children'][1][0][3]['listing']
+                seller = data.content['children'][3]['children'][3]['children'][3]['children'][1][0][3]['seller']
 
-                yield SellerItem.parse_response(seller)
-                yield CarItem.parse_response(self.search_name,
+                car = CarItem.parse_response(self.search_name,
                                              response.url,
                                              {'pageViewTracking': page_view_tracking, 'listing': listing, 'seller': seller})
+
+                self.save_screenshot(response.meta.get('screenshot'), car['vehicle_id'])
+
+                yield SellerItem.parse_response(seller)
+                yield car
+
+    def save_screenshot(self, data, vehicle_id):
+        if not data:
+            self.logger.warning('No screenshot data to be saved')
+            return
+
+        now = datetime.now().strftime('%Y-%m-%dT%H-%M-%SZ')
+        search_name = re.sub(r'\W+', '_', self.search_name).lower().strip('_')
+        filename = f'output/screenshot_{search_name}_{vehicle_id}_{now}.png'
+
+        with open(filename, 'wb') as screenshot_file:
+            screenshot_file.write(data)
 
     def build_url(self, page=0):
         return f'{self.url}&{urlencode({'pagination[page]': page})}'
