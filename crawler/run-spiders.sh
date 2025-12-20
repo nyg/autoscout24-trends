@@ -6,6 +6,8 @@ log() {
 
 cd "$(dirname "$0")" || { log "ERROR: Failed to cd into crawler directory"; exit 1; }
 
+mkdir -p output
+
 if [ ! -d .venv ]; then
     log "Creating virtual environment"
     python -m venv .venv
