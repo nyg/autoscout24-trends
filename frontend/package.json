@@ -8,19 +8,19 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "daisyui": "5.5.5",
+    "daisyui": "5.5.14",
     "next": "16.0.10",
     "postgres": "3.4.7",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "recharts": "3.5.1"
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "recharts": "3.6.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.3",
-    "@tailwindcss/postcss": "4.1.17",
+    "@tailwindcss/postcss": "4.1.18",
     "@tailwindcss/typography": "0.5.19",
-    "eslint": "9.39.1",
-    "eslint-config-next": "16.0.5",
-    "tailwindcss": "4.1.17"
+    "eslint": "9.39.2",
+    "eslint-config-next": "16.0.10",
+    "tailwindcss": "4.1.18"
   }
 }
