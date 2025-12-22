@@ -1,17 +1,16 @@
-import logging
 import os
 
 import psycopg
 from psycopg import sql
 from psycopg.types.json import Jsonb
+from scrapy import Spider
 
-from autoscout.items import CarItem, SellerItem
+from .items import CarItem, SellerItem
 
 
 class PostgreSQLPipeline:
 
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
         self.connection = None
         self.batch_id = None
 
@@ -19,12 +18,22 @@ class PostgreSQLPipeline:
         self.car_buffer = []
         self.seller_buffer = []
 
-    def open_spider(self, spider):
+    def open_spider(self, spider: Spider):
         self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
         with self.connection.transaction():
             with self.connection.cursor() as cursor:
                 (self.batch_id,) = cursor.execute("SELECT nextval('car_batch_id_seq')").fetchone()
-                self.logger.info(f'Fetched batch_id sequence value: {self.batch_id}')
+                spider.logger.info(f'Fetched batch_id sequence value: {self.batch_id}')
+
+    def close_spider(self, spider: Spider):
+        try:
+            self.flush_buffers(spider)
+        except Exception as e:
+            spider.logger.error(f'Database error: {e}', exc_info=True)
+            raise
+        finally:
+            self.connection.close()
+            spider.logger.info('Database connection closed')
 
     def process_item(self, item, spider):
         if isinstance(item, SellerItem):
@@ -33,11 +42,11 @@ class PostgreSQLPipeline:
             self.car_buffer.append(dict(item))
 
         if len(self.seller_buffer) >= self.batch_size or len(self.car_buffer) >= self.batch_size:
-            self.flush_buffers()
+            self.flush_buffers(spider)
 
         return item
 
-    def flush_buffers(self):
+    def flush_buffers(self, spider: Spider):
         with self.connection.transaction():
             with self.connection.cursor() as cursor:
                 if self.seller_buffer:
@@ -48,7 +57,7 @@ class PostgreSQLPipeline:
                     ''')
 
                     cursor.executemany(insert_query, self.seller_buffer)
-                    self.logger.info(f'{cursor.rowcount} of {len(self.seller_buffer)} sellers inserted into database')
+                    spider.logger.info(f'{cursor.rowcount} of {len(self.seller_buffer)} sellers inserted into database')
                     self.seller_buffer.clear()
 
                 if self.car_buffer:
@@ -62,18 +71,8 @@ class PostgreSQLPipeline:
                         car['json_data'] = Jsonb(car['json_data'])
 
                     cursor.executemany(insert_query, self.car_buffer)
-                    self.logger.info(f'{cursor.rowcount} of {len(self.car_buffer)} cars inserted into database')
+                    spider.logger.info(f'{cursor.rowcount} of {len(self.car_buffer)} cars inserted into database')
                     self.car_buffer.clear()
-
-    def close_spider(self, spider):
-        try:
-            self.flush_buffers()
-        except Exception as e:
-            self.logger.error(f'Database error: {e}', exc_info=True)
-            raise
-        finally:
-            self.connection.close()
-            self.logger.info('Database connection closed')
 
 
 class ItemTypeStatsPipeline:

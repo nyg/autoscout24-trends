@@ -1,6 +1,6 @@
 from scrapy.exporters import CsvItemExporter
 
-from autoscout.items import CarItem, SellerItem
+from .items import CarItem, SellerItem
 
 
 class CarWithSellerCsvItemExporter(CsvItemExporter):

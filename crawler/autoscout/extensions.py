@@ -1,4 +1,3 @@
-import logging
 import os
 from textwrap import dedent
 
@@ -7,7 +6,7 @@ from jinja2 import Template
 from resend import Emails
 from scrapy import signals
 
-logger = logging.getLogger(__name__)
+from .spiders.search import SearchSpider
 
 output_filename = 'cars.csv'
 template = Template(dedent('''
@@ -35,7 +34,7 @@ template = Template(dedent('''
 class EmailAfterFeedExport:
 
     def __init__(self, stats):
-        self.spider = None
+        self.spider: SearchSpider | None = None
         self.stats = stats
         resend.api_key = os.environ['RESEND_API_KEY']
 
@@ -50,6 +49,10 @@ class EmailAfterFeedExport:
         self.spider = spider
 
     def output_file_written(self):
+        if not self.spider.emails:
+            self.spider.logger.info('No email address defined, not sending email')
+            return
+
         failed_requests, responses_by_status = self.compute_stats()
         warning_subject = ' (cars missing!)' if failed_requests else ''
 
@@ -61,7 +64,7 @@ class EmailAfterFeedExport:
             'attachments': self.create_attachments()
         })
 
-        logger.info(f'Email sent: {email}')
+        self.spider.logger.info(f'Email sent: {email}')
 
     def create_attachments(self):
         if not os.path.exists(output_filename) or os.stat(output_filename).st_size == 0:

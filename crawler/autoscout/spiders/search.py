@@ -8,7 +8,16 @@ from dotenv import dotenv_values
 from scrapy import Spider
 from scrapy_seleniumbase_cdp import SeleniumBaseRequest
 
-from autoscout.items import CarItem, SellerItem
+from ..items import CarItem, SellerItem
+
+ACCEPT_COOKIES_AND_EXPAND_FIELDS = {
+    'await_promise': True,
+    'script': '''
+        document.getElementById('onetrust-accept-btn-handler').click();
+        [...document.querySelectorAll('button[aria-expanded="false"]')].slice(1).forEach(b => b.click())
+        new Promise(resolve => setTimeout(resolve, 1000))
+    '''
+}
 
 
 class SearchSpider(Spider):
@@ -27,17 +36,17 @@ class SearchSpider(Spider):
             raise ValueError('Missing keys in search file, check example')
 
         self.search_name = search_config['name']
-        self.emails = [e.strip() for e in search_config['emails'].split(',')]
+        self.emails = [e.strip() for e in search_config['emails'].split(',')] if search_config['emails'] else None
         self.url = search_config['url']
 
     async def start(self):
-        yield SeleniumBaseRequest(url=self.build_url(),
+        yield SeleniumBaseRequest(url=self._build_url(),
                                   callback=self.parse,
                                   meta={'page': 0},
-                                  wait_time=10,
                                   wait_until='h1.chakra-text')
 
     def parse(self, response, **kwargs):
+        """Parse the search result page"""
         self.logger.info(f'Parsing page: {response.meta.get('page')}')
 
         # for each car url, call parse_car
@@ -45,8 +54,8 @@ class SearchSpider(Spider):
             self.logger.info(f'Car found: {car_url}')
             yield SeleniumBaseRequest(url=response.urljoin(car_url),
                                       callback=self.parse_car,
-                                      wait_time=10,
                                       wait_until='h1.chakra-text',
+                                      script=ACCEPT_COOKIES_AND_EXPAND_FIELDS,
                                       screenshot=True)
 
         # fetch next page, if any
@@ -56,31 +65,37 @@ class SearchSpider(Spider):
 
         if next_page < page_count:
             self.logger.info(f'Next page: {next_page}')
-            yield SeleniumBaseRequest(url=self.build_url(next_page),
+            yield SeleniumBaseRequest(url=self._build_url(next_page),
                                       callback=self.parse,
                                       meta={'page': next_page},
-                                      wait_time=10,
                                       wait_until='h1.chakra-text')
 
     def parse_car(self, response):
-        self.logger.info(f'Parsing car: {response}')
-        fd = njsparser.BeautifulFD(response.body)
-        for data in fd.find_iter([njsparser.T.Data]):
-            if 'children' in data.content and 'referer' in data.content:
-                page_view_tracking = data.content['children'][3]['children'][3]['children'][3]['pageViewTracking']
-                listing = data.content['children'][3]['children'][3]['children'][3]['children'][1][0][3]['listing']
-                seller = data.content['children'][3]['children'][3]['children'][3]['children'][1][0][3]['seller']
+        try:
+            self.logger.info(f'Parsing car: {response}')
+            flight_data = self._extract_flight_data(response.body)
 
-                car = CarItem.parse_response(self.search_name,
-                                             response.url,
-                                             {'pageViewTracking': page_view_tracking, 'listing': listing, 'seller': seller})
+            car = CarItem.parse_response(self.search_name, response.url, flight_data)
+            self._save_screenshot(car['vehicle_id'], response.meta.get('screenshot'))
 
-                self.save_screenshot(response.meta.get('screenshot'), car['vehicle_id'])
+            yield SellerItem.parse_response(flight_data['seller'])
+            yield car
+        except Exception as e:
+            self.logger.error(f'Error parsing car: {e}')
 
-                yield SellerItem.parse_response(seller)
-                yield car
+    @staticmethod
+    def _extract_flight_data(body):
+        """Extract Next.js flight data describing the vehicle and seller"""
+        data = njsparser.BeautifulFD(body).find_iter([njsparser.T.Data])
+        matches = [d.content['children'][3]['children'][3]['children'][3] for d in data
+                   if {'children', 'referer'}.issubset(d.content)]
+        return {
+            'pageViewTracking': matches[0]['pageViewTracking'],
+            'listing': matches[0]['children'][1][0][3]['listing'],
+            'seller': matches[0]['children'][1][0][3]['seller']
+        }
 
-    def save_screenshot(self, data, vehicle_id):
+    def _save_screenshot(self, vehicle_id, data):
         if not data:
             self.logger.warning('No screenshot data to be saved')
             return
@@ -92,5 +107,5 @@ class SearchSpider(Spider):
         with open(filename, 'wb') as screenshot_file:
             screenshot_file.write(data)
 
-    def build_url(self, page=0):
+    def _build_url(self, page=0):
         return f'{self.url}&{urlencode({'pagination[page]': page})}'
