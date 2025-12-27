@@ -20,6 +20,20 @@ ACCEPT_COOKIES_AND_EXPAND_FIELDS = {
 }
 
 
+class SearchPageRequest(SeleniumBaseRequest):
+    """Request for a search result page."""
+
+    def __init__(self, page=0, **kwargs):
+        super().__init__(**kwargs, meta={'page': page}, wait_for='h1.chakra-text')
+
+
+class CarPageRequest(SeleniumBaseRequest):
+    """Request for a car page."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, wait_for='h1.chakra-text', script=ACCEPT_COOKIES_AND_EXPAND_FIELDS, screenshot=True)
+
+
 class SearchSpider(Spider):
     name = 'search'
     allowed_domains = ['www.autoscout24.ch', 'autoscout24.ch']
@@ -40,10 +54,7 @@ class SearchSpider(Spider):
         self.url = search_config['url']
 
     async def start(self):
-        yield SeleniumBaseRequest(url=self._build_url(),
-                                  callback=self.parse,
-                                  meta={'page': 0},
-                                  wait_until='h1.chakra-text')
+        yield SearchPageRequest(url=self._build_url(), callback=self.parse)
 
     def parse(self, response, **kwargs):
         """Parse the search result page"""
@@ -52,23 +63,16 @@ class SearchSpider(Spider):
         # for each car url, call parse_car
         for car_url in response.xpath('//a[contains(@data-testid, "listing-card-")]/@href').getall():
             self.logger.info(f'Car found: {car_url}')
-            yield SeleniumBaseRequest(url=response.urljoin(car_url),
-                                      callback=self.parse_car,
-                                      wait_until='h1.chakra-text',
-                                      script=ACCEPT_COOKIES_AND_EXPAND_FIELDS,
-                                      screenshot=True)
+            yield CarPageRequest(url=response.urljoin(car_url), callback=self.parse_car)
 
         # fetch next page, if any
-        go_to_page_links = response.xpath('//button[contains(@aria-label, "go to page")]').getall()
-        page_count = len(go_to_page_links) if go_to_page_links else 1
+        go_to_page_links = response.xpath('//button[contains(@aria-label, "go to page")]/text()').getall()
+        page_count = int(go_to_page_links[-1]) if go_to_page_links else 1
         next_page = response.meta.get('page') + 1
 
         if next_page < page_count:
             self.logger.info(f'Next page: {next_page}')
-            yield SeleniumBaseRequest(url=self._build_url(next_page),
-                                      callback=self.parse,
-                                      meta={'page': next_page},
-                                      wait_until='h1.chakra-text')
+            yield SearchPageRequest(url=self._build_url(next_page), callback=self.parse, page=next_page)
 
     def parse_car(self, response):
         try:
