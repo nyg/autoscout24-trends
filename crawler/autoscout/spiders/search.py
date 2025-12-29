@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 import njsparser
 from dotenv import dotenv_values
 from scrapy import Spider
+from scrapy.http import Response
 from scrapy_seleniumbase_cdp import SeleniumBaseRequest
 
 from ..items import CarItem, SellerItem
@@ -13,7 +14,7 @@ from ..items import CarItem, SellerItem
 ACCEPT_COOKIES_AND_EXPAND_FIELDS = {
     'await_promise': True,
     'script': '''
-        document.getElementById('onetrust-accept-btn-handler').click();
+        document.getElementById('onetrust-accept-btn-handler')?.click();
         [...document.querySelectorAll('button[aria-expanded="false"]')].slice(1).forEach(b => b.click())
         new Promise(resolve => setTimeout(resolve, 1000))
     '''
@@ -54,11 +55,13 @@ class SearchSpider(Spider):
         self.url = search_config['url']
 
     async def start(self):
-        yield SearchPageRequest(url=self._build_url(), callback=self.parse)
+        start_url = self._build_url()
+        self.logger.info(f'Starting crawl with URL: {start_url}')
+        yield SearchPageRequest(url=start_url, callback=self.parse)
 
-    def parse(self, response, **kwargs):
+    def parse(self, response: Response, **kwargs):
         """Parse the search result page"""
-        self.logger.info(f'Parsing page: {response.meta.get('page')}')
+        self.logger.info(f'Parsing search page: {response.meta.get('page')} ({response.url}, {response.status})')
 
         # for each car url, call parse_car
         for car_url in response.xpath('//a[contains(@data-testid, "listing-card-")]/@href').getall():
@@ -74,9 +77,9 @@ class SearchSpider(Spider):
             self.logger.info(f'Next page: {next_page}')
             yield SearchPageRequest(url=self._build_url(next_page), callback=self.parse, page=next_page)
 
-    def parse_car(self, response):
+    def parse_car(self, response: Response):
         try:
-            self.logger.info(f'Parsing car: {response}')
+            self.logger.info(f'Parsing car: {response.url} ({response.status})')
             flight_data = self._extract_flight_data(response.body)
 
             car = CarItem.parse_response(self.search_name, response.url, flight_data)
