@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "daisyui": "5.5.14",
-    "next": "16.0.10",
+    "next": "16.1.1",
     "postgres": "3.4.7",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -20,7 +20,7 @@
     "@tailwindcss/postcss": "4.1.18",
     "@tailwindcss/typography": "0.5.19",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.0.10",
+    "eslint-config-next": "16.1.1",
     "tailwindcss": "4.1.18"
   }
 }
