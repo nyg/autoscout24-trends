@@ -25,6 +25,8 @@ class SearchPageRequest(SeleniumBaseRequest):
     """Request for a search result page."""
 
     def __init__(self, page=0, **kwargs):
+        meta = kwargs.pop('meta', {})
+        meta['page'] = page
         super().__init__(**kwargs, meta={'page': page}, wait_for='h1.chakra-text')
 
 

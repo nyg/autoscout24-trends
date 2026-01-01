@@ -23,7 +23,7 @@ template = Template(dedent('''
     Start time     {{ stats.start_time.strftime('%d-%m-%Y %H:%M:%S') }}
     Finish time    {{ stats.finish_time.strftime('%d-%m-%Y %H:%M:%S') }}
     Time elapsed   {{ stats.elapsed_time_seconds | round(1) }} seconds
-    Requests       {{ stats['downloader/request_count'] }}
+    Requests       {{ stats.get('downloader/request_count', 0) }}
     {%- for status_code, count in responses_by_status.items() %}
     Responses/{{ status_code }}  {{ count }}
     {%- endfor %}
@@ -59,7 +59,7 @@ class EmailAfterFeedExport:
         email = Emails.send({
             'from': 'AutoScout24 Crawler <autscout24-crawler@resend.dev>',
             'to': self.spider.emails,
-            'subject': f'Car extraction - {self.spider.search_name}{warning_subject}',
+            'subject': f'{self.stats.get_stats().get('item_scraped_count/CarItem', 0)} car(s) extracted for {self.spider.search_name}{warning_subject}',
             'text': template.render(stats=self.stats.get_stats(), failed_requests=failed_requests, responses_by_status=responses_by_status),
             'attachments': self.create_attachments()
         })
@@ -84,5 +84,8 @@ class EmailAfterFeedExport:
                 responses_by_status[http_code] = value
                 if http_code != '200':
                     failed_requests += value
+
+        if not self.stats.get('downloader/request_count'):
+            failed_requests += 1
 
         return failed_requests, responses_by_status
