@@ -1,91 +1,102 @@
 import os
+from pathlib import Path
 from textwrap import dedent
+from typing import Any, cast
 
 import resend
 from jinja2 import Template
 from resend import Emails
 from scrapy import signals
+from scrapy.crawler import Crawler
+from scrapy.extensions.feedexport import FeedSlot
 
 from .spiders.search import SearchSpider
 
-output_filename = 'cars.csv'
-template = Template(dedent('''
-    {% if stats.get('item_scraped_count/CarItem', 0) == 0 %}
-    No cars extracted, check logs for errors or change search parameters.
-    {%- else %}
-    {{ stats['item_scraped_count/CarItem'] }} car(s) extracted, please see the attached file.
+template = Template(lstrip_blocks=True, trim_blocks=True, source=dedent('''
+    {% if not stats.cars_scraped %}
+    No cars scraped, check logs for errors or change search parameters.
+    {% else %}
+    {{ stats.cars_scraped }} car(s) and {{ stats.sellers_scraped }} seller(s) scraped.
+    See attached file for results.
     {% endif %}
-    {% if failed_requests %}
-    Warning: {{ failed_requests }} request(s) failed!
+    {% if stats.failed_requests or stats.error_logs %}
+
+    Warnings:
+    - {{ stats.failed_requests }} request(s) failed
+    - {{ stats.error_logs }} error log(s)
     {% endif %}
-    
-    --- Extraction stats ---
+
+    --- Crawler stats ---
     Start time     {{ stats.start_time.strftime('%d-%m-%Y %H:%M:%S') }}
     Finish time    {{ stats.finish_time.strftime('%d-%m-%Y %H:%M:%S') }}
-    Time elapsed   {{ stats.elapsed_time_seconds | round(1) }} seconds
-    Requests       {{ stats.get('downloader/request_count', 0) }}
-    {%- for status_code, count in responses_by_status.items() %}
+    Time elapsed   {{ stats.elapsed_time | round(1) }} seconds
+    {% for status_code, count in stats.responses_by_status.items() %}
     Responses/{{ status_code }}  {{ count }}
-    {%- endfor %}
-    Status         {{ stats.finish_reason }}
+    {% endfor %}
+    Status         {{ stats.status }}
 ''').strip())
 
 
 class EmailAfterFeedExport:
 
-    def __init__(self, stats):
-        self.spider: SearchSpider | None = None
-        self.stats = stats
+    def __init__(self, spider: SearchSpider, stats: dict[str, Any]):
+        self.spider: SearchSpider = spider
+        self.stats: dict[str, Any] = stats
         resend.api_key = os.environ['RESEND_API_KEY']
 
     @classmethod
-    def from_crawler(cls, crawler):
-        ext = cls(crawler.stats)
-        crawler.signals.connect(ext.spider_opened, signal=signals.spider_opened)
-        crawler.signals.connect(ext.output_file_written, signal=signals.feed_exporter_closed)
-        return ext
+    def from_crawler(cls, crawler: Crawler):
+        spider = cast(SearchSpider, crawler.spider)
+        extension = cls(spider, crawler.stats.get_stats())
+        crawler.signals.connect(extension.output_file_written, signal=signals.feed_slot_closed)
+        return extension
 
-    def spider_opened(self, spider):
-        self.spider = spider
-
-    def output_file_written(self):
+    def output_file_written(self, slot: FeedSlot):
         if not self.spider.emails:
             self.spider.logger.info('No email address defined, not sending email')
             return
 
-        failed_requests, responses_by_status = self.compute_stats()
-        warning_subject = ' (cars missing!)' if failed_requests else ''
-
+        stats = self._build_stats()
         email = Emails.send({
             'from': 'AutoScout24 Crawler <autscout24-crawler@resend.dev>',
             'to': self.spider.emails,
-            'subject': f'{self.stats.get_stats().get('item_scraped_count/CarItem', 0)} car(s) extracted for {self.spider.search_name}{warning_subject}',
-            'text': template.render(stats=self.stats.get_stats(), failed_requests=failed_requests, responses_by_status=responses_by_status),
-            'attachments': self.create_attachments()
+            'subject': self._build_subject(stats),
+            'text': template.render(stats=stats),
+            'attachments': self._create_attachments(slot.uri)
         })
 
         self.spider.logger.info(f'Email sent: {email}')
 
-    def create_attachments(self):
-        if not os.path.exists(output_filename) or os.stat(output_filename).st_size == 0:
+    def _build_stats(self):
+        responses_by_status = {
+            int(key.split('/')[2]): value
+            for key, value in self.stats.items()
+            if key.startswith('downloader/response_status_count/')
+        }
+
+        return {
+            'start_time': self.stats['start_time'],
+            'finish_time': self.stats['finish_time'],
+            'elapsed_time': self.stats['elapsed_time_seconds'],
+            'status': self.stats['finish_reason'],
+            'cars_scraped': self.stats.get('item_scraped_count/CarItem', 0),
+            'sellers_scraped': self.stats.get('item_scraped_count/SellerItem', 0),
+            'responses_by_status': responses_by_status,
+            'failed_requests': len(responses_by_status.keys() - {200}),
+            'error_logs': self.stats.get('log_count/ERROR', 0),
+        }
+
+    def _build_subject(self, stats):
+        errors_detected = ' (errors detected!)' if stats['error_logs'] or stats['failed_requests'] else ''
+        return f'{stats['cars_scraped']} car(s) scraped for {self.spider.search_name}{errors_detected}'
+
+    @staticmethod
+    def _create_attachments(filepath):
+        file = Path(filepath)
+        if not file.exists() or file.stat().st_size == 0:
             return []
 
-        attachment_content = open(output_filename, 'rb').read()
-        attachment_filename = f'extract-{self.spider.search_name.lower().replace(' ', '-')}.csv'
-        return [{'content': list(attachment_content), 'filename': attachment_filename}]
+        with file.open('rb') as f:
+            attachment_content = f.read()
 
-    def compute_stats(self):
-        failed_requests = 0
-        responses_by_status = {}
-
-        for key, value in self.stats.get_stats().items():
-            if key.startswith('downloader/response_status_count/'):
-                http_code = key.split('/')[2]
-                responses_by_status[http_code] = value
-                if http_code != '200':
-                    failed_requests += value
-
-        if not self.stats.get_stats().get('downloader/request_count'):
-            failed_requests += 1
-
-        return failed_requests, responses_by_status
+        return [{'content': list(attachment_content), 'filename': file.name}]
