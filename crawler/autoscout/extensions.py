@@ -85,7 +85,7 @@ class EmailAfterFeedExport:
                 if http_code != '200':
                     failed_requests += value
 
-        if not self.stats.get('downloader/request_count'):
+        if not self.stats.get_stats().get('downloader/request_count'):
             failed_requests += 1
 
         return failed_requests, responses_by_status
