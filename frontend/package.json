@@ -9,18 +9,18 @@
   },
   "dependencies": {
     "daisyui": "5.5.14",
-    "next": "16.1.5",
-    "postgres": "3.4.7",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "recharts": "3.6.0"
+    "next": "16.1.6",
+    "postgres": "3.4.8",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "3.7.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.3",
     "@tailwindcss/postcss": "4.1.18",
     "@tailwindcss/typography": "0.5.19",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.1.1",
+    "eslint-config-next": "16.1.6",
     "tailwindcss": "4.1.18"
   }
 }
