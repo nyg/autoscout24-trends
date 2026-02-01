@@ -2,7 +2,7 @@ Jinja2==3.1.6
 njsparser==2.14
 psycopg[binary]==3.3.2
 python-dotenv==1.2.1
-resend==2.19.0
-scrapy==2.13.4
+resend==2.21.0
+scrapy==2.14.1
 scrapy-seleniumbase-cdp==1.0.0
-seleniumbase==4.45.7
+seleniumbase==4.46.2
