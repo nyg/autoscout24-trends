@@ -10,7 +10,7 @@ export default async function Home({ params }) {
    const awaitedParams = await params
    const searchName = decodeURIComponent(awaitedParams.searchName)
 
-   const cars = fetchActiveListings(searchName)
+   const activeListings = fetchActiveListings(searchName)
    const previousListings = fetchPreviousListings(searchName)
    const dailyListingCount = fetchDailyListingCount(searchName)
 
@@ -18,10 +18,10 @@ export default async function Home({ params }) {
       <Suspense fallback={<p>Loading data…</p>}>
          <div className="flex">
             <DailyListingCount data={dailyListingCount} />
-            <MileagePriceComparison data={cars} />
+            <MileagePriceComparison data={activeListings} />
          </div>
          <Cars name="Previous listings" data={previousListings} options={{ listingEnded: true }} />
-         <Cars name="Active listings" data={cars} />
+         <Cars name="Active listings" data={activeListings} />
       </Suspense>
    )
 }
