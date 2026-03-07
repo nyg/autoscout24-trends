@@ -96,12 +96,19 @@ class SearchSpider(Spider):
     def _extract_flight_data(body):
         """Extract Next.js flight data describing the vehicle and seller"""
         fd = njsparser.BeautifulFD(body)
-        data = [x for x in fd.find_all([njsparser.T.Data]) if x.index == 7][0]
-        element = data.content['children'][3]['children'][3]['children'][3]['children'][3]
+        data = next(x for x in fd.find_all([njsparser.T.Data]) if x.index == 7)
+        nested_data = data.content['children'][3]['children'][3]['children'][3]['children'][3]
+        text = {hex(t.index).replace('0x', '$'): t.value for t in fd.find_all([njsparser.T.Text])}
+
+        # sometimes, description is a reference (e.g. "$31") pointing to a separate Text node instead of being inlined
+        listing = nested_data['children'][1][0][3]['listing']
+        if listing['description'] in text:
+            listing['description'] = text[listing['description']]
+
         return {
-            'pageViewTracking': element['pageViewTracking'],
-            'listing': element['children'][1][0][3]['listing'],
-            'seller': element['children'][1][0][3]['seller']
+            'pageViewTracking': nested_data['pageViewTracking'],
+            'listing': listing,
+            'seller': nested_data['children'][1][0][3]['seller'],
         }
 
     def _save_screenshot(self, vehicle_id, data):
