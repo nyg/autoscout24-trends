@@ -37,5 +37,5 @@ export async function fetchDailyListingCount(searchName) {
 }
 
 export async function fetchSearchNames() {
-   return pgSql`select distinct(search_name) name from cars`
+   return pgSql`select distinct(search_name) name from cars order by search_name`
 }
