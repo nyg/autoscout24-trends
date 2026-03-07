@@ -95,13 +95,13 @@ class SearchSpider(Spider):
     @staticmethod
     def _extract_flight_data(body):
         """Extract Next.js flight data describing the vehicle and seller"""
-        data = njsparser.BeautifulFD(body).find_iter([njsparser.T.Data])
-        matches = [d.content['children'][3]['children'][3]['children'][3] for d in data
-                   if {'children', 'referer'}.issubset(d.content)]
+        fd = njsparser.BeautifulFD(body)
+        data = [x for x in fd.find_all([njsparser.T.Data]) if x.index == 7][0]
+        element = data.content['children'][3]['children'][3]['children'][3]['children'][3]
         return {
-            'pageViewTracking': matches[0]['pageViewTracking'],
-            'listing': matches[0]['children'][1][0][3]['listing'],
-            'seller': matches[0]['children'][1][0][3]['seller']
+            'pageViewTracking': element['pageViewTracking'],
+            'listing': element['children'][1][0][3]['listing'],
+            'seller': element['children'][1][0][3]['seller']
         }
 
     def _save_screenshot(self, vehicle_id, data):
