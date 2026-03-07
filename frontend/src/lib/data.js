@@ -1,3 +1,4 @@
+import { noStore } from 'next/cache'
 import postgres from 'postgres'
 
 const pgSql = postgres(process.env.PGSQL_URL)
@@ -49,5 +50,6 @@ export async function fetchDailyListingCount(searchName) {
 }
 
 export async function fetchSearchNames() {
+   noStore()
    return pgSql`select distinct(search_name) name from cars order by search_name`
 }
