@@ -20,8 +20,8 @@ export default async function Home({ params }) {
             <DailyListingCount data={dailyListingCount} />
             <MileagePriceComparison data={activeListings} />
          </div>
-         <Cars name="Previous listings" data={previousListings} options={{ listingEnded: true }} />
          <Cars name="Active listings" data={activeListings} />
+         <Cars name="Previous listings" data={previousListings} options={{ listingEnded: true }} />
       </Suspense>
    )
 }
