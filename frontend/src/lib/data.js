@@ -32,8 +32,8 @@ export async function fetchDailyListingCount(searchName) {
              avg(mileage) mileage_avg
         from cars
        where search_name = ${searchName}
-       group by date_trunc('day', date_in)
-       order by date_trunc('day', date_in)`
+       group by date
+       order by date`
 }
 
 export async function fetchSearchNames() {
