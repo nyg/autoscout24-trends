@@ -18,7 +18,7 @@ export default async function NavBar() {
             ))}
          </div>
          <div className="navbar-end">
-            <a href="https://github.com/nyg/autoscout24-trends" target="_blank">Github</a>
+            <a href="https://github.com/nyg/autoscout24-trends" target="_blank" rel="noopener noreferrer">Github</a>
          </div>
       </div>
    )
