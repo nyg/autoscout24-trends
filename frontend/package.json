@@ -1,8 +1,8 @@
 {
-  "name": "autoscout24-visualizer",
+  "name": "autoscout24-trends",
   "version": "1.0.0",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint ."
