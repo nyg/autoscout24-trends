@@ -28,8 +28,8 @@ sudo apt install chromium xvfb
 Set up a Python virtual environment and install packages:
 
 ```bash
-python -m venv venv
-source venv/bin/activate
+python -m venv .venv
+. .venv/bin/activate
 pip install -r requirements.txt
 ```
 
