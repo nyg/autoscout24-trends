@@ -1,6 +1,6 @@
 # AutoScout24 Crawler
 
-A Scrapy-based web crawler that extracts car listings from AutoScout24.ch, stores them in PostgreSQL, and sends email reports. The spider uses SeleniumBase CDP mode to bypass CloudFlare and other anti-bot protections.
+A Scrapy-based web crawler that extracts car listings from AutoScout24, stores them in PostgreSQL, and sends email reports. The spider uses SeleniumBase CDP mode to bypass CloudFlare and other anti-bot protections.
 
 ## Introduction
 
@@ -12,22 +12,7 @@ This crawler is composed of one [Scrapy spider](https://docs.scrapy.org/en/lates
 4. **Generates** CSV export files with combined car and seller data
 5. **Emails** results to configured recipients via Resend API
 
-### Key Features
-
-- **Anti-bot bypass**: Uses [SeleniumBase](https://seleniumbase.io/) CDP mode to avoid CloudFlare blocks
-- **Concurrent support**: Configurable request concurrency and delays
-- **Screenshot capture**: Saves listing page screenshots for visual records
-- **Batch tracking**: Uses sequence-generated IDs to track scraping sessions
-- **Flexible search config**: Define multiple searches with separate `.env` files
-
 ## Installation
-
-### Prerequisites
-
-- Python 3.9 or higher
-- PostgreSQL 13 or higher
-- Chromium browser
-- Linux: `xvfb` for headless operation
 
 ### System Dependencies (Linux)
 
@@ -158,69 +143,3 @@ crontab -e
 # Verify cron job
 crontab -l
 ```
-
-## Database Schema
-
-### Tables
-
-#### `cars`
-
-Stores vehicle listings with the following key columns:
-
-- `id`: Auto-incrementing primary key
-- `search_name`: Name from search configuration
-- `batch_id`: Tracks crawl session (from `car_batch_id_seq`)
-- `vehicle_id`: AutoScout24 vehicle identifier
-- `price`, `mileage`, `fuel_type`, `body_type`, `color`: Vehicle attributes
-- `kilo_watts`, `cm3`, `cylinders`, `cylinder_layout`: Engine specs
-- `avg_consumption`, `co2_emission`: Efficiency data
-- `first_registration_date`, `last_inspection_date`: Date fields
-- `seller_id`: Foreign key to sellers table
-- `date_in`: Timestamp of when record was created
-- `json_data`: Complete JSON response from AutoScout24
-
-#### `sellers`
-
-Stores dealer/seller information:
-
-- `id`: Seller identifier from AutoScout24
-- `name`, `address`, `city`, `zip_code`: Contact information
-- `type`: Seller type (dealer, private, etc.)
-
-### Development Setup
-
-```bash
-# Install development dependencies
-pip install -r requirements.txt
-
-# Run tests (if available)
-pytest
-
-# Format code
-black autoscout/
-
-# Lint code
-flake8 autoscout/
-```
-
-## License
-
-This project is provided as-is for educational and personal use. Please respect:
-
-- AutoScout24's Terms of Service
-- Rate limiting and robots.txt
-- Data privacy regulations (GDPR, etc.)
-- Ethical web scraping practices
-
-**Disclaimer**: Use this crawler responsibly and at your own risk. The authors are not responsible for any misuse or violations of AutoScout24's terms.
-
-## Additional Resources
-
-- [Scrapy Documentation](https://docs.scrapy.org/)
-- [SeleniumBase CDP Mode](https://seleniumbase.io/help_docs/cdp_mode/)
-- [Resend Email API](https://resend.com/docs)
-- [PostgreSQL psycopg3](https://www.psycopg.org/psycopg3/)
-
----
-
-**[← Back to Project README](../README.md)**

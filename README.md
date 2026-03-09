@@ -1,6 +1,7 @@
 # AutoScout24 Trends
 
-A car listing analytics platform that scrapes vehicle data from AutoScout24, stores it in a PostgreSQL database, and provides a web interface to visualize trends and insights.
+A car listing analytics platform that scrapes vehicle data from AutoScout24.ch, stores it in a PostgreSQL database, and provides a web 
+interface to visualize trends and insights.
 
 ## Overview
 
@@ -21,10 +22,10 @@ The system enables users to track car listings over time, analyze pricing trends
 
 ## Quick Start
 
-### 1. Run the Crawler
+### Run the Crawler
 
 See [crawler/README.md](crawler/README.md) for detailed setup and usage instructions.
 
-### 2. Start the Frontend
+### Start the Frontend
 
 See [frontend/README.md](frontend/README.md) for detailed setup and usage instructions.
