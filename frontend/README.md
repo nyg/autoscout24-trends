@@ -2,6 +2,13 @@
 
 A Next.js application for visualizing AutoScout24 data scraped by the crawler.
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+
 ## Features
 
 - **Search-based navigation**: Browse different saved searches via dynamic routes

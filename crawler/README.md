@@ -2,6 +2,13 @@
 
 A Scrapy-based web crawler that extracts car listings from AutoScout24, stores them in PostgreSQL, and sends email reports. The spider uses SeleniumBase CDP mode to bypass CloudFlare and other anti-bot protections.
 
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Cron Jobs](#cron-jobs)
+
 ## Introduction
 
 This crawler is composed of one [Scrapy spider](https://docs.scrapy.org/en/latest/topics/spiders.html) called `search` that:
