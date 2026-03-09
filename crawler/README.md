@@ -1,68 +1,111 @@
-# Crawler
+# AutoScout24 Crawler
 
-This crawler is composed of one [Scrapy spider][1] called `search`. It takes a
-search file as argument which contains a name, an AutoScout24 search URL and a
-list of email addresses. The spider will perform the following steps:
+[Scrapy spider](https://docs.scrapy.org/en/latest/topics/spiders.html) that scrapes AutoScout24 car listings and stores them in PostgreSQL.
 
-1. crawl the search URL and all cars returned by this search URL,
-2. store the cars and sellers into database (see `PostgreSQLPipeline` in
-   `pipeline.py`),
-3. generate a CSV file (see `CarWithSellerCsvItemExporter` in `exporter.py`),
-4. email the given addresses with the CSV file in attachment.
+## Table of Contents
 
-The spider uses [SeleniumBase](https://seleniumbase.io/)'s pure CDP mode to
-bypass AutoScout24's anti-bot protections (currently CloudFlare).
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
 
-## Running the spider
+## Features
 
-`venv` is optional but creates an isolated Python environment to avoid conflicts
-between projects.
+- Bypasses CloudFlare protection using [SeleniumBase CDP mode](https://github.com/nyg/scrapy-seleniumbase-cdp)
+- Extracts vehicle details (price, mileage, specs) and seller information
+- Stores data in PostgreSQL with batch tracking for historical analysis
+- Generates CSV exports
+- Sends email reports via Resend API
 
-Create an `.env` file and set the `PGSQL_URL` variable to point to your
-PostgreSQL database. Also create a free [resend.com][2] API key `RESEND_API_KEY`
-to receive results by email.
+## Installation
 
-```shell
-# create the virtual environment
-python -m venv venv
+Install system dependencies:
 
-# activate the virtual environment
-. venv/bin/activate
-
-# run the `search` spider (search file should be placed in the `searches/` folder)
-scrapy crawl search -a search_file=rs6.env
-
-# when done, deactivate the virtual environment
-deactivate
-```
-
-## Adding a cron job
-
-```shell
-# create directory for log file
-mkdir -p $HOME/.local/state/autoscout24-trends
-
-# edit the crontab file
-crontab -e
-
-# add this line to run the spiders daily at midnight, change paths if needed
-0 0 * * * $HOME/.local/share/autoscout24-trends/crawler/run-spiders.sh >> $HOME/.local/state/autoscout24-trends/cron.log 2>&1
-
-# list jobs in crontab file
-crontab -l
-```
-
-## Linux dependencies
-
-```shell
+```bash
 sudo apt install chromium xvfb
 ```
 
-## Database schema
+Set up a Python virtual environment and install packages:
 
-See [SCHEMA.sql](SCHEMA.sql).
+```bash
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+```
 
+Create a PostgreSQL database and initialize the schema:
 
-[1]: https://docs.scrapy.org/en/latest/topics/spiders.html
+```bash
+createdb autoscout24_trends
+psql -d autoscout24_trends -f SCHEMA.sql
+```
 
-[2]: https://resend.com
+Create a `.env` file in the crawler directory:
+
+```env
+PGSQL_URL=postgresql://username:password@localhost:5432/autoscout24_trends
+RESEND_API_KEY=re_YourApiKeyFromResendCom
+```
+
+## Usage
+
+### Search Files
+
+Create `.env` files in `searches/` to define what to scrape:
+
+```env
+name=Audi RS6 Avant
+emails=user@example.com
+url=https://www.autoscout24.ch/en/cars/audi/rs-6?sort=standard&desc=0
+```
+
+- `name`: search label used in filenames and database
+- `emails`: comma-separated recipients (optional)
+- `url`: AutoScout24 search URL with filters
+
+### Running
+
+Run a single search:
+
+```bash
+source venv/bin/activate
+scrapy crawl search -a search_file=audi_rs6.env
+```
+
+Run all searches:
+
+```bash
+./run-spiders.sh
+```
+
+### Cron Job
+
+Schedule daily crawls:
+
+```bash
+mkdir -p $HOME/.local/state/autoscout24-trends
+crontab -e
+```
+
+```cron
+0 0 * * * /path/to/crawler/run-spiders.sh >> $HOME/.local/state/autoscout24-trends/cron.log 2>&1
+```
+
+## Project Structure
+
+```
+crawler/
+├── autoscout/           # Scrapy project package
+│   ├── spiders/
+│   │   └── search.py    # Main spider
+│   ├── items.py         # Scrapy item definitions
+│   ├── pipelines.py     # PostgreSQL pipeline
+│   ├── exporters.py     # CSV exporter
+│   ├── extensions.py    # Email extension
+│   └── settings.py      # Scrapy settings
+├── searches/            # Search configuration files (.env)
+├── output/              # Generated CSV exports and screenshots
+├── SCHEMA.sql           # PostgreSQL schema
+├── run-spiders.sh       # Runs all search files
+└── requirements.txt     # Python dependencies
+```
