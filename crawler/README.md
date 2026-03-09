@@ -44,9 +44,7 @@ Using a virtual environment is recommended to isolate dependencies:
 python -m venv venv
 
 # Activate virtual environment
-source venv/bin/activate  # Linux/macOS
-# or
-.\venv\Scripts\activate  # Windows
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -122,19 +120,6 @@ scrapy crawl search -a search_file=audi_rs6.env
 deactivate
 ```
 
-#### Scrapy Commands
-
-```bash
-# List all spiders
-scrapy list
-
-# Run with custom log level
-scrapy crawl search -a search_file=audi_rs6.env --loglevel=DEBUG
-
-# Run without output files (database only)
-scrapy crawl search -a search_file=audi_rs6.env -s FEEDS={}
-```
-
 #### Run All Searches
 
 The `run-spiders.sh` script processes all `.env` files in `searches/`:
@@ -156,43 +141,7 @@ The crawler generates files in the `output/` directory:
 - **CSV exports**: `search_<search_name>_<timestamp>.csv`
 - **Screenshots**: `screenshot_<search_name>_<vehicle_id>_<timestamp>.png`
 
-## Configuration
-
-### Spider Settings
-
-Edit `autoscout/settings.py` to customize behavior:
-
-```python
-# Concurrency settings
-CONCURRENT_REQUESTS = 1        # Number of simultaneous requests
-DOWNLOAD_DELAY = 3             # Delay between requests (seconds)
-
-# Logging
-LOG_LEVEL = 'INFO'             # DEBUG, INFO, WARNING, ERROR
-
-# Feed exports
-FEEDS = {
-    'output/%(name)s_%(search_name)s_%(time)s.csv': {
-        'format': 'csv',
-        'encoding': 'utf8',
-    }
-}
-```
-
-### Pipeline Configuration
-
-The crawler uses these pipelines (in order):
-
-1. **ItemTypeStatsPipeline** (priority 200): Counts scraped items by type
-2. **PostgreSQLPipeline** (priority 300): Stores data in PostgreSQL
-
-### Extensions
-
-- **EmailAfterFeedExport**: Sends CSV files via email after crawl completion
-
-## Automation
-
-### Setting Up Cron Jobs
+## Cron Jobs
 
 Schedule automatic daily crawls:
 
@@ -210,41 +159,6 @@ crontab -e
 crontab -l
 ```
 
-### Alternative: systemd Timer (Linux)
-
-Create `~/.config/systemd/user/autoscout24-crawler.service`:
-
-```ini
-[Unit]
-Description=AutoScout24 Crawler
-
-[Service]
-Type=oneshot
-WorkingDirectory=/path/to/autoscout24-trends/crawler
-ExecStart=/path/to/autoscout24-trends/crawler/run-spiders.sh
-```
-
-Create `~/.config/systemd/user/autoscout24-crawler.timer`:
-
-```ini
-[Unit]
-Description=Run AutoScout24 Crawler Daily
-
-[Timer]
-OnCalendar=daily
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-```
-
-Enable the timer:
-
-```bash
-systemctl --user enable --now autoscout24-crawler.timer
-systemctl --user status autoscout24-crawler.timer
-```
-
 ## Database Schema
 
 ### Tables
@@ -257,7 +171,9 @@ Stores vehicle listings with the following key columns:
 - `search_name`: Name from search configuration
 - `batch_id`: Tracks crawl session (from `car_batch_id_seq`)
 - `vehicle_id`: AutoScout24 vehicle identifier
-- `price`, `mileage`, `fuel_type`, `body_type`: Vehicle attributes
+- `price`, `mileage`, `fuel_type`, `body_type`, `color`: Vehicle attributes
+- `kilo_watts`, `cm3`, `cylinders`, `cylinder_layout`: Engine specs
+- `avg_consumption`, `co2_emission`: Efficiency data
 - `first_registration_date`, `last_inspection_date`: Date fields
 - `seller_id`: Foreign key to sellers table
 - `date_in`: Timestamp of when record was created
@@ -270,122 +186,6 @@ Stores dealer/seller information:
 - `id`: Seller identifier from AutoScout24
 - `name`, `address`, `city`, `zip_code`: Contact information
 - `type`: Seller type (dealer, private, etc.)
-
-### Batch Tracking
-
-Each crawl session gets a unique `batch_id` from the sequence. This enables:
-- Tracking which listings appeared in which crawl
-- Comparing listings over time
-- Identifying new, removed, or changed listings
-
-See [SCHEMA.sql](SCHEMA.sql) for complete DDL.
-
-## Spider Details
-
-### Search Spider
-
-The `search` spider (in `autoscout/spiders/search.py`) implements:
-
-#### Request Types
-
-- **SearchPageRequest**: Fetches search result pages with pagination
-- **CarPageRequest**: Fetches individual car listing pages with screenshots
-
-#### Parsing Logic
-
-1. **parse()**: Extracts car URLs from search results and handles pagination
-2. **parse_car()**: Extracts vehicle details using Next.js flight data
-3. **_extract_flight_data()**: Parses embedded JSON from Next.js pages
-
-#### Data Extraction
-
-The spider uses `njsparser` to extract structured data from Next.js flight data, which includes:
-- Vehicle specifications and attributes
-- Seller information
-- Page view tracking metadata
-
-### Allowed Domains
-
-- `www.autoscout24.ch`
-- `autoscout24.ch`
-
-## Troubleshooting
-
-### Common Issues
-
-#### CloudFlare Blocks
-
-**Symptom**: Spider gets blocked or returns error pages
-
-**Solution**:
-- Verify SeleniumBase CDP middleware is enabled
-- Increase `DOWNLOAD_DELAY` in settings
-- Check if AutoScout24 has updated their protections
-- Try running during off-peak hours
-
-#### Database Connection Errors
-
-**Symptom**: `psycopg` connection failures
-
-**Solution**:
-- Verify `PGSQL_URL` format: `postgresql://user:password@host:port/dbname`
-- Check database is running: `pg_isready`
-- Ensure user has necessary permissions
-- Test connection: `psql "$PGSQL_URL"`
-
-#### Email Not Sending
-
-**Symptom**: No emails received after crawl
-
-**Solution**:
-- Verify `RESEND_API_KEY` is set correctly
-- Check Resend dashboard for delivery status
-- Ensure sender email is verified in Resend
-- Check if `emails` field is set in search file
-
-#### Missing Screenshots
-
-**Symptom**: No screenshot files generated
-
-**Solution**:
-- Ensure `output/` directory exists
-- Check disk space availability
-- Verify Chromium is installed and accessible
-- Review logs for screenshot-related errors
-
-#### Parsing Errors
-
-**Symptom**: Missing data or empty fields
-
-**Solution**:
-- AutoScout24 may have changed their HTML structure
-- Check `parse_car()` method in spider
-- Enable DEBUG logging to see raw responses
-- Update XPath selectors or flight data extraction logic
-
-### Debugging
-
-Enable verbose logging:
-
-```bash
-scrapy crawl search -a search_file=test.env --loglevel=DEBUG
-```
-
-Use Scrapy shell for interactive debugging:
-
-```bash
-scrapy shell "https://www.autoscout24.ch/en/..."
-```
-
-## Contributing
-
-Contributions are welcome! Areas for improvement:
-
-- Support for additional AutoScout24 regions (Germany, Austria, etc.)
-- Enhanced error handling and retry logic
-- Additional export formats (JSON, Excel)
-- Price change detection and alerts
-- Multi-language support
 
 ### Development Setup
 

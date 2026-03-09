@@ -1,6 +1,6 @@
-# AutoScout24 Trends - Frontend
+# AutoScout24 Trends — Frontend
 
-A modern Next.js web application for visualizing AutoScout24 car listing data. Features interactive charts, real-time data from PostgreSQL, and a responsive interface built with TailwindCSS and DaisyUI.
+A Next.js web application for visualizing AutoScout24 car listing data. Features interactive charts, real-time data from PostgreSQL, and a responsive interface built with Tailwind CSS and DaisyUI.
 
 ## Introduction
 
@@ -14,10 +14,10 @@ This frontend application provides a user-friendly interface to analyze car list
 
 ### Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
-- **Styling**: TailwindCSS 4 + DaisyUI 5
-- **Charts**: Recharts 3
-- **Database**: PostgreSQL via `postgres` client
+- **Framework**: [Next.js](https://nextjs.org/) 16 (App Router)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) 4 + [DaisyUI](https://daisyui.com/) 5
+- **Charts**: [Recharts](https://recharts.org/) 3
+- **Database**: PostgreSQL via [`postgres`](https://github.com/porsager/postgres)
 - **React**: React 19
 
 ## Installation
@@ -25,7 +25,7 @@ This frontend application provides a user-friendly interface to analyze car list
 ### Prerequisites
 
 - **Node.js** 18.17 or higher
-- **npm**, **pnpm**, or **yarn** package manager
+- **pnpm** package manager
 - **PostgreSQL** database with crawler data
 - **Environment variables** configured (see below)
 
@@ -39,19 +39,8 @@ cd frontend
 
 2. **Install dependencies**:
 
-Using npm:
-```bash
-npm install
-```
-
-Using pnpm (recommended):
 ```bash
 pnpm install
-```
-
-Using yarn:
-```bash
-yarn install
 ```
 
 3. **Configure environment variables**:
@@ -62,13 +51,7 @@ Create a `.env.local` file in the frontend directory:
 PGSQL_URL=postgresql://username:password@localhost:5432/autoscout24_trends
 ```
 
-Or alternatively, create a `.env` file (not recommended for production as it may be committed):
-
-```env
-PGSQL_URL=postgresql://username:password@localhost:5432/autoscout24_trends
-```
-
-**Important**: `.env.local` is gitignored by default and is the preferred way to store local environment variables in Next.js.
+**Note**: `.env.local` is gitignored by default and is the preferred way to store local environment variables in Next.js.
 
 #### Environment Variable Details
 
@@ -84,39 +67,48 @@ PGSQL_URL=postgresql://username:password@localhost:5432/autoscout24_trends
 Run the development server with hot reload:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
-The application will be available at [http://localhost:3000](http://localhost:3000)
+The application will be available at [http://localhost:3000](http://localhost:3000).
 
-#### Development Features
+### Production Build
 
-- **Hot Module Replacement**: Changes reflect immediately
-- **Error overlay**: Detailed error messages in browser
-- **Fast Refresh**: Preserves component state during edits
+```bash
+pnpm build
+pnpm start
+```
 
+### Linting
+
+```bash
+pnpm lint
+```
 
 ## Project Structure
 
 ```
 frontend/
 ├── src/
-│   ├── app/                  # Next.js App Router
-│   │   ├── layout.js         # Root layout with navbar
-│   │   ├── page.js           # Home page
-│   │   ├── globals.css       # Global styles
-│   │   └── [searchName]/     # Dynamic route for searches
-│   │       └── page.js       # Search-specific listing page
-│   ├── components/           # React components
-│   │   ├── navbar.js         # Navigation with search links
-│   │   ├── listing-table.js  # Car listings table
-│   │   └── trend-chart.js    # Historical data charts
+│   ├── app/                         # Next.js App Router
+│   │   ├── layout.js                # Root layout with navbar
+│   │   ├── page.js                  # Home page
+│   │   ├── globals.css              # Global styles (Tailwind CSS v4 config)
+│   │   └── [searchName]/            # Dynamic route for searches
+│   │       └── page.js              # Search-specific listing page
+│   ├── components/                  # React components
+│   │   ├── navbar.js                # Navigation with search links
+│   │   ├── cars.js                  # Car listings table
+│   │   ├── daily-listing-count.js   # Daily listing count chart
+│   │   └── mileage-price-comparison.js # Mileage vs price chart
 │   └── lib/
-│       └── data.js           # Database queries and data fetching
-├── public/                   # Static assets
-├── .env.local                # Environment variables (create this)
-├── package.json              # Dependencies and scripts
-├── next.config.mjs           # Next.js configuration
-├── tailwind.config.js        # TailwindCSS configuration
-└── README.md                 # This file
+│       ├── data.js                  # Database queries and data fetching
+│       └── format.js                # Formatting utilities
+├── .env.local                       # Environment variables (create this)
+├── eslint.config.mjs                # ESLint configuration
+├── jsconfig.json                    # Path alias configuration
+├── next.config.mjs                  # Next.js configuration
+├── postcss.config.mjs               # PostCSS / Tailwind CSS plugin
+├── package.json                     # Dependencies and scripts
+└── README.md                        # This file
 ```
