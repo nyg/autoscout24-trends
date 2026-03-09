@@ -108,17 +108,6 @@ The frontend is a Next.js application that:
 
 **[→ View Frontend Documentation](frontend/README.md)**
 
-## Database Schema
-
-The database consists of two main tables:
-
-- **cars**: Stores vehicle listings with detailed attributes (price, mileage, specs, etc.)
-- **sellers**: Contains seller information (name, location, type)
-
-Each car record includes a `batch_id` for tracking when it was scraped, enabling historical analysis.
-
-See [crawler/SCHEMA.sql](crawler/SCHEMA.sql) for the complete schema.
-
 ## Automation
 
 You can schedule the crawler to run automatically using cron:
@@ -150,34 +139,6 @@ Both components require:
 The crawler additionally requires:
 - `RESEND_API_KEY`: API key from resend.com for email notifications
 
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is provided as-is for educational and personal use. Please respect AutoScout24's Terms of Service and robots.txt when scraping their website.
-
-## Troubleshooting
-
-### Crawler Issues
-
-- **CloudFlare blocks**: The spider uses CDP mode to bypass protections, but may need updates if AutoScout24 changes their anti-bot systems
-- **Missing data**: Check logs for parsing errors; website structure may have changed
-- **Database errors**: Verify `PGSQL_URL` is correct and database schema is up to date
-
-### Frontend Issues
-
-- **No data displayed**: Ensure crawler has run at least once and data exists in the database
-- **Connection errors**: Verify `PGSQL_URL` environment variable in frontend's `.env` file
-- **Build failures**: Check Node.js version (18+ required)
-
 ## Support
 
 For issues, questions, or contributions, please refer to the individual component READMEs:
@@ -185,5 +146,3 @@ For issues, questions, or contributions, please refer to the individual componen
 - [Frontend Documentation](frontend/README.md)
 
 ---
-
-**Note**: This tool is for personal use and research purposes. Always respect website terms of service and implement appropriate rate limiting when scraping.
