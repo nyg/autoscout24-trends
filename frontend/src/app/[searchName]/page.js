@@ -15,13 +15,15 @@ export default async function Home({ params }) {
    const dailyListingCount = fetchDailyListingCount(searchName)
 
    return (
-      <Suspense fallback={<p>Loading data…</p>}>
-         <div className="flex">
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading data…</p>}>
+         <div className="flex gap-4">
             <DailyListingCount data={dailyListingCount} />
             <MileagePriceComparison data={activeListings} />
          </div>
-         <Cars name="Active listings" data={activeListings} />
-         <Cars name="Previous listings" data={previousListings} options={{ listingEnded: true }} />
+         <div className="mt-4 space-y-4">
+            <Cars name="Active listings" data={activeListings} />
+            <Cars name="Previous listings" data={previousListings} options={{ listingEnded: true }} />
+         </div>
       </Suspense>
    )
 }

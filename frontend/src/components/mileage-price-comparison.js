@@ -2,21 +2,43 @@
 
 import { asDecimal } from '@/lib/format'
 import { use } from 'react'
-import { CartesianGrid, Tooltip, XAxis, YAxis, ScatterChart, Scatter } from 'recharts'
+import { CartesianGrid, XAxis, YAxis, ScatterChart, Scatter } from 'recharts'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
+const chartConfig = {
+   listings: { label: 'Price / Mileage', color: 'var(--chart-1)' },
+}
 
 export default function MileagePriceComparison({ data }) {
    const listings = use(data)
 
    return (
-      <div className="flex-1 border-0 border-gray-400 rounded">
-         <ScatterChart responsive margin={{ top: 20, right: 20, bottom: 50, left: 30 }} height={450}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="mileage" type="number" name="mileage" domain={['auto', 'auto']} tickFormatter={asDecimal} label={{ value: 'Mileage (km)', position: 'bottom' }} />
-            <YAxis dataKey="price" type="number" name="price" domain={['auto', 'auto']} tickFormatter={asDecimal} label={{ value: 'Price (CHF)', position: 'left', angle: -90 }} />
-            <Tooltip />
-            <Scatter name="Price / Mileage" data={listings} fill="#8884d8" />
-         </ScatterChart>
-      </div>
+      <Card className="flex-1">
+         <CardHeader>
+            <CardTitle>Mileage vs Price</CardTitle>
+         </CardHeader>
+         <CardContent>
+            <ChartContainer config={chartConfig} className="min-h-87.5 w-full">
+               <ScatterChart margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                     dataKey="mileage" type="number" name="mileage"
+                     domain={['auto', 'auto']} tickFormatter={asDecimal}
+                     tickLine={false} axisLine={false}
+                     label={{ value: 'Mileage (km)', position: 'bottom', offset: 0 }}
+                  />
+                  <YAxis
+                     dataKey="price" type="number" name="price"
+                     domain={['auto', 'auto']} tickFormatter={asDecimal}
+                     tickLine={false} axisLine={false}
+                     label={{ value: 'Price (CHF)', position: 'left', angle: -90 }}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  <Scatter name="listings" data={listings} fill="var(--color-listings)" />
+               </ScatterChart>
+            </ChartContainer>
+         </CardContent>
+      </Card>
    )
 }

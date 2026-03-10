@@ -2,42 +2,58 @@
 
 import { asDecimal, asLongDate, asShortDate } from '@/lib/format'
 import { use } from 'react'
+import {
+   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 
 export default function Cars({ name, data, options = {} }) {
    const cars = use(data)
 
    return (
-      <div>
-         <h2>{name}: {cars.length} cars</h2>
-         <table className="table table-xs table-pin-rows tabular-nums overflow-x-auto vertical">
-            <thead>
-               <tr>
-                  <th>Title</th>
-                  <th className="text-right">Price</th>
-                  <th className="text-right">Color</th>
-                  <th className="text-right">Year</th>
-                  <th className="text-right">Mileage</th>
-                  <th className="text-right">km / year</th>
-                  <th className="text-right">Seller</th>
-                  <th className="text-right">{options.listingEnded ? 'Listing duration' : 'Listed since'}</th>
-               </tr>
-            </thead>
-            <tbody>
-               {cars.map(car => (
-                  <tr key={car.id}>
-                     <td><a className="no-underline hover:underline" href={car.url} target="_blank">{car.title}</a><br /><span>{(car.subtitle || car.description || '-').substring(0, 100)}</span></td>
-                     <td className="text-right align-middle" suppressHydrationWarning>{asDecimal(car.price)}</td>
-                     <td className="text-right align-middle">{car.color}</td>
-                     <td className="text-right align-middle" suppressHydrationWarning>{asShortDate(car.first_registration_date)}</td>
-                     <td className="text-right align-middle" suppressHydrationWarning>{asDecimal(car.mileage)}</td>
-                     <td className="text-right align-middle" suppressHydrationWarning>{asDecimal(car.km_year)}</td>
-                     <td className="text-right">{car.seller_name}<br />{car.zip_code} {car.city}</td>
-                     <td className="text-right" suppressHydrationWarning>{asLongDate(car.created_date)}<br/>{asLongDate(car.date_in)}</td>
-                  </tr>
-               ))}
-            </tbody>
-         </table>
-      </div>
+      <Card>
+         <CardHeader>
+            <CardTitle>{name}: {cars.length} cars</CardTitle>
+         </CardHeader>
+         <CardContent className="px-0">
+            <Table>
+               <TableHeader>
+                  <TableRow>
+                     <TableHead>Title</TableHead>
+                     <TableHead className="text-right">Price</TableHead>
+                     <TableHead className="text-right">Color</TableHead>
+                     <TableHead className="text-right">Year</TableHead>
+                     <TableHead className="text-right">Mileage</TableHead>
+                     <TableHead className="text-right">km / year</TableHead>
+                     <TableHead className="text-right">Seller</TableHead>
+                     <TableHead className="text-right">{options.listingEnded ? 'Listing duration' : 'Listed since'}</TableHead>
+                  </TableRow>
+               </TableHeader>
+               <TableBody>
+                  {cars.map(car => (
+                     <TableRow key={car.id}>
+                        <TableCell>
+                           <a className="hover:underline" href={car.url} target="_blank">{car.title}</a>
+                           <br />
+                           <span className="text-muted-foreground">{(car.subtitle || car.description || '-').substring(0, 100)}</span>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums" suppressHydrationWarning>{asDecimal(car.price)}</TableCell>
+                        <TableCell className="text-right">{car.color}</TableCell>
+                        <TableCell className="text-right tabular-nums" suppressHydrationWarning>{asShortDate(car.first_registration_date)}</TableCell>
+                        <TableCell className="text-right tabular-nums" suppressHydrationWarning>{asDecimal(car.mileage)}</TableCell>
+                        <TableCell className="text-right tabular-nums" suppressHydrationWarning>{asDecimal(car.km_year)}</TableCell>
+                        <TableCell className="text-right">
+                           {car.seller_name}<br />{car.zip_code} {car.city}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums" suppressHydrationWarning>
+                           {asLongDate(car.created_date)}<br />{asLongDate(car.date_in)}
+                        </TableCell>
+                     </TableRow>
+                  ))}
+               </TableBody>
+            </Table>
+         </CardContent>
+      </Card>
    )
 }

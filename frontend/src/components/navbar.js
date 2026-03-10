@@ -6,20 +6,31 @@ export default async function NavBar() {
    const searches = await fetchSearchNames()
 
    return (
-      <div className="navbar bg-base-300 drop-shadow px-4">
-         <div className="navbar-start">
-            <span className="text-lg font-semibold">AutoScout24 Trends</span>
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+         <div className="mx-auto flex h-12 max-w-screen-2xl items-center justify-between px-4">
+            <Link href="/" className="text-sm font-semibold tracking-tight">
+               AutoScout24 Trends
+            </Link>
+            <nav className="flex items-center gap-4">
+               {searches.map(search => (
+                  <Link
+                     key={search.name}
+                     href={`/${encodeURIComponent(search.name)}`}
+                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                     {search.name}
+                  </Link>
+               ))}
+            </nav>
+            <a
+               href="https://github.com/nyg/autoscout24-trends"
+               target="_blank"
+               rel="noopener noreferrer"
+               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+               GitHub
+            </a>
          </div>
-         <div className="navbar-center space-x-4">
-            {searches.map(search => (
-               <Link key={search.name} href={`/${encodeURIComponent(search.name)}`}>
-                  {search.name}
-               </Link>
-            ))}
-         </div>
-         <div className="navbar-end">
-            <a href="https://github.com/nyg/autoscout24-trends" target="_blank" rel="noopener noreferrer">Github</a>
-         </div>
-      </div>
+      </header>
    )
 }
