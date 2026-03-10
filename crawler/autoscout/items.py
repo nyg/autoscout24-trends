@@ -15,6 +15,13 @@ def format_date(value):
     return value.date().isoformat()
 
 
+def parse_iso_datetime(value):
+    try:
+        return datetime.fromisoformat(value)
+    except (ValueError, TypeError):
+        return None
+
+
 class CarItem(Item):
     search_name = Field()
     url = Field()
@@ -104,12 +111,12 @@ class CarItem(Item):
         car['warranty'] = json_response['listing']['warranty']['type'] != 'none'
         car['leasing'] = json_response['listing']['leasing'] is not None
 
-        car['created_date'] = datetime.fromisoformat(json_response['listing']['createdDate'])
-        car['last_modified_date'] = datetime.fromisoformat(json_response['listing']['lastModifiedDate'])
-        car['first_registration_date'] = datetime.fromisoformat(json_response['listing']['firstRegistrationDate'])
+        car['created_date'] = parse_iso_datetime(json_response['listing']['createdDate'])
+        car['last_modified_date'] = parse_iso_datetime(json_response['listing']['lastModifiedDate'])
+        car['first_registration_date'] = parse_iso_datetime(json_response['listing']['firstRegistrationDate'])
 
         last_inspection = json_response['listing']['lastInspectionDate']
-        car['last_inspection_date'] = datetime.fromisoformat(last_inspection) if last_inspection is not None else None
+        car['last_inspection_date'] = parse_iso_datetime(last_inspection)
 
         car['seller_id'] = json_response['seller']['id']
         return car
