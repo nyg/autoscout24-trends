@@ -11,7 +11,7 @@ import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const chartConfig = {
-   listings: { label: 'Price / Mileage', color: 'oklch(0.809 0.105 251.813)' },
+   listings: { label: 'Price / Mileage', color: 'var(--chart-4)' },
 }
 
 // TODO rework, add label which should be the car name
