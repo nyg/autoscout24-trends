@@ -52,7 +52,7 @@ function DailyListingCountLegend({ hiddenDataKeys, onToggleDataKey }) {
                   className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
                   style={{ opacity: isHidden ? 0.45 : 1 }}
                >
-                  <div className="h-2 w-2 shrink-0 rounded-xs" style={{ backgroundColor: color }} />
+                  <div className="size-2 shrink-0 rounded-xs" style={{ backgroundColor: color }} />
                   <span>{label}</span>
                </button>
             )
