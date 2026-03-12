@@ -82,7 +82,6 @@ function DailyListingCountLegend({ hiddenDataKeys, onToggleDataKey }) {
    )
 }
 
-
 export default function DailyListingCount({ data }) {
    const listings = use(data)
    const [hiddenDataKeys, setHiddenDataKeys] = useState({})
@@ -106,7 +105,7 @@ export default function DailyListingCount({ data }) {
                   <XAxis
                      dataKey="date"
                      scale="time"
-                     type="auto"
+                     type="number"
                      ticks={monthlyXAxisTicks(listings)}
                      tickFormatter={asShortMonthYearDate}
                      tickMargin={8}
