@@ -27,6 +27,7 @@ export default async function NavBar() {
                   href="https://github.com/nyg/autoscout24-trends"
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Open AutoScout24 Trends GitHub repository"
                   className="text-muted-foreground transition-colors hover:text-foreground"
                >
                   <GithubIcon className="size-4" />
