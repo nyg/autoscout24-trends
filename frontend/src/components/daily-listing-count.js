@@ -1,9 +1,14 @@
 'use client'
 
-import { asLongDate, asDecimal, asShortMonthYearDate } from '@/lib/format'
+import { asMediumDate, asDecimal, asShortMonthYearDate } from '@/lib/format'
 import { use, useState } from 'react'
 import { CartesianGrid, Line, XAxis, YAxis, ComposedChart, Bar } from 'recharts'
-import { ChartContainer, ChartTooltip, ChartLegend } from '@/components/ui/chart'
+import {
+   ChartContainer,
+   ChartTooltip,
+   ChartLegend,
+   ChartTooltipContent
+} from '@/components/ui/chart'
 import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -32,32 +37,6 @@ function carCountDomain(listings) {
    return [Math.min(...carCounts) * .9, Math.max(...carCounts) * 2]
 }
 
-// TODO try again to use default tooltip
-function DailyListingCountTooltip({ active, payload, label, labelFormatter, valueFormatter }) {
-   if (!active || !payload?.length) {
-      return null
-   }
-
-   return (
-      <div className="grid min-w-32 items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
-         <div className="font-medium">{labelFormatter(Number(label))}</div>
-         <div className="grid gap-1.5">
-            {payload.map(item => (
-               <div key={item.dataKey} className="flex w-full items-center gap-2">
-                  <div className="h-2.5 w-2.5 shrink-0 rounded-xs" style={{ backgroundColor: item.color }} />
-                  <div className="flex flex-1 items-center justify-between gap-2 leading-none">
-                     <span className="min-w-0 text-muted-foreground">{chartConfig[item.dataKey].label}</span>
-                     <span className="text-foreground tabular-nums">
-                        {valueFormatter(item.value)}
-                     </span>
-                  </div>
-               </div>
-            ))}
-         </div>
-      </div>
-   )
-}
-
 function DailyListingCountLegend({ hiddenDataKeys, onToggleDataKey }) {
    return (
       <div className="pt-3 flex items-center justify-center gap-4">
@@ -73,7 +52,7 @@ function DailyListingCountLegend({ hiddenDataKeys, onToggleDataKey }) {
                   className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
                   style={{ opacity: isHidden ? 0.45 : 1 }}
                >
-                  <div className="h-2 w-2 shrink-0 rounded-xs" style={{ backgroundColor: color }} />
+                  <div className="size-2 shrink-0 rounded-xs" style={{ backgroundColor: color }} />
                   <span>{label}</span>
                </button>
             )
@@ -133,7 +112,7 @@ export default function DailyListingCount({ data }) {
                      axisLine={false}
                   />
                   <YAxis yAxisId="zount" domain={carCountDomain(listings)} hide />
-                  <ChartTooltip content={<DailyListingCountTooltip labelFormatter={asLongDate} valueFormatter={asDecimal} />} />
+                  <ChartTooltip content={<ChartTooltipContent labelFormatter={asMediumDate} valueFormatter={asDecimal} />} />
                   <ChartLegend content={<DailyListingCountLegend hiddenDataKeys={hiddenDataKeys} onToggleDataKey={toggleDataKey} />} />
                   <Line type="monotone" yAxisId="price" dataKey="price_avg" stroke="var(--color-price_avg)" strokeWidth={2} dot={false} hide={Boolean(hiddenDataKeys.price_avg)} />
                   <Line type="monotone" yAxisId="mileage" dataKey="mileage_avg" stroke="var(--color-mileage_avg)" strokeWidth={2} dot={false} hide={Boolean(hiddenDataKeys.mileage_avg)} />

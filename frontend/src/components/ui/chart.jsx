@@ -95,6 +95,7 @@ function ChartTooltipContent({
    labelFormatter,
    labelClassName,
    formatter,
+   valueFormatter,
    color,
    nameKey,
    labelKey
@@ -109,8 +110,8 @@ function ChartTooltipContent({
       const [item] = payload
       const key = `${labelKey || item?.dataKey || item?.name || 'value'}`
       const itemConfig = getPayloadConfigFromPayload(config, item, key)
-      const value =
-      !labelKey && typeof label === 'string'
+
+      const value = !labelKey && typeof label === 'string'
          ? config[label]?.label || label
          : itemConfig?.label
 
@@ -162,7 +163,7 @@ function ChartTooltipContent({
                      <div
                         key={item.dataKey}
                         className={cn(
-                           'flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground',
+                           'flex w-full flex-wrap items-stretch gap-2 [&>svg]:size-2.5 [&>svg]:text-muted-foreground',
                            indicator === 'dot' && 'items-center'
                         )}>
                         {formatter && item?.value !== undefined && item.name ? (
@@ -175,7 +176,7 @@ function ChartTooltipContent({
                                  !hideIndicator && (
                                     <div
                                        className={cn('shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)', {
-                                          'h-2.5 w-2.5': indicator === 'dot',
+                                          'size-2.5': indicator === 'dot',
                                           'w-1': indicator === 'line',
                                           'w-0 border-[1.5px] border-dashed bg-transparent':
                               indicator === 'dashed',
@@ -191,7 +192,7 @@ function ChartTooltipContent({
                               )}
                               <div
                                  className={cn(
-                                    'flex flex-1 justify-between leading-none',
+                                    'flex flex-1 justify-between gap-2 leading-none',
                                     nestLabel ? 'items-end' : 'items-center'
                                  )}>
                                  <div className="grid gap-1.5">
@@ -201,8 +202,8 @@ function ChartTooltipContent({
                                     </span>
                                  </div>
                                  {item.value && (
-                                    <span className="font-mono font-medium text-foreground tabular-nums">
-                                       {item.value.toLocaleString()}
+                                    <span className="text-foreground tabular-nums">
+                                       {valueFormatter ? valueFormatter(item.value) : item.value.toLocaleString()}
                                     </span>
                                  )}
                               </div>
@@ -248,13 +249,13 @@ function ChartLegendContent({
                   <div
                      key={item.value}
                      className={cn(
-                        'flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground'
+                        'flex items-center gap-1.5 [&>svg]:size-3 [&>svg]:text-muted-foreground'
                      )}>
                      {itemConfig?.icon && !hideIcon ? (
                         <itemConfig.icon />
                      ) : (
                         <div
-                           className="h-2 w-2 shrink-0 rounded-[2px]"
+                           className="size-2 shrink-0 rounded-[2px]"
                            style={{
                               backgroundColor: item.color,
                            }} />

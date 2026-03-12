@@ -3,6 +3,8 @@
 A car listing analytics platform that scrapes vehicle data from AutoScout24.ch, stores it in a PostgreSQL database, and provides a web 
 interface to visualize trends and insights.
 
+![AutoScout24 Trends frontpage](demo.png)
+
 ## Overview
 
 This project consists of two main components:

@@ -1,6 +1,6 @@
 'use client'
 
-import { asDecimal, asLongDate, asShortDate } from '@/lib/format'
+import { asDecimal, asMediumDate, asShortDate } from '@/lib/format'
 import { use } from 'react'
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -47,7 +47,10 @@ export default function Cars({ name, data, options = {} }) {
                            {car.seller_name}<br />{car.zip_code} {car.city}
                         </TableCell>
                         <TableCell className="text-right tabular-nums" suppressHydrationWarning>
-                           {asLongDate(car.created_date)}<br />{asLongDate(car.date_in)}
+                           {asMediumDate(car.created_date)}
+                           {options.listingEnded
+                              ? <><br />{asMediumDate(car.date_in)}</>
+                              : null}
                         </TableCell>
                      </TableRow>
                   ))}
