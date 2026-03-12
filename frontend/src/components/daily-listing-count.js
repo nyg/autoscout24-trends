@@ -8,9 +8,9 @@ import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const chartConfig = {
-   price_avg: { label: 'Average Price', color: 'oklch(0.62 0.2 259)' },
-   mileage_avg: { label: 'Average Mileage', color: 'oklch(0.72 0.17 150)' },
-   car_count: { label: 'Car Count', color: 'oklch(0.78 0.17 85)' },
+   price_avg: { label: 'Average Price', color: 'var(--chart-1)' },
+   mileage_avg: { label: 'Average Mileage', color: 'var(--chart-2)' },
+   car_count: { label: 'Car Count', color: 'var(--chart-3)' },
 }
 
 function monthlyXAxisTicks(listings) {
