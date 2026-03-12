@@ -17,6 +17,7 @@ export default async function NavBar() {
                <SearchDropdown searches={searches} />
                <Link
                   href="/settings"
+                  aria-label="Settings"
                   className="text-muted-foreground transition-colors hover:text-foreground"
                >
                   <SettingsIcon className="size-4" />
