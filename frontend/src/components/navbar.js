@@ -1,5 +1,6 @@
 import { fetchSearchNames } from '@/lib/data'
 import Link from 'next/link'
+import { SettingsIcon, GithubIcon } from 'lucide-react'
 import SearchDropdown from '@/components/search-dropdown'
 
 export default async function NavBar() {
@@ -14,13 +15,22 @@ export default async function NavBar() {
             </Link>
             <nav className="flex items-center gap-4">
                <SearchDropdown searches={searches} />
+               <Link
+                  href="/settings"
+                  aria-label="Settings"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+               >
+                  <SettingsIcon className="size-4" />
+               </Link>
+               <div className="h-4 border-l" />
                <a
                   href="https://github.com/nyg/autoscout24-trends"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Open AutoScout24 Trends GitHub repository"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
                >
-                  GitHub
+                  <GithubIcon className="size-4" />
                </a>
             </nav>
          </div>
