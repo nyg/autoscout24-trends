@@ -205,6 +205,7 @@ function SellerCell({ car }) {
                rel="noopener noreferrer"
                className="text-muted-foreground hover:text-foreground transition-colors"
                title="Open in Google Maps"
+               aria-label={`Open ${address} in Google Maps`}
             >
                <MapPinIcon className="size-3.5" />
             </a>
@@ -215,6 +216,7 @@ function SellerCell({ car }) {
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   title="Directions from home"
+                  aria-label={`Get directions from home to ${address} in Google Maps`}
                >
                   <NavigationIcon className="size-3.5" />
                </a>
