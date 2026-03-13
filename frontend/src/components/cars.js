@@ -50,7 +50,6 @@ const COLUMNS = [
 const VISIBILITY_STORAGE_KEY = 'car-table-visible-columns'
 const MAPS_API_KEY_STORAGE_KEY = 'google-maps-api-key'
 const HOME_ADDRESS_STORAGE_KEY = 'home-address'
-const HOME_ADDRESS_EVENT = 'home-address-changed'
 
 function getDefaultVisibleKeys() {
    return COLUMNS.filter(c => c.defaultVisible).map(c => c.key)
@@ -107,43 +106,20 @@ function getVisibleColumnsServerSnapshot() {
    return defaultVisibleKeys
 }
 
-function subscribeMapsApiKey(callback) {
-   window.addEventListener('storage', callback)
-   return () => window.removeEventListener('storage', callback)
-}
-
-function getMapsApiKeySnapshot() {
-   try { return localStorage.getItem(MAPS_API_KEY_STORAGE_KEY) || '' } catch { return '' }
-}
-
-function getMapsApiKeyServerSnapshot() {
-   return ''
-}
-
-function useMapsApiKey() {
-   return useSyncExternalStore(subscribeMapsApiKey, getMapsApiKeySnapshot, getMapsApiKeyServerSnapshot)
-}
-
-function subscribeHomeAddress(callback) {
-   window.addEventListener('storage', callback)
-   window.addEventListener(HOME_ADDRESS_EVENT, callback)
-   return () => {
-      window.removeEventListener('storage', callback)
-      window.removeEventListener(HOME_ADDRESS_EVENT, callback)
+function createStorageHook(storageKey) {
+   const subscribe = (callback) => {
+      window.addEventListener('storage', callback)
+      return () => window.removeEventListener('storage', callback)
    }
+   const getSnapshot = () => {
+      try { return localStorage.getItem(storageKey) || '' } catch { return '' }
+   }
+   const getServerSnapshot = () => ''
+   return () => useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
 
-function getHomeAddressSnapshot() {
-   try { return localStorage.getItem(HOME_ADDRESS_STORAGE_KEY) || '' } catch { return '' }
-}
-
-function getHomeAddressServerSnapshot() {
-   return ''
-}
-
-function useHomeAddress() {
-   return useSyncExternalStore(subscribeHomeAddress, getHomeAddressSnapshot, getHomeAddressServerSnapshot)
-}
+const useMapsApiKey = createStorageHook(MAPS_API_KEY_STORAGE_KEY)
+const useHomeAddress = createStorageHook(HOME_ADDRESS_STORAGE_KEY)
 
 
 // --- Sorting ---
