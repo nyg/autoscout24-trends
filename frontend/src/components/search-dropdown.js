@@ -15,12 +15,15 @@ import {
 export default function SearchDropdown({ searches }) {
 
    const pathname = usePathname()
-   const activeSearch = decodeURIComponent(pathname.slice(1))
+   const searchPrefix = '/search/'
+   const activeSearch = pathname.startsWith(searchPrefix)
+      ? decodeURIComponent(pathname.slice(searchPrefix.length))
+      : null
 
    return (
       <DropdownMenu>
          <DropdownMenuTrigger render={<Button variant="ghost" />}>
-            Searches
+            {activeSearch ?? 'Searches'}
             <ChevronDownIcon data-icon="inline-end" />
          </DropdownMenuTrigger>
          <DropdownMenuContent align="end">
@@ -28,7 +31,7 @@ export default function SearchDropdown({ searches }) {
                {searches.map(search => (
                   <DropdownMenuItem
                      key={search.name}
-                     render={<Link href={`/${encodeURIComponent(search.name)}`} />}
+                     render={<Link href={`/search/${encodeURIComponent(search.name)}`} />}
                      className={activeSearch === search.name ? 'font-semibold text-foreground' : ''}
                   >
                      {search.name}

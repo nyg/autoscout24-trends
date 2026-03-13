@@ -5,6 +5,11 @@ import MileagePriceComparison from '@/components/mileage-price-comparison'
 import { fetchActiveListings, fetchDailyListingCount, fetchPreviousListings } from '@/lib/data'
 
 
+export async function generateMetadata({ params }) {
+   const { searchName } = await params
+   return { title: `${decodeURIComponent(searchName)} – AutoScout24 Trends` }
+}
+
 export default async function Home({ params }) {
 
    const awaitedParams = await params
