@@ -5,17 +5,14 @@ import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 import { StarIcon, PhoneIcon, GlobeIcon, ClockIcon, ExternalLinkIcon } from 'lucide-react'
 
 const placeCache = new Map()
-let lastApiKey = null
+let optionsSet = false
 
 function ensureApiKey(apiKey) {
-   console.log('Ensuring Google Maps API key is set', apiKey)
-   if (!apiKey || lastApiKey === apiKey) {
+   if (!apiKey || optionsSet) {
       return
    }
-
-   console.log('Setting Google Maps API key', apiKey)
    setOptions({ key: apiKey, v: 'weekly' })
-   lastApiKey = apiKey
+   optionsSet = true
 }
 
 export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
