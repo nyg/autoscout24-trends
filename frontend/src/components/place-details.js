@@ -8,8 +8,12 @@ const placeCache = new Map()
 let lastApiKey = null
 
 function ensureApiKey(apiKey) {
-   if (!apiKey) return
-   if (lastApiKey === apiKey) return
+   console.log('Ensuring Google Maps API key is set', apiKey)
+   if (!apiKey || lastApiKey === apiKey) {
+      return
+   }
+
+   console.log('Setting Google Maps API key', apiKey)
    setOptions({ key: apiKey, v: 'weekly' })
    lastApiKey = apiKey
 }
@@ -22,7 +26,10 @@ export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
    const [error, setError] = useState(null)
 
    useEffect(() => {
-      if (place) return
+      if (place) {
+         return
+      }
+
       let cancelled = false
 
       async function fetchPlace() {
@@ -37,7 +44,10 @@ export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
                maxResultCount: 1,
             })
 
-            if (cancelled) return
+            if (cancelled) {
+               return
+            }
+
             if (!places?.length) {
                setError('Place not found')
                setLoading(false)
@@ -53,7 +63,9 @@ export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
                ],
             })
 
-            if (cancelled) return
+            if (cancelled) {
+               return
+            }
 
             let photoUrl = null
             if (found.photos?.length) {
@@ -85,7 +97,9 @@ export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
       }
 
       fetchPlace()
-      return () => { cancelled = true }
+      return () => {
+         cancelled = true
+      }
    }, [place, sellerName, zipCode, city, apiKey])
 
    return (

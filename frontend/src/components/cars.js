@@ -113,7 +113,11 @@ function subscribeMapsApiKey(callback) {
 }
 
 function getMapsApiKeySnapshot() {
-   try { return localStorage.getItem(MAPS_API_KEY_STORAGE_KEY) || '' } catch { return '' }
+   try {
+      return localStorage.getItem(MAPS_API_KEY_STORAGE_KEY) || '' 
+   } catch {
+      return '' 
+   }
 }
 
 function getMapsApiKeyServerSnapshot() {
@@ -134,7 +138,11 @@ function subscribeHomeAddress(callback) {
 }
 
 function getHomeAddressSnapshot() {
-   try { return localStorage.getItem(HOME_ADDRESS_STORAGE_KEY) || '' } catch { return '' }
+   try {
+      return localStorage.getItem(HOME_ADDRESS_STORAGE_KEY) || '' 
+   } catch {
+      return '' 
+   }
 }
 
 function getHomeAddressServerSnapshot() {
@@ -154,9 +162,15 @@ function compareCars(a, b, sortKey, sortType, direction) {
 
    const nullA = valA == null || valA === ''
    const nullB = valB == null || valB === ''
-   if (nullA && nullB) return 0
-   if (nullA) return 1
-   if (nullB) return -1
+   if (nullA && nullB) {
+      return 0
+   }
+   if (nullA) {
+      return 1
+   }
+   if (nullB) {
+      return -1
+   }
 
    let result = 0
    if (sortType === 'numeric') {
@@ -174,12 +188,16 @@ function compareCars(a, b, sortKey, sortType, direction) {
 // --- Truncated text with tooltip ---
 
 function TruncatedText({ text, maxLength, className, scrollable = false }) {
-   if (!text) return <span className={className}>-</span>
+   if (!text) {
+      return <span className={className}>-</span>
+   }
 
    const str = String(text)
    const truncated = str.length > maxLength
 
-   if (!truncated) return <span className={className}>{str}</span>
+   if (!truncated) {
+      return <span className={className}>{str}</span>
+   }
 
    return (
       <Tooltip delay={300}>
@@ -394,7 +412,9 @@ export default function Cars({ name, data, options = {} }) {
 
    const sortedCars = useMemo(() => {
       const col = COLUMNS.find(c => c.key === sort.key)
-      if (!col) return cars
+      if (!col) {
+         return cars
+      }
       return [...cars].sort((a, b) => compareCars(a, b, col.sortKey, col.sortType, sort.direction))
    }, [cars, sort])
 

@@ -8,11 +8,15 @@ const HOME_ADDRESS_STORAGE_KEY = 'home-address'
 
 export default function SettingsPage() {
    const [apiKey, setApiKey] = useState(() => {
-      if (typeof window === 'undefined') return ''
+      if (typeof window === 'undefined') {
+         return ''
+      }
       return localStorage.getItem(MAPS_KEY_STORAGE_KEY) || ''
    })
    const [homeAddress, setHomeAddress] = useState(() => {
-      if (typeof window === 'undefined') return ''
+      if (typeof window === 'undefined') {
+         return ''
+      }
       return localStorage.getItem(HOME_ADDRESS_STORAGE_KEY) || ''
    })
    const [saved, setSaved] = useState(false)
@@ -26,7 +30,9 @@ export default function SettingsPage() {
    }
 
    function handleKeyDown(e) {
-      if (e.key === 'Enter') handleSave()
+      if (e.key === 'Enter') {
+         handleSave()
+      }
    }
 
    return (
