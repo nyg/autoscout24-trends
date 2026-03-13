@@ -113,9 +113,9 @@ function createStorageHook(storageKey) {
    }
    const getSnapshot = () => {
       try {
-         return localStorage.getItem(storageKey) || '' 
+         return localStorage.getItem(storageKey) || ''
       } catch {
-         return '' 
+         return ''
       }
    }
    const getServerSnapshot = () => ''
