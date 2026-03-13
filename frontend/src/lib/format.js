@@ -1,4 +1,4 @@
-const locales = typeof navigator !== 'undefined' ? navigator.language : 'fr-CH'
+const locales = typeof navigator === 'undefined' ? 'fr-CH' : navigator.language
 
 const shortDateFormatter = new Intl.DateTimeFormat(locales, { year: 'numeric', month: '2-digit' })
 const mediumDateFormatter = new Intl.DateTimeFormat(locales, { year: 'numeric', month: 'short', day: 'numeric' })
@@ -7,7 +7,7 @@ const decimalFormatter = new Intl.NumberFormat(locales, { style: 'decimal', mini
 
 
 const formatDate = (formatter, date) =>
-   formatter.format(date).replace(' ', ' ') // non-breaking space
+   formatter.format(date).replace(' ', ' ') // non-breaking space
 
 export function asMediumDate(timestamp) {
    return formatDate(mediumDateFormatter, timestamp)

@@ -27,9 +27,19 @@ autoscout24-trends/
 │   └── run-spiders.sh      # Shell script to run all spiders
 └── frontend/
     ├── src/
-    │   ├── app/            # Next.js App Router pages
-    │   ├── components/     # React components
-    │   └── lib/            # Shared utilities and DB queries
+    │   ├── app/
+    │   │   ├── search/[searchName]/  # Main search results page
+    │   │   └── settings/             # Settings page (API keys, home address)
+    │   ├── components/
+    │   │   ├── ui/           # UI primitives (button, card, chart, dropdown-menu, popover, table, tooltip)
+    │   │   ├── cars.js       # Cars table with sorting, column visibility, seller cell
+    │   │   ├── place-details.js  # Google Places API integration
+    │   │   ├── daily-listing-count.js
+    │   │   ├── mileage-price-comparison.js
+    │   │   └── navbar.js
+    │   └── lib/
+    │       ├── data.js       # All PostgreSQL queries
+    │       └── format.js     # Number/date locale formatting
     ├── package.json
     └── eslint.config.mjs
 ```
@@ -99,4 +109,7 @@ pnpm lint     # Run ESLint
 - Package manager: `pnpm`.
 - Keep SQL in `src/lib/data.js`; pages and components consume those helpers instead of embedding SQL.
 - Preserve the existing server/client pattern: server routes create unresolved data promises and client components consume them with `use(data)`.
-- Search routes use URL-encoded display names: `navbar.js` encodes `search.name`, and `src/app/[searchName]/page.js` decodes before querying.
+- Search routes use URL-encoded display names: `navbar.js` encodes `search.name`, and `src/app/search/[searchName]/page.js` decodes before querying.
+- Number/date formatting in `src/lib/format.js` uses `navigator.language` on the client with `'fr-CH'` server fallback. Client components that render formatted values must force a post-hydration re-render (see `cars.js` pattern with `useReducer` + `useEffect`).
+- localStorage-backed state (column visibility, API keys, home address) uses `useSyncExternalStore` with server snapshots to avoid hydration mismatches. Same-tab sync requires custom events since `storage` events only fire in other tabs.
+- Seller types are `'professional'` and `'private'`. Google Places details are only available for professional sellers. Address format differs by type (see `buildAddress` in `cars.js`).
