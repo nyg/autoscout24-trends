@@ -7,14 +7,16 @@ import {
    ChartContainer,
    ChartTooltip
 } from '@/components/ui/chart'
+import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const chartConfig = {
    listings: { label: 'Price / Mileage', color: 'oklch(0.809 0.105 251.813)' },
 }
 
-function MileagePriceComparisonTooltip({ active, payload }) {
-   if (!active) {
+// TODO rework, add label which should be the car name
+function MileagePriceComparisonTooltip({ active, payload, valueFormatter }) {
+   if (!active || !payload?.length) {
       return null
    }
 
@@ -25,15 +27,20 @@ function MileagePriceComparisonTooltip({ active, payload }) {
          <div className="grid gap-1.5">
             <div className="flex items-center justify-between gap-2 leading-none">
                <span className="text-muted-foreground">Mileage</span>
-               <span className="text-foreground tabular-nums">{asDecimal(listing.mileage)}</span>
+               <span className="text-foreground tabular-nums">{valueFormatter(listing.mileage)}</span>
             </div>
             <div className="flex items-center justify-between gap-2 leading-none">
                <span className="text-muted-foreground">Price</span>
-               <span className="text-foreground tabular-nums">{asDecimal(listing.price)}</span>
+               <span className="text-foreground tabular-nums">{valueFormatter(listing.price)}</span>
             </div>
          </div>
       </div>
    )
+}
+
+function mileageDomain(listings) {
+   const mileages = listings.map(l => l.mileage)
+   return [Math.min(...mileages) - 100, Math.max(...mileages) + 100]
 }
 
 export default function MileagePriceComparison({ data }) {
@@ -46,21 +53,29 @@ export default function MileagePriceComparison({ data }) {
          </CardHeader>
          <CardContent>
             <ChartContainer config={chartConfig} className="min-h-87.5 w-full">
-               <ScatterChart margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
+               <ScatterChart margin={{ top: 10, right: 0, bottom: 28, left: 0 }}>
                   <CartesianGrid vertical={false} />
                   <XAxis
-                     dataKey="mileage" type="number" name="mileage"
-                     domain={['auto', 'auto']} tickFormatter={asDecimal}
-                     tickLine={false} axisLine={false}
-                     label={{ value: 'Mileage (km)', position: 'bottom', offset: 0 }}
+                     name="mileage"
+                     dataKey="mileage"
+                     type="number"
+                     domain={mileageDomain(listings)}
+                     tickFormatter={asDecimal}
+                     unit=" km"
+                     tickLine={false}
+                     tickMargin={8}
+                     axisLine={false}
                   />
                   <YAxis
-                     dataKey="price" type="number" name="price"
-                     domain={['auto', 'auto']} tickFormatter={asDecimal}
-                     tickLine={false} axisLine={false}
-                     label={{ value: 'Price (CHF)', position: 'left', angle: -90 }}
+                     name="price"
+                     dataKey="price"
+                     type="number"
+                     domain={['auto', 'auto']}
+                     tick={<HiddenEdgeYAxisTick unit='.-' formatter={asDecimal} />}
+                     tickLine={false}
+                     axisLine={false}
                   />
-                  <ChartTooltip content={<MileagePriceComparisonTooltip />} />
+                  <ChartTooltip content={<MileagePriceComparisonTooltip valueFormatter={asDecimal} />} />
                   <Scatter name="listings" data={listings} fill="var(--color-listings)" />
                </ScatterChart>
             </ChartContainer>

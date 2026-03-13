@@ -1,12 +1,10 @@
 'use client'
 
-import {
-   asLongDate, asDecimal, asMonthYearDate, asShortDate,
-   asShortMonthYearDate
-} from '@/lib/format'
+import { asLongDate, asDecimal, asShortMonthYearDate } from '@/lib/format'
 import { use } from 'react'
 import { CartesianGrid, Line, XAxis, YAxis, ComposedChart, Bar } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartLegend, ChartLegendContent } from '@/components/ui/chart'
+import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const chartConfig = {
@@ -15,28 +13,42 @@ const chartConfig = {
    car_count: { label: 'Car Count', color: 'oklch(0.78 0.17 85)' },
 }
 
-function DailyListingCountTooltip({ active, payload, label }) {
+function monthlyXAxisTicks(listings) {
+   const months = {}
+
+   for (const timestamp of listings.map(l => Number(l.date)).toSorted((a, b) => a - b)) {
+      const date = new Date(timestamp)
+      if (date.getDate() > 15) continue
+
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`
+      months[monthKey] = timestamp
+   }
+
+   return Object.values(months)
+}
+
+function carCountDomain(listings) {
+   const carCounts = listings.map(l => l.car_count)
+   return [Math.min(...carCounts) * .9, Math.max(...carCounts) * 2]
+}
+
+// TODO try again to use default tooltip
+function DailyListingCountTooltip({ active, payload, label, labelFormatter, valueFormatter }) {
    if (!active || !payload?.length) {
       return null
    }
 
    return (
       <div className="grid min-w-32 items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
-         <div className="font-medium">{asLongDate(Number(label))}</div>
+         <div className="font-medium">{labelFormatter(Number(label))}</div>
          <div className="grid gap-1.5">
             {payload.map(item => (
-               <div
-                  key={item.dataKey}
-                  className="flex w-full items-center gap-2"
-               >
-                  <div
-                     className="h-2.5 w-2.5 shrink-0 rounded-xs"
-                     style={{ backgroundColor: item.color }}
-                  />
+               <div key={item.dataKey} className="flex w-full items-center gap-2">
+                  <div className="h-2.5 w-2.5 shrink-0 rounded-xs" style={{ backgroundColor: item.color }} />
                   <div className="flex flex-1 items-center justify-between gap-2 leading-none">
                      <span className="min-w-0 text-muted-foreground">{chartConfig[item.dataKey].label}</span>
                      <span className="text-foreground tabular-nums">
-                        {asDecimal(item.value)}
+                        {valueFormatter(item.value)}
                      </span>
                   </div>
                </div>
@@ -46,13 +58,9 @@ function DailyListingCountTooltip({ active, payload, label }) {
    )
 }
 
+
 export default function DailyListingCount({ data }) {
    const listings = use(data)
-
-   const carCountDomain = [
-      Math.min(...listings.map(l => l.car_count)) * .9,
-      Math.max(...listings.map(l => l.car_count)) * 2,
-   ]
 
    return (
       <Card className="flex-1">
@@ -61,13 +69,39 @@ export default function DailyListingCount({ data }) {
          </CardHeader>
          <CardContent>
             <ChartContainer config={chartConfig} className="min-h-87.5 w-full">
-               <ComposedChart data={listings}>
+               <ComposedChart data={listings} margin={{ top: 10, right: 0, bottom: 0, left: 0 }}>
                   <CartesianGrid vertical={false} />
-                  <XAxis dataKey="date" scale="time" type="auto" tickFormatter={asLongDate} tickMargin={8} minTickGap={30} tickLine={false} axisLine={false} />
-                  <YAxis yAxisId="price" domain={['auto', 'auto']} unit='.-' orientation="right" tickFormatter={asDecimal} tickLine={false} axisLine={false} />
-                  <YAxis yAxisId="mileage" domain={['auto', 'auto']} unit=' km' className={'tabular-nums'} width={82} orientation="left" tickFormatter={asDecimal} tickLine={false} axisLine={false} />
-                  <YAxis yAxisId="zount" domain={carCountDomain} hide />
-                  <ChartTooltip content={<DailyListingCountTooltip />} />
+                  <XAxis
+                     dataKey="date"
+                     scale="time"
+                     type="atuo"
+                     ticks={monthlyXAxisTicks(listings)}
+                     tickFormatter={asShortMonthYearDate}
+                     tickMargin={8}
+                     tickLine={false}
+                     axisLine={false}
+                  />
+                  <YAxis
+                     yAxisId="price"
+                     domain={['auto', 'auto']}
+                     unit='.-'
+                     orientation="left"
+                     tick={<HiddenEdgeYAxisTick unit='.-' formatter={asDecimal} />}
+                     tickLine={false}
+                     axisLine={false}
+                  />
+                  <YAxis
+                     yAxisId="mileage"
+                     domain={['auto', 'auto']}
+                     unit=' km'
+                     width={82}
+                     orientation="right"
+                     tick={<HiddenEdgeYAxisTick unit=' km' formatter={asDecimal} />}
+                     tickLine={false}
+                     axisLine={false}
+                  />
+                  <YAxis yAxisId="zount" domain={carCountDomain(listings)} hide />
+                  <ChartTooltip content={<DailyListingCountTooltip labelFormatter={asLongDate} valueFormatter={asDecimal} />} />
                   <ChartLegend content={<ChartLegendContent />} />
                   <Line type="monotone" yAxisId="price" dataKey="price_avg" stroke="var(--color-price_avg)" strokeWidth={2} dot={false} />
                   <Line type="monotone" yAxisId="mileage" dataKey="mileage_avg" stroke="var(--color-mileage_avg)" strokeWidth={2} dot={false} />
