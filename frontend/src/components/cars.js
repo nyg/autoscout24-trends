@@ -85,10 +85,15 @@ function saveVisibleColumns(keys) {
 let visibleColumnsCache = null
 
 function subscribeVisibleColumns(callback) {
-   window.addEventListener('storage', callback)
+   const handleStorage = (event) => {
+      if (event.storageArea !== localStorage) return
+      if (event.key !== VISIBILITY_STORAGE_KEY) return
+      callback(event)
+   }
+   window.addEventListener('storage', handleStorage)
    window.addEventListener(VISIBLE_COLUMNS_EVENT, callback)
    return () => {
-      window.removeEventListener('storage', callback)
+      window.removeEventListener('storage', handleStorage)
       window.removeEventListener(VISIBLE_COLUMNS_EVENT, callback)
    }
 }
