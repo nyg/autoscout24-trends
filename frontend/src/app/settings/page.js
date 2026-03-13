@@ -20,7 +20,6 @@ export default function SettingsPage() {
    function handleSave() {
       localStorage.setItem(MAPS_KEY_STORAGE_KEY, apiKey.trim())
       localStorage.setItem(HOME_ADDRESS_STORAGE_KEY, homeAddress.trim())
-      window.dispatchEvent(new Event('home-address-changed'))
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
    }

@@ -50,7 +50,6 @@ const COLUMNS = [
 const VISIBILITY_STORAGE_KEY = 'car-table-visible-columns'
 const MAPS_API_KEY_STORAGE_KEY = 'google-maps-api-key'
 const HOME_ADDRESS_STORAGE_KEY = 'home-address'
-const HOME_ADDRESS_EVENT = 'home-address-changed'
 
 function getDefaultVisibleKeys() {
    return COLUMNS.filter(c => c.defaultVisible).map(c => c.key)
@@ -126,11 +125,7 @@ function useMapsApiKey() {
 
 function subscribeHomeAddress(callback) {
    window.addEventListener('storage', callback)
-   window.addEventListener(HOME_ADDRESS_EVENT, callback)
-   return () => {
-      window.removeEventListener('storage', callback)
-      window.removeEventListener(HOME_ADDRESS_EVENT, callback)
-   }
+   return () => window.removeEventListener('storage', callback)
 }
 
 function getHomeAddressSnapshot() {
