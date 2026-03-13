@@ -112,7 +112,11 @@ function createStorageHook(storageKey) {
       return () => window.removeEventListener('storage', callback)
    }
    const getSnapshot = () => {
-      try { return localStorage.getItem(storageKey) || '' } catch { return '' }
+      try {
+         return localStorage.getItem(storageKey) || '' 
+      } catch {
+         return '' 
+      }
    }
    const getServerSnapshot = () => ''
    return () => useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
