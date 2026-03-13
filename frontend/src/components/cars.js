@@ -261,6 +261,7 @@ function MapPreviewButton({ car, apiKey }) {
          <PopoverTrigger
             className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             title="Seller details on Google Maps"
+            aria-label="Open seller details in Google Maps"
          >
             <MapIcon className="size-3.5" />
          </PopoverTrigger>
