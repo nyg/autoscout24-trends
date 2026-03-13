@@ -7,7 +7,7 @@ const decimalFormatter = new Intl.NumberFormat(locales, { style: 'decimal', mini
 
 
 const formatDate = (formatter, date) =>
-   formatter.format(date).replace(' ', ' ') // non-breaking space
+   formatter.format(date).replace(' ', '\u00A0') // non-breaking space
 
 export function asMediumDate(timestamp) {
    return formatDate(mediumDateFormatter, timestamp)
