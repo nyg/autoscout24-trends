@@ -61,7 +61,13 @@ function loadVisibleColumns() {
       const stored = localStorage.getItem(VISIBILITY_STORAGE_KEY)
       if (stored) {
          const parsed = JSON.parse(stored)
-         if (Array.isArray(parsed) && parsed.length > 0) return parsed
+         if (Array.isArray(parsed) && parsed.length > 0) {
+            const validKeys = new Set(COLUMNS.map(c => c.key))
+            const filtered = parsed.filter(key => validKeys.has(key))
+            if (filtered.length > 0) {
+               return filtered
+            }
+         }
       }
    } catch { /* ignore */ }
    return getDefaultVisibleKeys()
