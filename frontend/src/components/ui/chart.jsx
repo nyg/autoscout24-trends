@@ -95,6 +95,7 @@ function ChartTooltipContent({
    labelFormatter,
    labelClassName,
    formatter,
+   valueFormatter,
    color,
    nameKey,
    labelKey
@@ -109,8 +110,8 @@ function ChartTooltipContent({
       const [item] = payload
       const key = `${labelKey || item?.dataKey || item?.name || 'value'}`
       const itemConfig = getPayloadConfigFromPayload(config, item, key)
-      const value =
-      !labelKey && typeof label === 'string'
+
+      const value = !labelKey && typeof label === 'string'
          ? config[label]?.label || label
          : itemConfig?.label
 
@@ -191,7 +192,7 @@ function ChartTooltipContent({
                               )}
                               <div
                                  className={cn(
-                                    'flex flex-1 justify-between leading-none',
+                                    'flex flex-1 justify-between gap-2 leading-none',
                                     nestLabel ? 'items-end' : 'items-center'
                                  )}>
                                  <div className="grid gap-1.5">
@@ -201,8 +202,8 @@ function ChartTooltipContent({
                                     </span>
                                  </div>
                                  {item.value && (
-                                    <span className="font-mono font-medium text-foreground tabular-nums">
-                                       {item.value.toLocaleString()}
+                                    <span className="text-foreground tabular-nums">
+                                       {valueFormatter ? valueFormatter(item.value) : item.value.toLocaleString()}
                                     </span>
                                  )}
                               </div>

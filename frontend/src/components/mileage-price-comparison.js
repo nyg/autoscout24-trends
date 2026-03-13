@@ -5,7 +5,7 @@ import { use } from 'react'
 import { CartesianGrid, XAxis, YAxis, ScatterChart, Scatter } from 'recharts'
 import {
    ChartContainer,
-   ChartTooltip
+   ChartTooltip, ChartTooltipContent
 } from '@/components/ui/chart'
 import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,34 +14,29 @@ const chartConfig = {
    listings: { label: 'Price / Mileage', color: 'var(--chart-4)' },
 }
 
-// TODO rework, add label which should be the car name
-function MileagePriceComparisonTooltip({ active, payload, valueFormatter }) {
-   if (!active || !payload?.length) {
-      return null
-   }
-
-   const listing = payload[0].payload
-
+function ClickableScatterPoint({ cx, cy, fill, payload, size = 64 }) {
    return (
-      <div className="grid min-w-32 items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
-         <div className="grid gap-1.5">
-            <div className="flex items-center justify-between gap-2 leading-none">
-               <span className="text-muted-foreground">Mileage</span>
-               <span className="text-foreground tabular-nums">{valueFormatter(listing.mileage)}</span>
-            </div>
-            <div className="flex items-center justify-between gap-2 leading-none">
-               <span className="text-muted-foreground">Price</span>
-               <span className="text-foreground tabular-nums">{valueFormatter(listing.price)}</span>
-            </div>
-         </div>
-      </div>
+      <circle
+         cx={cx}
+         cy={cy}
+         r={Math.sqrt(size / Math.PI)}
+         fill={fill}
+         role='link'
+         tabIndex={0}
+         className='cursor-pointer focus:outline-none'
+         aria-label={`Open ${payload.title} in a new tab`}
+         onClick={ ()=> window.open(payload.url, '_blank', 'noopener,noreferrer')} />
    )
 }
 
-// TODO mileage x-axis ticks should be "round numbers", e.g. 10k, 15k, 20k, ...
 function mileageDomain(listings) {
    const mileages = listings.map(l => l.mileage)
-   return [Math.min(...mileages) - 500, Math.max(...mileages) + 500]
+   const min = Math.min(...mileages)
+   const max = Math.max(...mileages)
+   const step = max > 0 ? Math.pow(10, Math.floor(Math.log10(max)) - 1) : 1000
+   const lo = Math.floor(min / step) * step
+   const hi = Math.ceil(max / step) * step
+   return [lo, hi === lo ? hi + step : hi]
 }
 
 export default function MileagePriceComparison({ data }) {
@@ -54,7 +49,7 @@ export default function MileagePriceComparison({ data }) {
          </CardHeader>
          <CardContent>
             <ChartContainer config={chartConfig} className="min-h-87.5 w-full">
-               <ScatterChart margin={{ top: 10, right: 0, bottom: 28, left: 0 }}>
+               <ScatterChart margin={{ top: 10, right: 5, bottom: 28, left: 0 }}>
                   <CartesianGrid vertical={false} />
                   <XAxis
                      name="mileage"
@@ -76,8 +71,8 @@ export default function MileagePriceComparison({ data }) {
                      tickLine={false}
                      axisLine={false}
                   />
-                  <ChartTooltip content={<MileagePriceComparisonTooltip valueFormatter={asDecimal} />} />
-                  <Scatter name="listings" data={listings} fill="var(--color-listings)" />
+                  <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => payload[0].payload.title} valueFormatter={asDecimal} hideIndicator={true} />} />
+                  <Scatter name="listings" data={listings} fill="var(--color-listings)" shape={<ClickableScatterPoint />} />
                </ScatterChart>
             </ChartContainer>
          </CardContent>
