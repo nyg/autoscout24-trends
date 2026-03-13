@@ -13,7 +13,7 @@ export default function RootLayout({ children }) {
       <html lang="en">
          <body className={`${geist.variable} font-sans antialiased`}>
             <NavBar />
-            <main className="mx-auto max-w-screen-2xl px-4 py-4">
+            <main className="mx-auto max-w-screen-2xl py-4">
                {children}
             </main>
          </body>
