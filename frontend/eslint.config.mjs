@@ -11,6 +11,7 @@ const eslintConfig = defineConfig([
          quotes: ['error', 'single'],
          curly: ['error', 'all'],
          'brace-style': ['error', '1tbs'],
+         'no-trailing-spaces': 'error',
       }
    },
    globalIgnores([
