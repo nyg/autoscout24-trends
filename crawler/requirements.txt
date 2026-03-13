@@ -3,6 +3,6 @@ njsparser==2.16
 psycopg[binary]==3.3.3
 python-dotenv==1.2.1
 resend==2.23.0
-scrapy==2.14.1
+scrapy==2.14.2
 scrapy-seleniumbase-cdp==1.0.0
 seleniumbase==4.47.1
