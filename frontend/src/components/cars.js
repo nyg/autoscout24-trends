@@ -85,10 +85,15 @@ function saveVisibleColumns(keys) {
 let visibleColumnsCache = null
 
 function subscribeVisibleColumns(callback) {
-   window.addEventListener('storage', callback)
+   const handleStorage = (event) => {
+      if (event.storageArea !== localStorage) return
+      if (event.key !== VISIBILITY_STORAGE_KEY) return
+      callback(event)
+   }
+   window.addEventListener('storage', handleStorage)
    window.addEventListener(VISIBLE_COLUMNS_EVENT, callback)
    return () => {
-      window.removeEventListener('storage', callback)
+      window.removeEventListener('storage', handleStorage)
       window.removeEventListener(VISIBLE_COLUMNS_EVENT, callback)
    }
 }
@@ -113,9 +118,9 @@ function createStorageHook(storageKey) {
    }
    const getSnapshot = () => {
       try {
-         return localStorage.getItem(storageKey) || '' 
+         return localStorage.getItem(storageKey) || ''
       } catch {
-         return '' 
+         return ''
       }
    }
    const getServerSnapshot = () => ''
@@ -205,6 +210,7 @@ function SellerCell({ car }) {
                rel="noopener noreferrer"
                className="text-muted-foreground hover:text-foreground transition-colors"
                title="Open in Google Maps"
+               aria-label={`Open ${address} in Google Maps`}
             >
                <MapPinIcon className="size-3.5" />
             </a>
@@ -215,6 +221,7 @@ function SellerCell({ car }) {
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   title="Directions from home"
+                  aria-label={`Get directions from home to ${address} in Google Maps`}
                >
                   <NavigationIcon className="size-3.5" />
                </a>
