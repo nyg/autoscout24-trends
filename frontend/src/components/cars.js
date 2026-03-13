@@ -47,7 +47,10 @@ export default function Cars({ name, data, options = {} }) {
                            {car.seller_name}<br />{car.zip_code} {car.city}
                         </TableCell>
                         <TableCell className="text-right tabular-nums" suppressHydrationWarning>
-                           {asMediumDate(car.created_date)}<br />{asMediumDate(car.date_in)}
+                           {asMediumDate(car.created_date)}
+                           {options.listingEnded
+                              ? <><br />{asMediumDate(car.date_in)}</>
+                              : null}
                         </TableCell>
                      </TableRow>
                   ))}
