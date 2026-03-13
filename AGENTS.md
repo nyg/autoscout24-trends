@@ -51,7 +51,7 @@
 - Stores Google Maps API key (`'google-maps-api-key'`) and home address (`'home-address'`) in localStorage.
 - Maps API key is consumed by `place-details.js` via `useSyncExternalStore` in `cars.js`.
 - Home address is consumed by the directions link in `SellerCell` via `useSyncExternalStore`.
-- Dispatches custom events (`'home-address-changed'`) for same-tab cross-component sync.
+- Does not dispatch custom events itself; components that depend on these values read them from localStorage (e.g. via `useSyncExternalStore`) for same-tab sync.
 
 ## Google Places integration (`place-details.js`)
 - Uses `@googlemaps/js-api-loader` v2 functional API: `setOptions()` + `importLibrary('places')`.
