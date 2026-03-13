@@ -1,9 +1,9 @@
 'use client'
 
 import { asLongDate, asDecimal, asShortMonthYearDate } from '@/lib/format'
-import { use } from 'react'
+import { use, useState } from 'react'
 import { CartesianGrid, Line, XAxis, YAxis, ComposedChart, Bar } from 'recharts'
-import { ChartContainer, ChartTooltip, ChartLegend, ChartLegendContent } from '@/components/ui/chart'
+import { ChartContainer, ChartTooltip, ChartLegend } from '@/components/ui/chart'
 import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -58,9 +58,41 @@ function DailyListingCountTooltip({ active, payload, label, labelFormatter, valu
    )
 }
 
+function DailyListingCountLegend({ hiddenDataKeys, onToggleDataKey }) {
+   return (
+      <div className="pt-3 flex items-center justify-center gap-4">
+         {Object.entries(chartConfig).map(([dataKey, { label, color }]) => {
+            const isHidden = Boolean(hiddenDataKeys[dataKey])
+
+            return (
+               <button
+                  key={dataKey}
+                  type="button"
+                  aria-pressed={!isHidden}
+                  onClick={() => onToggleDataKey(dataKey)}
+                  className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
+                  style={{ opacity: isHidden ? 0.45 : 1 }}
+               >
+                  <div className="h-2 w-2 shrink-0 rounded-xs" style={{ backgroundColor: color }} />
+                  <span>{label}</span>
+               </button>
+            )
+         })}
+      </div>
+   )
+}
+
 
 export default function DailyListingCount({ data }) {
    const listings = use(data)
+   const [hiddenDataKeys, setHiddenDataKeys] = useState({})
+
+   function toggleDataKey(dataKey) {
+      setHiddenDataKeys(current => ({
+         ...current,
+         [dataKey]: !current[dataKey],
+      }))
+   }
 
    return (
       <Card className="flex-1">
@@ -74,7 +106,7 @@ export default function DailyListingCount({ data }) {
                   <XAxis
                      dataKey="date"
                      scale="time"
-                     type="atuo"
+                     type="auto"
                      ticks={monthlyXAxisTicks(listings)}
                      tickFormatter={asShortMonthYearDate}
                      tickMargin={8}
@@ -102,10 +134,10 @@ export default function DailyListingCount({ data }) {
                   />
                   <YAxis yAxisId="zount" domain={carCountDomain(listings)} hide />
                   <ChartTooltip content={<DailyListingCountTooltip labelFormatter={asLongDate} valueFormatter={asDecimal} />} />
-                  <ChartLegend content={<ChartLegendContent />} />
-                  <Line type="monotone" yAxisId="price" dataKey="price_avg" stroke="var(--color-price_avg)" strokeWidth={2} dot={false} />
-                  <Line type="monotone" yAxisId="mileage" dataKey="mileage_avg" stroke="var(--color-mileage_avg)" strokeWidth={2} dot={false} />
-                  <Bar yAxisId="zount" dataKey="car_count" fill="var(--color-car_count)" fillOpacity={0.4} barSize={20} radius={[4, 4, 0, 0]} />
+                  <ChartLegend content={<DailyListingCountLegend hiddenDataKeys={hiddenDataKeys} onToggleDataKey={toggleDataKey} />} />
+                  <Line type="monotone" yAxisId="price" dataKey="price_avg" stroke="var(--color-price_avg)" strokeWidth={2} dot={false} hide={Boolean(hiddenDataKeys.price_avg)} />
+                  <Line type="monotone" yAxisId="mileage" dataKey="mileage_avg" stroke="var(--color-mileage_avg)" strokeWidth={2} dot={false} hide={Boolean(hiddenDataKeys.mileage_avg)} />
+                  <Bar yAxisId="zount" dataKey="car_count" fill="var(--color-car_count)" fillOpacity={0.4} barSize={20} radius={[4, 4, 0, 0]} hide={Boolean(hiddenDataKeys.car_count)} />
                </ComposedChart>
             </ChartContainer>
          </CardContent>

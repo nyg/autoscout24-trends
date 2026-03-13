@@ -38,9 +38,10 @@ function MileagePriceComparisonTooltip({ active, payload, valueFormatter }) {
    )
 }
 
+// TODO mileage x-axis ticks should be "round numbers", e.g. 10k, 15k, 20k, ...
 function mileageDomain(listings) {
    const mileages = listings.map(l => l.mileage)
-   return [Math.min(...mileages) - 100, Math.max(...mileages) + 100]
+   return [Math.min(...mileages) - 500, Math.max(...mileages) + 500]
 }
 
 export default function MileagePriceComparison({ data }) {
