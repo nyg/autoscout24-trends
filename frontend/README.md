@@ -7,11 +7,12 @@ Next.js application that visualizes car listing data scraped by the crawler.
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Updating shadcn/ui Components](#updating-shadcnui-components)
 - [Project Structure](#project-structure)
 
 ## Features
 
-- Built with Next.js 16, Tailwind CSS 4, DaisyUI 5, and Recharts 3
+- Built with Next.js 16, Tailwind CSS 4, shadcn/ui-generated primitives, and Recharts 2
 - Search-based navigation via dynamic routes
 - Active listings table with detailed specifications
 - Historical charts for listing count, average price, and mileage
@@ -37,6 +38,41 @@ Start the development server:
 ```bash
 pnpm dev
 ```
+
+## Updating shadcn/ui Components
+
+This frontend uses the shadcn CLI with the config in `components.json`:
+
+- generated components live under `src/components/ui/`
+- Tailwind CSS is configured through `src/app/globals.css`
+- imports use the `@/` aliases from `components.json` and `jsconfig.json`
+
+To add a new component from the registry:
+
+```bash
+pnpm dlx shadcn@latest add <component>
+```
+
+To refresh an existing generated component, run the same command again for that component and review the diff before keeping local customizations:
+
+```bash
+pnpm dlx shadcn@latest add card
+pnpm dlx shadcn@latest add table
+pnpm dlx shadcn@latest add chart
+```
+
+After regenerating components, run:
+
+```bash
+pnpm lint
+pnpm build
+```
+
+Notes for this repo:
+
+- Keep generated UI code aligned with the existing style rules: 3-space indentation, single quotes, and no semicolons.
+- Prefer the existing local primitives in `src/components/ui/` over introducing another component system.
+- `components.json` still uses `"iconLibrary": "lucide"`, so adding or refreshing components that depend on icons may re-introduce `lucide-react`.
 
 ## Project Structure
 
