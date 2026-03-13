@@ -1,5 +1,6 @@
 import { fetchSearchNames } from '@/lib/data'
 import Link from 'next/link'
+import SearchDropdown from '@/components/search-dropdown'
 
 export default async function NavBar() {
 
@@ -12,24 +13,16 @@ export default async function NavBar() {
                AutoScout24 Trends
             </Link>
             <nav className="flex items-center gap-4">
-               {searches.map(search => (
-                  <Link
-                     key={search.name}
-                     href={`/${encodeURIComponent(search.name)}`}
-                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                     {search.name}
-                  </Link>
-               ))}
+               <SearchDropdown searches={searches} />
+               <a
+                  href="https://github.com/nyg/autoscout24-trends"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+               >
+                  GitHub
+               </a>
             </nav>
-            <a
-               href="https://github.com/nyg/autoscout24-trends"
-               target="_blank"
-               rel="noopener noreferrer"
-               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-               GitHub
-            </a>
          </div>
       </header>
    )
