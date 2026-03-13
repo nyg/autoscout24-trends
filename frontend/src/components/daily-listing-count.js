@@ -23,7 +23,9 @@ function monthlyXAxisTicks(listings) {
 
    for (const timestamp of listings.map(l => Number(l.date)).toSorted((a, b) => a - b)) {
       const date = new Date(timestamp)
-      if (date.getDate() > 15) continue
+      if (date.getDate() > 15) {
+         continue
+      }
 
       const monthKey = `${date.getFullYear()}-${date.getMonth()}`
       months[monthKey] = timestamp

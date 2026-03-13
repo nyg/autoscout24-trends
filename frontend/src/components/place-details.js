@@ -8,10 +8,11 @@ const placeCache = new Map()
 let optionsSet = false
 
 function ensureApiKey(apiKey) {
-   if (!optionsSet) {
-      setOptions({ key: apiKey, v: 'weekly' })
-      optionsSet = true
+   if (!apiKey || optionsSet) {
+      return
    }
+   setOptions({ key: apiKey, v: 'weekly' })
+   optionsSet = true
 }
 
 export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
@@ -22,7 +23,10 @@ export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
    const [error, setError] = useState(null)
 
    useEffect(() => {
-      if (place) return
+      if (place) {
+         return
+      }
+
       let cancelled = false
 
       async function fetchPlace() {
@@ -37,7 +41,10 @@ export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
                maxResultCount: 1,
             })
 
-            if (cancelled) return
+            if (cancelled) {
+               return
+            }
+
             if (!places?.length) {
                setError('Place not found')
                setLoading(false)
@@ -53,7 +60,9 @@ export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
                ],
             })
 
-            if (cancelled) return
+            if (cancelled) {
+               return
+            }
 
             let photoUrl = null
             if (found.photos?.length) {
@@ -85,7 +94,9 @@ export default function PlaceDetails({ sellerName, zipCode, city, apiKey }) {
       }
 
       fetchPlace()
-      return () => { cancelled = true }
+      return () => {
+         cancelled = true
+      }
    }, [place, sellerName, zipCode, city, apiKey])
 
    return (

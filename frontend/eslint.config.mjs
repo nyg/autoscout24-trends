@@ -8,7 +8,9 @@ const eslintConfig = defineConfig([
          indent: ['error', 3, { SwitchCase: 1 }],
          semi: ['error', 'never'],
          'react-hooks/exhaustive-deps': 'off',
-         quotes: ['error', 'single']
+         quotes: ['error', 'single'],
+         curly: ['error', 'all'],
+         'brace-style': ['error', '1tbs'],
       }
    },
    globalIgnores([
