@@ -3,14 +3,14 @@ import os
 import psycopg
 from psycopg import sql
 from psycopg.types.json import Jsonb
-from scrapy import Spider
 
 from .items import CarItem, SellerItem
 
 
 class PostgreSQLPipeline:
 
-    def __init__(self):
+    def __init__(self, crawler):
+        self.crawler = crawler
         self.connection = None
         self.batch_id = None
 
@@ -18,16 +18,22 @@ class PostgreSQLPipeline:
         self.car_buffer = []
         self.seller_buffer = []
 
-    def open_spider(self, spider: Spider):
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
+    def open_spider(self):
+        spider = self.crawler.spider
         self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
         with self.connection.transaction():
             with self.connection.cursor() as cursor:
                 (self.batch_id,) = cursor.execute("SELECT nextval('car_batch_id_seq')").fetchone()
                 spider.logger.info(f'Fetched batch_id sequence value: {self.batch_id}')
 
-    def close_spider(self, spider: Spider):
+    def close_spider(self):
+        spider = self.crawler.spider
         try:
-            self.flush_buffers(spider)
+            self.flush_buffers()
         except Exception as e:
             spider.logger.error(f'Database error: {e}', exc_info=True)
             raise
@@ -35,18 +41,19 @@ class PostgreSQLPipeline:
             self.connection.close()
             spider.logger.info('Database connection closed')
 
-    def process_item(self, item, spider):
+    def process_item(self, item):
         if isinstance(item, SellerItem):
             self.seller_buffer.append(dict(item))
         if isinstance(item, CarItem):
             self.car_buffer.append(dict(item))
 
         if len(self.seller_buffer) >= self.batch_size or len(self.car_buffer) >= self.batch_size:
-            self.flush_buffers(spider)
+            self.flush_buffers()
 
         return item
 
-    def flush_buffers(self, spider: Spider):
+    def flush_buffers(self):
+        spider = self.crawler.spider
         with self.connection.transaction():
             with self.connection.cursor() as cursor:
                 if self.seller_buffer:
@@ -83,7 +90,7 @@ class ItemTypeStatsPipeline:
     def from_crawler(cls, crawler):
         return cls(stats=crawler.stats)
 
-    def process_item(self, item, spider):
+    def process_item(self, item):
         item_type = type(item).__name__
         self.stats.inc_value(f'item_scraped_count/{item_type}')
         return item
