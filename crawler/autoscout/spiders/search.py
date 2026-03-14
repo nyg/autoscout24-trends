@@ -7,7 +7,9 @@ import njsparser
 from dotenv import dotenv_values
 from scrapy import Spider
 from scrapy.http import Response
+from scrapy.spidermiddlewares.httperror import HttpError
 from scrapy_seleniumbase_cdp import SeleniumBaseRequest
+from twisted.python.failure import Failure
 
 from ..items import CarItem, SellerItem
 
@@ -55,11 +57,12 @@ class SearchSpider(Spider):
         self.search_name = search_config['name']
         self.emails = [e.strip() for e in search_config['emails'].split(',')] if search_config['emails'] else None
         self.url = search_config['url']
+        self.failed_urls = []
 
     async def start(self):
         start_url = self._build_url()
         self.logger.info(f'Starting crawl with URL: {start_url}')
-        yield SearchPageRequest(url=start_url, callback=self.parse)
+        yield SearchPageRequest(url=start_url, callback=self.parse, errback=self.handle_error)
 
     def parse(self, response: Response, **kwargs):
         """Parse the search result page"""
@@ -68,7 +71,7 @@ class SearchSpider(Spider):
         # for each car url, call parse_car
         for car_url in response.xpath('//a[contains(@data-testid, "listing-card-")]/@href').getall():
             self.logger.info(f'Car found: {car_url}')
-            yield CarPageRequest(url=response.urljoin(car_url), callback=self.parse_car)
+            yield CarPageRequest(url=response.urljoin(car_url), callback=self.parse_car, errback=self.handle_error)
 
         # fetch next page, if any
         go_to_page_links = response.xpath('//button[contains(@aria-label, "go to page")]/text()').getall()
@@ -77,7 +80,7 @@ class SearchSpider(Spider):
 
         if next_page < page_count:
             self.logger.info(f'Next page: {next_page}')
-            yield SearchPageRequest(url=self._build_url(next_page), callback=self.parse, page=next_page)
+            yield SearchPageRequest(url=self._build_url(next_page), callback=self.parse, errback=self.handle_error, page=next_page)
 
     def parse_car(self, response: Response):
         try:
@@ -91,6 +94,20 @@ class SearchSpider(Spider):
             yield car
         except Exception as e:
             self.logger.error(f'Error parsing car: {e}')
+
+    def handle_error(self, failure: Failure):
+        """Handle request errors by logging the failed URL and reason, and storing it for summary on spider close."""
+        reason = failure.value.response.status if failure.check(HttpError) else repr(failure.value)
+        self.failed_urls.append({'url': failure.request.url, 'reason': reason})
+
+    def closed(self, reason):
+        """Log a summary of failed URLs when the spider finishes, if there are any."""
+        if not self.failed_urls:
+            return
+
+        self.logger.warning(f'{len(self.failed_urls)} URLs failed:')
+        for entry in self.failed_urls:
+            self.logger.warning(f"  {entry['url']} failed due to: {entry['reason']}")
 
     @staticmethod
     def _extract_flight_data(body):
