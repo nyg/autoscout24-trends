@@ -22,26 +22,20 @@ class PostgreSQLPipeline:
     def from_crawler(cls, crawler):
         return cls(crawler)
 
-    def open_spider(self):
-        spider = self.crawler.spider
-        self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
-        with self.connection.transaction():
-            with self.connection.cursor() as cursor:
-                (self.batch_id,) = cursor.execute("SELECT nextval('car_batch_id_seq')").fetchone()
-                spider.logger.info(f'Fetched batch_id sequence value: {self.batch_id}')
-
     def close_spider(self):
-        spider = self.crawler.spider
+        """Flush any remaining items in buffers and close database connection when spider finishes."""
         try:
             self.flush_buffers()
         except Exception as e:
-            spider.logger.error(f'Database error: {e}', exc_info=True)
+            self.crawler.spider.logger.error(f'Database error: {e}', exc_info=True)
             raise
         finally:
-            self.connection.close()
-            spider.logger.info('Database connection closed')
+            if self.connection:
+                self.connection.close()
+                self.crawler.spider.logger.info('Database connection closed')
 
     def process_item(self, item):
+        """Buffer items and flush to database in batches for better performance."""
         if isinstance(item, SellerItem):
             self.seller_buffer.append(dict(item))
         if isinstance(item, CarItem):
@@ -52,8 +46,23 @@ class PostgreSQLPipeline:
 
         return item
 
+    def _ensure_connection(self):
+        """Establish a database connection and fetch batch_id sequence value if not already done."""
+        if self.connection:
+            return
+
+        self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
+        with self.connection.transaction():
+            with self.connection.cursor() as cursor:
+                (self.batch_id,) = cursor.execute("SELECT nextval('car_batch_id_seq')").fetchone()
+                self.crawler.spider.logger.info(f'Fetched batch_id sequence value: {self.batch_id}')
+
     def flush_buffers(self):
-        spider = self.crawler.spider
+        """Insert buffered items into the database and clear buffers. This is called when buffers reach batch size or when spider closes."""
+        if not self.seller_buffer and not self.car_buffer:
+            return
+
+        self._ensure_connection()
         with self.connection.transaction():
             with self.connection.cursor() as cursor:
                 if self.seller_buffer:
@@ -64,7 +73,7 @@ class PostgreSQLPipeline:
                     ''')
 
                     cursor.executemany(insert_query, self.seller_buffer)
-                    spider.logger.info(f'{cursor.rowcount} of {len(self.seller_buffer)} sellers inserted into database')
+                    self.crawler.spider.logger.info(f'{cursor.rowcount} of {len(self.seller_buffer)} sellers inserted into database')
                     self.seller_buffer.clear()
 
                 if self.car_buffer:
@@ -78,7 +87,7 @@ class PostgreSQLPipeline:
                         car['json_data'] = Jsonb(car['json_data'])
 
                     cursor.executemany(insert_query, self.car_buffer)
-                    spider.logger.info(f'{cursor.rowcount} of {len(self.car_buffer)} cars inserted into database')
+                    self.crawler.spider.logger.info(f'{cursor.rowcount} of {len(self.car_buffer)} cars inserted into database')
                     self.car_buffer.clear()
 
 
