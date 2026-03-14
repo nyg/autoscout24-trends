@@ -24,16 +24,15 @@ class PostgreSQLPipeline:
 
     def close_spider(self):
         """Flush any remaining items in buffers and close database connection when spider finishes."""
-        spider = self.crawler.spider
         try:
             self.flush_buffers()
         except Exception as e:
-            spider.logger.error(f'Database error: {e}', exc_info=True)
+            self.crawler.spider.logger.error(f'Database error: {e}', exc_info=True)
             raise
         finally:
             if self.connection:
                 self.connection.close()
-                spider.logger.info('Database connection closed')
+                self.crawler.spider.logger.info('Database connection closed')
 
     def process_item(self, item):
         """Buffer items and flush to database in batches for better performance."""
