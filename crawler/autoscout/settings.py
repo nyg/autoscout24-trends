@@ -16,8 +16,10 @@ ROBOTSTXT_OBEY = False
 
 CONCURRENT_REQUESTS = 1
 DOWNLOAD_DELAY = 3
+RETRY_TIMES = 1
+SELENIUMBASE_BACKOFF_ON_429 = 120
 
-COOKIES_ENABLED = False
+COOKIES_ENABLED = True
 TELNETCONSOLE_ENABLED = False
 
 LOG_LEVEL = 'INFO'
@@ -48,6 +50,7 @@ DOWNLOADER_MIDDLEWARES = {
 }
 
 EXTENSIONS = {
+    'scrapy.extensions.logstats.LogStats': None,
     'autoscout.extensions.EmailAfterFeedExport': 1,
 }
 
