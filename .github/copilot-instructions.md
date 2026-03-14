@@ -1,115 +1,16 @@
 # Copilot Instructions
 
-Read `AGENTS.md` in the repository root first for the current architecture, cross-component contracts, and integration pitfalls. This file stays as a shorter Copilot-oriented summary.
+Read `AGENTS.md` in the repository root first. It is the canonical source for repository architecture, workflows, conventions, and integration pitfalls.
 
-## Project Overview
+Keep this file short and Copilot-specific:
 
-AutoScout24 Trends is a two-component application:
+- Use `AGENTS.md` for repo facts; avoid duplicating large sections of project documentation here.
+- If `AGENTS.md` and this file ever drift, treat `AGENTS.md` as authoritative for repository behavior and update this file to match.
+- Make surgical changes that preserve the existing crawler/frontend split and reuse established patterns before introducing new ones.
 
-1. **Crawler** (`crawler/`) – A Python [Scrapy](https://scrapy.org/) spider that periodically scrapes AutoScout24 search results and stores car and seller data in a PostgreSQL database. It uses SeleniumBase CDP mode to bypass CloudFlare protection.
-2. **Frontend** (`frontend/`) – A [Next.js](https://nextjs.org/) App Router application that reads the same PostgreSQL database directly and visualises listing data with [Recharts](https://recharts.org/) and Tailwind-based UI primitives.
+## Copilot-specific reminders
 
-## Repository Structure
-
-```
-autoscout24-trends/
-├── crawler/
-│   ├── autoscout/          # Scrapy project package
-│   │   ├── spiders/        # Scrapy spiders (search.py)
-│   │   ├── items.py        # Scrapy item definitions
-│   │   ├── pipelines.py    # PostgreSQL pipeline
-│   │   ├── exporters.py    # CSV exporter
-│   │   ├── extensions.py   # Scrapy extensions
-│   │   └── settings.py     # Scrapy settings
-│   ├── searches/           # Search definition files (.env format)
-│   ├── requirements.txt    # Python dependencies
-│   ├── SCHEMA.sql          # PostgreSQL schema
-│   └── run-spiders.sh      # Shell script to run all spiders
-└── frontend/
-    ├── src/
-    │   ├── app/
-    │   │   ├── search/[searchName]/  # Main search results page
-    │   │   └── settings/             # Settings page (API keys, home address)
-    │   ├── components/
-    │   │   ├── ui/           # UI primitives (button, card, chart, dropdown-menu, popover, table, tooltip)
-    │   │   ├── cars.js       # Cars table with sorting, column visibility, seller cell
-    │   │   ├── place-details.js  # Google Places API integration
-    │   │   ├── daily-listing-count.js
-    │   │   ├── mileage-price-comparison.js
-    │   │   └── navbar.js
-    │   └── lib/
-    │       ├── data.js       # All PostgreSQL queries
-    │       └── format.js     # Number/date locale formatting
-    ├── package.json
-    └── eslint.config.mjs
-```
-
-## Crawler
-
-### Setup
-
-```shell
-cd crawler
-python -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Create a `.env` file in `crawler/` and set `PGSQL_URL` and `RESEND_API_KEY`. Scrapy settings call `load_dotenv()` automatically.
-
-### Running
-
-```shell
-scrapy crawl search -a search_file=<search-file-in-searches-folder>
-```
-
-For operational batch runs, use:
-
-```shell
-./run-spiders.sh
-```
-
-### Conventions
-
-- Python code follows standard PEP 8 style.
-- Spider logic lives in `autoscout/spiders/search.py`.
-- Database writes are handled by `PostgreSQLPipeline` in `pipelines.py`.
-- Email delivery uses the [resend](https://resend.com) API.
-- Search configuration files are stored in `searches/` in `.env` format and in practice must contain `name`, `emails`, and `url`.
-- Car pages are parsed from Next.js flight data (`njsparser`), not from the visible HTML.
-- The spider yields `SellerItem` before `CarItem`; `autoscout/exporters.py` depends on that ordering.
-- If you change car fields, keep `items.py`, `pipelines.py`, `SCHEMA.sql`, and frontend readers in sync.
-
-## Frontend
-
-### Setup
-
-```shell
-cd frontend
-pnpm install
-```
-
-### Commands
-
-```shell
-pnpm dev
-pnpm build    # Production build
-pnpm lint     # Run ESLint
-```
-
-### Conventions
-
-- **Indentation**: 3 spaces.
-- **Quotes**: Single quotes for strings.
-- **Semicolons**: Omitted (no semicolons at end of statements).
-- Framework: Next.js App Router (`src/app/`).
-- Styling: Tailwind CSS v4 with local UI primitives under `src/components/ui/` and shadcn-generated foundations.
-- Charts: Recharts.
-- Database access: [`postgres`](https://github.com/porsager/postgres) npm package connecting to PostgreSQL.
-- Package manager: `pnpm`.
-- Keep SQL in `src/lib/data.js`; pages and components consume those helpers instead of embedding SQL.
-- Preserve the existing server/client pattern: server routes create unresolved data promises and client components consume them with `use(data)`.
-- Search routes use URL-encoded display names: `navbar.js` encodes `search.name`, and `src/app/search/[searchName]/page.js` decodes before querying.
-- Number/date formatting in `src/lib/format.js` uses `navigator.language` on the client with `'fr-CH'` server fallback. Client components that render formatted values must force a post-hydration re-render (see `cars.js` pattern with `useReducer` + `useEffect`).
-- localStorage-backed state (column visibility, API keys, home address) uses `useSyncExternalStore` with server snapshots to avoid hydration mismatches. Same-tab sync requires custom events since `storage` events only fire in other tabs.
-- Seller types are `'professional'` and `'private'`. Google Places details are only available for professional sellers. Address format differs by type (see `buildAddress` in `cars.js`).
+- For frontend work, keep SQL in `frontend/src/lib/data.js` and preserve the server-passes-promises/client-uses-`use(data)` pattern described in `AGENTS.md`.
+- For crawler schema or car-field changes, update `crawler/autoscout/items.py`, `crawler/autoscout/pipelines.py`, `crawler/SCHEMA.sql`, and relevant frontend readers together.
+- Do not modify `crawler/output/` unless the task is explicitly about runtime artifacts or debugging output.
+- Follow the existing style conventions already documented in `AGENTS.md`: frontend uses 3-space indentation, single quotes, and no semicolons; Python stays close to PEP 8.
