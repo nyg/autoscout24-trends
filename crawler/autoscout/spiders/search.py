@@ -26,17 +26,17 @@ ACCEPT_COOKIES_AND_EXPAND_FIELDS = {
 class SearchPageRequest(SeleniumBaseRequest):
     """Request for a search result page."""
 
-    def __init__(self, page=0, **kwargs):
+    def __init__(self, spider, page=0, **kwargs):
         meta = kwargs.pop('meta', {})
         meta['page'] = page
-        super().__init__(**kwargs, meta={'page': page}, wait_for='h1.chakra-text')
+        super().__init__(**kwargs, callback=spider.parse, errback=spider.handle_error, meta=meta, wait_for='h1.chakra-text')
 
 
 class CarPageRequest(SeleniumBaseRequest):
     """Request for a car page."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs, wait_for='h1.chakra-text', script=ACCEPT_COOKIES_AND_EXPAND_FIELDS, screenshot=True)
+    def __init__(self, spider, **kwargs):
+        super().__init__(**kwargs, callback=spider.parse_car, errback=spider.handle_error, wait_for='h1.chakra-text', script=ACCEPT_COOKIES_AND_EXPAND_FIELDS, screenshot=True)
 
 
 class SearchSpider(Spider):
@@ -62,7 +62,7 @@ class SearchSpider(Spider):
     async def start(self):
         start_url = self._build_url()
         self.logger.info(f'Starting crawl with URL: {start_url}')
-        yield SearchPageRequest(url=start_url, callback=self.parse, errback=self.handle_error)
+        yield SearchPageRequest(self, url=start_url)
 
     def parse(self, response: Response, **kwargs):
         """Parse the search result page"""
@@ -71,7 +71,7 @@ class SearchSpider(Spider):
         # for each car url, call parse_car
         for car_url in response.xpath('//a[contains(@data-testid, "listing-card-")]/@href').getall():
             self.logger.info(f'Car found: {car_url}')
-            yield CarPageRequest(url=response.urljoin(car_url), callback=self.parse_car, errback=self.handle_error)
+            yield CarPageRequest(self, url=response.urljoin(car_url))
 
         # fetch next page, if any
         go_to_page_links = response.xpath('//button[contains(@aria-label, "go to page")]/text()').getall()
@@ -80,7 +80,7 @@ class SearchSpider(Spider):
 
         if next_page < page_count:
             self.logger.info(f'Next page: {next_page}')
-            yield SearchPageRequest(url=self._build_url(next_page), callback=self.parse, errback=self.handle_error, page=next_page)
+            yield SearchPageRequest(self, url=self._build_url(next_page), page=next_page)
 
     def parse_car(self, response: Response):
         try:
