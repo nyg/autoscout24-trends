@@ -1,9 +1,11 @@
+import logging
 import re
 from datetime import datetime
 
 from dotenv import load_dotenv
 
 load_dotenv()
+logging.getLogger('njsparser').setLevel(logging.ERROR)
 
 BOT_NAME = 'autoscout'
 
@@ -11,15 +13,13 @@ SPIDER_MODULES = ['autoscout.spiders']
 NEWSPIDER_MODULE = 'autoscout.spiders'
 
 ADDONS = {}
-
 ROBOTSTXT_OBEY = False
-
 CONCURRENT_REQUESTS = 1
 DOWNLOAD_DELAY = 3
-
-COOKIES_ENABLED = False
+RETRY_TIMES = 1
+SELENIUMBASE_BACKOFF_ON_429 = 120
+COOKIES_ENABLED = True
 TELNETCONSOLE_ENABLED = False
-
 LOG_LEVEL = 'INFO'
 
 
@@ -48,6 +48,7 @@ DOWNLOADER_MIDDLEWARES = {
 }
 
 EXTENSIONS = {
+    'scrapy.extensions.logstats.LogStats': None,
     'autoscout.extensions.EmailAfterFeedExport': 1,
 }
 

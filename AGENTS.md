@@ -1,5 +1,7 @@
 # AGENTS.md
 
+This is the canonical repo guide for humans and coding agents. Keep repository-specific architecture, workflows, conventions, and integration pitfalls here, and keep `.github/copilot-instructions.md` short and Copilot-specific.
+
 ## Repo map
 - This repo has two coupled parts: `crawler/` scrapes AutoScout24 into PostgreSQL, and `frontend/` reads the same DB directly to render charts/tables.
 - The main cross-component contract is the PostgreSQL schema in `crawler/SCHEMA.sql` plus the `search_name`/`batch_id` semantics used by both `crawler/autoscout/pipelines.py` and `frontend/src/lib/data.js`.
