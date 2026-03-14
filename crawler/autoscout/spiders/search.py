@@ -57,7 +57,7 @@ class SearchSpider(Spider):
         self.search_name = search_config['name']
         self.emails = [e.strip() for e in search_config['emails'].split(',')] if search_config['emails'] else None
         self.url = search_config['url']
-        self.failed_urls = []
+        self.failed_requests = []
 
     async def start(self):
         start_url = self._build_url()
@@ -98,16 +98,16 @@ class SearchSpider(Spider):
     def handle_error(self, failure: Failure):
         """Handle request errors by logging the failed URL and reason, and storing it for summary on spider close."""
         reason = failure.value.response.status if failure.check(HttpError) else repr(failure.value)
-        self.failed_urls.append({'url': failure.request.url, 'reason': reason})
+        self.failed_requests.append({'url': failure.request.url, 'reason': reason})
 
     def closed(self, reason):
         """Log a summary of failed URLs when the spider finishes, if there are any."""
-        if not self.failed_urls:
+        if not self.failed_requests:
             return
 
-        self.logger.warning(f'{len(self.failed_urls)} URLs failed:')
-        for entry in self.failed_urls:
-            self.logger.warning(f"  {entry['url']} failed due to: {entry['reason']}")
+        self.logger.warning(f'{len(self.failed_requests)} requests have failed:')
+        for entry in self.failed_requests:
+            self.logger.warning(f"  Scraping {entry['url']} failed due to: {entry['reason']}")
 
     @staticmethod
     def _extract_flight_data(body):
