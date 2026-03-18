@@ -1,22 +1,22 @@
 'use client'
 
 import { asDecimal, asMediumDate, asShortDate } from '@/lib/format'
-import { use, useState, useMemo, useCallback, useSyncExternalStore, useEffect, useReducer } from 'react'
+import { use, useCallback, useEffect, useMemo, useReducer, useState, useSyncExternalStore } from 'react'
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-   DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem,
-   DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator
+   DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent,
+   DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import PlaceDetails from '@/components/place-details'
 import {
-   ArrowUpIcon, ArrowDownIcon,
-   MapPinIcon, MapIcon, SlidersHorizontalIcon, NavigationIcon
+   ArrowDownIcon, ArrowUpIcon,
+   MapIcon, MapPinIcon, NavigationIcon, SlidersHorizontalIcon
 } from 'lucide-react'
 
 
@@ -86,8 +86,12 @@ let visibleColumnsCache = null
 
 function subscribeVisibleColumns(callback) {
    const handleStorage = (event) => {
-      if (event.storageArea !== localStorage) return
-      if (event.key !== VISIBILITY_STORAGE_KEY) return
+      if (event.storageArea !== localStorage) {
+         return
+      }
+      if (event.key !== VISIBILITY_STORAGE_KEY) {
+         return
+      }
       callback(event)
    }
    window.addEventListener('storage', handleStorage)

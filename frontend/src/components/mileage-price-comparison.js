@@ -2,7 +2,7 @@
 
 import { asDecimal } from '@/lib/format'
 import { use } from 'react'
-import { CartesianGrid, XAxis, YAxis, ScatterChart, Scatter } from 'recharts'
+import { CartesianGrid, Scatter, ScatterChart, XAxis, YAxis } from 'recharts'
 import {
    ChartContainer,
    ChartTooltip, ChartTooltipContent
