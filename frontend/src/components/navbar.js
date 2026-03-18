@@ -1,6 +1,6 @@
 import { fetchSearchNames } from '@/lib/data'
 import Link from 'next/link'
-import { SettingsIcon, GithubIcon } from 'lucide-react'
+import { GithubIcon, SettingsIcon } from 'lucide-react'
 import SearchDropdown from '@/components/search-dropdown'
 
 export default async function NavBar() {
