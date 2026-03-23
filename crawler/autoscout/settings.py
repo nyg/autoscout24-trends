@@ -43,6 +43,10 @@ FEEDS = {
     },
 }
 
+SELENIUMBASE_BROWSER_OPTIONS = {
+    'ad_block': True,
+}
+
 DOWNLOADER_MIDDLEWARES = {
     'scrapy_seleniumbase_cdp.SeleniumBaseAsyncCDPMiddleware': 800
 }
