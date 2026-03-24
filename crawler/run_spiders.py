@@ -1,79 +1,60 @@
 #!/usr/bin/env python3
-"""Run all autoscout24-trends spiders.
+"""Run all autoscout24-trends spiders programmatically.
 
-Replaces run-spiders.sh with a cross-platform Python equivalent that:
-- Creates/reuses a .venv virtual environment
-- Installs requirements via pip
-- Runs `scrapy crawl search` for every .env file found in searches/
+Uses Scrapy's CrawlerRunner API to launch each spider in-process,
+with a Twisted deferred chain that keeps them strictly sequential.
+No subprocess is involved; the Twisted reactor is shared across all runs.
+
+Usage (from within the activated virtual environment):
+    python run_spiders.py
 """
 
 import logging
-import subprocess
-import sys
-from datetime import datetime, timezone
+import os
 from pathlib import Path
 
+from scrapy.crawler import CrawlerRunner
+from scrapy.utils.project import get_project_settings
+from twisted.internet import defer, reactor
 
-class _UtcFormatter(logging.Formatter):
-    """Emit log timestamps in UTC ISO-8601 format, matching the shell script."""
-
-    def formatTime(self, record, datefmt=None):
-        ct = datetime.fromtimestamp(record.created, tz=timezone.utc)
-        return ct.strftime('%Y-%m-%dT%H:%M:%S+00:00')
-
-
-logging.basicConfig(level=logging.INFO)
-logging.root.handlers[0].setFormatter(
-    _UtcFormatter('[%(asctime)s] %(message)s')
-)
-log = logging.getLogger(__name__)
+from autoscout.spiders.search import SearchSpider
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-VENV_DIR = SCRIPT_DIR / '.venv'
 SEARCHES_DIR = SCRIPT_DIR / 'searches'
 OUTPUT_DIR = SCRIPT_DIR / 'output'
 
-# Platform-aware paths inside the virtual environment.
-if sys.platform == 'win32':
-    _BIN = VENV_DIR / 'Scripts'
-    PIP = _BIN / 'pip.exe'
-    SCRAPY = _BIN / 'scrapy.exe'
-else:
-    _BIN = VENV_DIR / 'bin'
-    PIP = _BIN / 'pip'
-    SCRAPY = _BIN / 'scrapy'
-
-
-def _run(cmd, **kwargs):
-    """Run *cmd* via subprocess and raise on non-zero exit."""
-    subprocess.run(cmd, check=True, **kwargs)
+log = logging.getLogger(__name__)
 
 
 def main():
+    # Anchor the working directory so all relative paths used by the spider
+    # (searches/<file>) and the feed settings (output/<name>.csv) resolve
+    # correctly, regardless of where this script is invoked from.
+    os.chdir(SCRIPT_DIR)
     OUTPUT_DIR.mkdir(exist_ok=True)
 
-    if not VENV_DIR.exists():
-        log.info('Creating virtual environment')
-        _run([sys.executable, '-m', 'venv', str(VENV_DIR)])
-
-    log.info('Installing requirements')
-    _run([str(PIP), 'install', '-r', str(SCRIPT_DIR / 'requirements.txt')])
-
-    log.info('Running all autoscout24-trends spiders')
     env_files = sorted(SEARCHES_DIR.glob('*.env'))
-
     if not env_files:
         log.warning('No .env files found in %s', SEARCHES_DIR)
         return
 
-    for env_file in env_files:
-        log.info('Found search file: %s', env_file.name)
-        _run(
-            [str(SCRAPY), 'crawl', 'search', '-a', f'search_file={env_file.name}'],
-            cwd=str(SCRIPT_DIR),
-        )
+    # CrawlerRunner, unlike CrawlerProcess, does not own the reactor lifecycle.
+    # We start it manually below and stop it once all crawlers have finished.
+    runner = CrawlerRunner(get_project_settings())
 
-    log.info('Finished running all spiders')
+    @defer.inlineCallbacks
+    def crawl_all():
+        try:
+            for env_file in env_files:
+                log.info('Running spider for search file: %s', env_file.name)
+                yield runner.crawl(SearchSpider, search_file=env_file.name)
+        except Exception:
+            log.exception('Spider run failed')
+        finally:
+            reactor.stop()
+
+    crawl_all()
+    reactor.run()
 
 
 if __name__ == '__main__':

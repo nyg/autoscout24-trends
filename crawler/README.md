@@ -68,11 +68,11 @@ url=https://www.autoscout24.ch/en/cars/audi/rs-6?sort=standard&desc=0
 Run a single search:
 
 ```bash
-source venv/bin/activate
+source .venv/bin/activate
 scrapy crawl search -a search_file=audi_rs6.env
 ```
 
-Run all searches:
+Run all searches (virtual environment must be active):
 
 ```bash
 python run_spiders.py
