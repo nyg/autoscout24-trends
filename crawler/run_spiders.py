@@ -53,7 +53,7 @@ def main():
         finally:
             reactor.stop()
 
-    crawl_all()
+    d = crawl_all()  # noqa: F841 – hold a reference so Twisted won't GC the deferred
     reactor.run()
 
 
