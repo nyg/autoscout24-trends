@@ -4,5 +4,5 @@ psycopg[binary]==3.3.3
 python-dotenv==1.2.2
 resend==2.26.0
 scrapy==2.14.2
-scrapy-seleniumbase-cdp==1.0.3
-seleniumbase==4.47.5
+scrapy-seleniumbase-cdp==2.0.0
+seleniumbase==4.47.8
