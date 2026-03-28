@@ -15,7 +15,7 @@ NEWSPIDER_MODULE = 'autoscout.spiders'
 ADDONS = {}
 ROBOTSTXT_OBEY = False
 CONCURRENT_REQUESTS = 1
-DOWNLOAD_DELAY = 2
+DOWNLOAD_DELAY = 5
 RETRY_TIMES = 1
 COOKIES_ENABLED = True
 TELNETCONSOLE_ENABLED = False
@@ -44,6 +44,7 @@ FEEDS = {
 
 SELENIUMBASE_BROWSER_OPTIONS = {
     'ad_block': True,
+    'browser_args': ['--disable-features=TranslateUI,Translate'],
 }
 
 DOWNLOADER_MIDDLEWARES = {
