@@ -30,7 +30,7 @@ class SearchPageRequest(SeleniumBaseRequest):
         if spider:
             meta = kwargs.pop('meta', {})
             meta['page'] = page
-            kwargs.update(callback=spider.parse, errback=spider.handle_error, meta=meta, wait_for='h1.chakra-text')
+            kwargs.update(callback=spider.parse, errback=spider.handle_error, meta=meta, wait_for_element='h1.chakra-text')
         super().__init__(**kwargs)
 
 
@@ -41,7 +41,7 @@ class CarPageRequest(SeleniumBaseRequest):
         if spider:
             kwargs.update(callback=spider.parse_car,
                           errback=spider.handle_error,
-                          wait_for='h1.chakra-text',
+                          wait_for_element='h1.chakra-text',
                           script=ACCEPT_COOKIES_AND_EXPAND_FIELDS,
                           screenshot=True)
         super().__init__(**kwargs)

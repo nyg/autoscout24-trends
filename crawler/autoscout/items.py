@@ -141,7 +141,7 @@ class SellerItem(Item):
         seller = SellerItem()
         seller['id'] = json_response['id']
         seller['type'] = json_response['type']
-        seller['name'] = json_response['name']
+        seller['name'] = json_response['name'] or 'Unknown seller'
         seller['address'] = json_response['address']
         seller['zip_code'] = json_response['zipCode']
         seller['city'] = json_response['city']
