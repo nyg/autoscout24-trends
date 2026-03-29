@@ -87,7 +87,8 @@ export default function DailyListingCount({ data }) {
                   <XAxis
                      dataKey="date"
                      scale="time"
-                     type="auto"
+                     type="number"
+                     domain={['dataMin', 'dataMax']}
                      ticks={monthlyXAxisTicks(listings)}
                      tickFormatter={asShortMonthYearDate}
                      tickMargin={8}
