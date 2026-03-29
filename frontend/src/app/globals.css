@@ -127,19 +127,19 @@
     }
 }
 
-.chart .recharts-cartesian-grid line[stroke='#ccc'] {
+[data-slot="chart"] .recharts-cartesian-grid line[stroke='#ccc'] {
    stroke: color-mix(in oklab, var(--border) 50%, transparent);
 }
 
-.chart .recharts-polar-grid [stroke='#ccc'] {
+[data-slot="chart"] .recharts-polar-grid [stroke='#ccc'] {
    stroke: var(--border);
 }
 
-.chart .recharts-reference-line [stroke='#ccc'] {
+[data-slot="chart"] .recharts-reference-line [stroke='#ccc'] {
    stroke: var(--border);
 }
 
-.chart .recharts-dot[stroke='#fff'],
-.chart .recharts-sector[stroke='#fff'] {
+[data-slot="chart"] .recharts-dot[stroke='#fff'],
+[data-slot="chart"] .recharts-sector[stroke='#fff'] {
    stroke: transparent;
 }
