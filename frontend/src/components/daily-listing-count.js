@@ -83,11 +83,12 @@ export default function DailyListingCount({ data }) {
          <CardContent>
             <ChartContainer config={chartConfig} className="min-h-87.5 w-full">
                <ComposedChart data={listings} margin={{ top: 10, right: 0, bottom: 0, left: 0 }}>
-                  <CartesianGrid vertical={false} />
+                  <CartesianGrid vertical={false} yAxisId="price" />
                   <XAxis
                      dataKey="date"
                      scale="time"
-                     type="auto"
+                     type="number"
+                     domain={['dataMin', 'dataMax']}
                      ticks={monthlyXAxisTicks(listings)}
                      tickFormatter={asShortMonthYearDate}
                      tickMargin={8}

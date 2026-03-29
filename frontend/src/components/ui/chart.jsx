@@ -10,6 +10,11 @@ const THEMES = {
    dark: '.dark'
 }
 
+const INITIAL_DIMENSION = {
+   width: 320,
+   height: 200
+}
+
 const ChartContext = React.createContext(null)
 
 function useChart() {
@@ -27,10 +32,11 @@ function ChartContainer({
    className,
    children,
    config,
+   initialDimension = INITIAL_DIMENSION,
    ...props
 }) {
    const uniqueId = React.useId()
-   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`
+   const chartId = `chart-${id ?? uniqueId.replace(/:/g, '')}`
 
    return (
       <ChartContext.Provider value={{ config }}>
@@ -38,12 +44,12 @@ function ChartContainer({
             data-slot="chart"
             data-chart={chartId}
             className={cn(
-               'chart flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-layer]:outline-hidden [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-sector]:outline-hidden [&_.recharts-surface]:outline-hidden',
+               'flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-layer]:outline-hidden [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-sector]:outline-hidden [&_.recharts-surface]:outline-hidden',
                className
             )}
             {...props}>
             <ChartStyle id={chartId} config={config} />
-            <RechartsPrimitive.ResponsiveContainer>
+            <RechartsPrimitive.ResponsiveContainer initialDimension={initialDimension}>
                {children}
             </RechartsPrimitive.ResponsiveContainer>
          </div>
@@ -55,7 +61,7 @@ const ChartStyle = ({
    id,
    config
 }) => {
-   const colorConfig = Object.entries(config).filter(([, config]) => config.theme || config.color)
+   const colorConfig = Object.entries(config).filter(([, config]) => config.theme ?? config.color)
 
    if (!colorConfig.length) {
       return null
@@ -70,7 +76,7 @@ ${prefix} [data-chart=${id}] {
 ${colorConfig
          .map(([key, itemConfig]) => {
             const color =
-  itemConfig.theme?.[theme] ||
+  itemConfig.theme?.[theme] ??
   itemConfig.color
             return color ? `  --color-${key}: ${color};` : null
          })
@@ -108,11 +114,11 @@ function ChartTooltipContent({
       }
 
       const [item] = payload
-      const key = `${labelKey || item?.dataKey || item?.name || 'value'}`
+      const key = `${labelKey ?? item?.dataKey ?? item?.name ?? 'value'}`
       const itemConfig = getPayloadConfigFromPayload(config, item, key)
 
       const value = !labelKey && typeof label === 'string'
-         ? config[label]?.label || label
+         ? config[label]?.label ?? label
          : itemConfig?.label
 
       if (labelFormatter) {
@@ -155,7 +161,7 @@ function ChartTooltipContent({
             {payload
                .filter((item) => item.type !== 'none')
                .map((item, index) => {
-                  const key = `${nameKey || item.name || item.dataKey || 'value'}`
+                  const key = `${nameKey ?? item.name ?? item.dataKey ?? 'value'}`
                   const itemConfig = getPayloadConfigFromPayload(config, item, key)
                   const indicatorColor = color || item.payload.fill || item.color
 
