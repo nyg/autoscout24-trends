@@ -2,32 +2,51 @@ import postgres from 'postgres'
 
 const pgSql = postgres(process.env.PGSQL_URL)
 
+export async function fetchSearches() {
+   return pgSql`select * from searches order by name`
+}
+
+export async function fetchSearchNames() {
+   return pgSql`select id, name from searches order by name`
+}
+
 export async function fetchActiveListings(searchName) {
    return pgSql`
       select c.*,
-             s.type seller_type, s.name seller_name, s.address seller_address, s.zip_code, s.city,
+             se.type seller_type, se.name seller_name, se.address seller_address, se.zip_code, se.city,
              365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year
         from cars c
-       inner join sellers s on c.seller_id = s.id
-       where c.batch_id = (select max(batch_id) from cars where search_name = ${searchName})
+       inner join sellers se on c.seller_id = se.id
+       inner join searches s on c.search_id = s.id
+       where c.batch_id = (
+          select max(c2.batch_id)
+            from cars c2
+           inner join searches s2 on c2.search_id = s2.id
+           where s2.name = ${searchName}
+       )
        order by c.price`
 }
 
 export async function fetchPreviousListings(searchName) {
    return pgSql`
       with latest_batch as (
-         select max(batch_id) batch_id from cars where search_name = ${searchName}
+         select max(c2.batch_id) batch_id
+           from cars c2
+          inner join searches s2 on c2.search_id = s2.id
+          where s2.name = ${searchName}
       )
       select * from (
          select distinct on (c.vehicle_id) c.*,
-                s.type seller_type, s.name seller_name, s.address seller_address, s.zip_code, s.city,
+                se.type seller_type, se.name seller_name, se.address seller_address, se.zip_code, se.city,
                 365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year
            from cars c
-          inner join sellers s on c.seller_id = s.id
-          where c.search_name = ${searchName}
+          inner join sellers se on c.seller_id = se.id
+          inner join searches s on c.search_id = s.id
+          where s.name = ${searchName}
             and not exists (
                 select 1 from cars l
-                 where l.search_name = ${searchName}
+                 inner join searches ls on l.search_id = ls.id
+                 where ls.name = ${searchName}
                    and l.batch_id = (select batch_id from latest_batch)
                    and l.vehicle_id = c.vehicle_id
             )
@@ -42,12 +61,9 @@ export async function fetchDailyListingCount(searchName) {
              count(*)::int car_count,
              avg(price) price_avg,
              avg(mileage) mileage_avg
-        from cars
-       where search_name = ${searchName}
+        from cars c
+       inner join searches s on c.search_id = s.id
+       where s.name = ${searchName}
        group by date
        order by date`
-}
-
-export async function fetchSearchNames() {
-   return pgSql`select distinct(search_name) name from cars order by search_name`
 }

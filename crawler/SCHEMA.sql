@@ -1,6 +1,26 @@
+CREATE TABLE public.searches (
+    id integer NOT NULL,
+    name text NOT NULL,
+    url text NOT NULL,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.searches ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.searches_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
 CREATE TABLE public.cars (
     id integer NOT NULL,
-    search_name text NOT NULL,
+    search_id integer NOT NULL,
     url text NOT NULL,
     json_data jsonb,
     date_in timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -57,12 +77,24 @@ CREATE TABLE public.sellers (
 );
 
 
+ALTER TABLE ONLY public.searches
+    ADD CONSTRAINT searches_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.searches
+    ADD CONSTRAINT searches_name_key UNIQUE (name);
+
+
 ALTER TABLE ONLY public.cars
     ADD CONSTRAINT cars_pkey PRIMARY KEY (id);
 
 
 ALTER TABLE ONLY public.sellers
     ADD CONSTRAINT sellers_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.cars
+    ADD CONSTRAINT cars_search_id_fkey FOREIGN KEY (search_id) REFERENCES public.searches(id);
 
 
 ALTER TABLE ONLY public.cars

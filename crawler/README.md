@@ -7,6 +7,7 @@
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Migration](#migration)
 - [Project Structure](#project-structure)
 
 ## Features
@@ -14,8 +15,8 @@
 - Bypasses CloudFlare protection using [SeleniumBase CDP mode](https://github.com/nyg/scrapy-seleniumbase-cdp)
 - Extracts vehicle details (price, mileage, specs) and seller information
 - Stores data in PostgreSQL with batch tracking for historical analysis
+- Search configurations stored in database, manageable from the frontend Settings page
 - Generates CSV exports
-- Sends email reports via Resend API
 
 ## Installation
 
@@ -49,30 +50,30 @@ RESEND_API_KEY=re_YourApiKeyFromResendCom
 
 ## Usage
 
-### Search Files
+### Managing Searches
 
-Create `.env` files in `searches/` to define what to scrape:
+Searches are stored in the `searches` database table and managed from the frontend Settings page (`/settings`). Each search has:
 
-```env
-name=Audi RS6 Avant
-emails=user@example.com
-url=https://www.autoscout24.ch/en/cars/audi/rs-6?sort=standard&desc=0
+- **name**: display label used in filenames and the UI
+- **url**: AutoScout24 search URL with filters
+- **is_active**: whether the search is included in batch runs
+
+You can also insert searches directly via SQL:
+
+```sql
+INSERT INTO searches (name, url) VALUES ('Audi RS6 Avant', 'https://www.autoscout24.ch/en/cars/audi/rs-6?sort=standard&desc=0');
 ```
-
-- `name`: search label used in filenames and database
-- `emails`: comma-separated recipients (optional)
-- `url`: AutoScout24 search URL with filters
 
 ### Running
 
-Run a single search:
+Run a single search by ID:
 
 ```bash
 source .venv/bin/activate
-scrapy crawl search -a search_file=audi_rs6.env
+scrapy crawl search -a search_id=1
 ```
 
-Run all searches (creates `.venv` if needed, updates dependencies, then starts all spiders):
+Run all active searches (creates `.venv` if needed, updates dependencies, then starts all spiders):
 
 ```bash
 ./run-spiders.sh
@@ -91,6 +92,21 @@ crontab -e
 0 0 * * * /path/to/crawler/run-spiders.sh >> $HOME/.local/state/autoscout24-trends/cron.log 2>&1
 ```
 
+## Migration
+
+If upgrading from the file-based search configuration (`.env` files in `searches/`), run the migration script:
+
+```bash
+psql -d autoscout24_trends -f migrations/001_add_searches_table.sql
+```
+
+This will:
+1. Create the `searches` table
+2. Populate it from existing `cars.search_name` values (with placeholder URLs — update them afterwards)
+3. Replace `cars.search_name` with `cars.search_id` (FK to `searches`)
+
+After migrating, update the `url` for each search in the Settings page or via SQL.
+
 ## Project Structure
 
 ```
@@ -101,9 +117,9 @@ crawler/
 │   ├── items.py         # Scrapy item definitions
 │   ├── pipelines.py     # PostgreSQL pipeline
 │   ├── exporters.py     # CSV exporter
-│   ├── extensions.py    # Email extension
+│   ├── extensions.py    # Email extension (currently disabled)
 │   └── settings.py      # Scrapy settings
-├── searches/            # Search configuration files (.env)
+├── migrations/          # Database migration scripts
 ├── output/              # Generated CSV exports and screenshots
 ├── SCHEMA.sql           # PostgreSQL schema
 ├── run-spiders.sh       # Shell wrapper: updates deps, runs run-spiders.py

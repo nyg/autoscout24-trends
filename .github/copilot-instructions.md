@@ -10,7 +10,7 @@ Keep this file short and Copilot-specific:
 
 ## Copilot-specific reminders
 
-- For frontend work, keep SQL in `frontend/src/lib/data.js` and preserve the server-passes-promises/client-uses-`use(data)` pattern described in `AGENTS.md`.
+- For frontend work, keep SQL reads in `frontend/src/lib/data.js`, SQL writes (mutations) in `frontend/src/lib/actions.js`, and preserve the server-passes-promises/client-uses-`use(data)` pattern described in `AGENTS.md`.
 - For crawler schema or car-field changes, update `crawler/autoscout/items.py`, `crawler/autoscout/pipelines.py`, `crawler/SCHEMA.sql`, and relevant frontend readers together.
 - Do not modify `crawler/output/` unless the task is explicitly about runtime artifacts or debugging output.
 - Follow the existing style conventions already documented in `AGENTS.md`: frontend uses 3-space indentation, single quotes, and no semicolons; Python stays close to PEP 8.

@@ -17,6 +17,6 @@ The system enables users to track car listings over time, analyze pricing trends
 ## Features
 
 - **Automated Web Scraping**: Bypasses anti-bot protections using SeleniumBase CDP mode
-- **Database Storage**: Persists car and seller data in PostgreSQL with full schema
-- **Email Notifications**: Sends CSV reports via email after each crawl
+- **Database Storage**: Persists car, seller, and search configuration data in PostgreSQL
 - **Data Visualization**: Interactive charts and tables for analyzing trends
+- **Search Management**: Configure and manage searches from the web UI
