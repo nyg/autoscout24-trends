@@ -68,11 +68,11 @@ url=https://www.autoscout24.ch/en/cars/audi/rs-6?sort=standard&desc=0
 Run a single search:
 
 ```bash
-source venv/bin/activate
+source .venv/bin/activate
 scrapy crawl search -a search_file=audi_rs6.env
 ```
 
-Run all searches:
+Run all searches (creates `.venv` if needed, updates dependencies, then starts all spiders):
 
 ```bash
 ./run-spiders.sh
@@ -106,6 +106,7 @@ crawler/
 ├── searches/            # Search configuration files (.env)
 ├── output/              # Generated CSV exports and screenshots
 ├── SCHEMA.sql           # PostgreSQL schema
-├── run-spiders.sh       # Runs all search files
+├── run-spiders.sh       # Shell wrapper: updates deps, runs run-spiders.py
+├── run-spiders.py       # Runs all spiders in-process via CrawlerRunner
 └── requirements.txt     # Python dependencies
 ```

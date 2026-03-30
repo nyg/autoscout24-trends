@@ -1,28 +1,22 @@
 #!/usr/bin/env sh
+# Run all autoscout24-trends spiders.
+#
+# Creates .venv if it does not exist yet, installs/updates dependencies from
+# requirements.txt, then delegates to run-spiders.py.  Designed to be called
+# directly by a cron job so that a plain `git pull` is enough to pick up
+# new package versions on the next scheduled run.
 
-log() {
-    echo "[$(date -uIseconds)] $*"
-}
+set -euo pipefail
 
-cd "$(dirname "$0")" || { log "ERROR: Failed to cd into crawler directory"; exit 1; }
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-mkdir -p output
-
-if [ ! -d .venv ]; then
-    log "Creating virtual environment"
-    python -m venv .venv
+if [ ! -d "$SCRIPT_DIR/.venv" ]; then
+    echo "Creating virtual environment"
+    python3 -m venv "$SCRIPT_DIR/.venv"
 fi
 
-log "Activating virtual environment"
-. .venv/bin/activate
-pip install -r requirements.txt
+echo "Installing/updating dependencies"
+"$SCRIPT_DIR/.venv/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
 
-log "Running all autoscout24-trends spiders"
-for f in searches/*.env ; do
-    [ -e "$f" ] || { log "WARNING: No .env files found in searches/"; break; }
-    log "Found search file: $(basename "$f")"
-    scrapy crawl search -a search_file="$(basename "$f")"
-done
-
-log "Finished running all spiders"
-deactivate
+echo "Starting spiders"
+"$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/run-spiders.py"
