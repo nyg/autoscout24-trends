@@ -13,11 +13,11 @@ import logging
 import os
 from pathlib import Path
 
-# The SeleniumBase CDP middleware requires the asyncio reactor.  It must be
-# installed before any other Twisted import so the reactor singleton is set
-# up correctly before Scrapy validates it.
-from twisted.internet import asyncioreactor
-asyncioreactor.install()
+# The SeleniumBase CDP middleware requires the asyncio reactor.  Scrapy's
+# install_reactor() must run before any import of twisted.internet.reactor
+# so the correct reactor singleton is in place when Scrapy validates it.
+from scrapy.utils.reactor import install_reactor
+install_reactor('twisted.internet.asyncioreactor.AsyncioSelectorReactor')
 
 from scrapy.crawler import CrawlerRunner  # noqa: E402
 from scrapy.utils.project import get_project_settings  # noqa: E402

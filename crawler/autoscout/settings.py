@@ -21,6 +21,7 @@ SELENIUMBASE_BACKOFF_ON_429 = 120
 COOKIES_ENABLED = True
 TELNETCONSOLE_ENABLED = False
 LOG_LEVEL = 'INFO'
+TWISTED_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
 
 
 def customize_params(params, spider):
