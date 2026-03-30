@@ -16,7 +16,7 @@ if [ ! -d "$SCRIPT_DIR/.venv" ]; then
 fi
 
 echo "Installing/updating dependencies"
-"$SCRIPT_DIR/.venv/bin/pip" install --quiet -r "$SCRIPT_DIR/requirements.txt"
+"$SCRIPT_DIR/.venv/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
 
 echo "Starting spiders"
 "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/run-spiders.py"
