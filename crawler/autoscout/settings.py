@@ -42,9 +42,19 @@ FEEDS = {
     },
 }
 
+screen_resolution = '1440,900'
 SELENIUMBASE_BROWSER_OPTIONS = {
     'ad_block': True,
-    'browser_args': ['--disable-features=TranslateUI,Translate'],
+    'use_chromium': True,
+    'xvfb_metrics': screen_resolution,
+    'browser_args': [
+        # '--disable-features=Translate',
+        # This option doesn't work on Linux with Xvfb (https://issues.chromium.org/issues/429137221).
+        # Create /etc/chromium/policies/managed/disable_translate.json with content: { "TranslateEnabled": false } instead.
+        # '--start-maximized',
+        # Doesn't work either on Linux with Xvfb. Using window-position and window-size instead.
+        '--window-position=0,0',
+        f'--window-size={screen_resolution}'],
 }
 
 DOWNLOADER_MIDDLEWARES = {
