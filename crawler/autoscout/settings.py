@@ -15,7 +15,7 @@ NEWSPIDER_MODULE = 'autoscout.spiders'
 ADDONS = {}
 ROBOTSTXT_OBEY = False
 CONCURRENT_REQUESTS = 1
-DOWNLOAD_DELAY = 2
+DOWNLOAD_DELAY = 5
 RETRY_TIMES = 1
 COOKIES_ENABLED = True
 TELNETCONSOLE_ENABLED = False
@@ -42,8 +42,19 @@ FEEDS = {
     },
 }
 
+screen_resolution = '1440,900'
 SELENIUMBASE_BROWSER_OPTIONS = {
     'ad_block': True,
+    'use_chromium': True,
+    'xvfb_metrics': screen_resolution,
+    'browser_args': [
+        # '--disable-features=Translate',
+        # This option doesn't work on Linux with Xvfb (https://issues.chromium.org/issues/429137221).
+        # Create /etc/chromium/policies/managed/disable_translate.json with content: { "TranslateEnabled": false } instead.
+        # '--start-maximized',
+        # Doesn't work either on Linux with Xvfb. Using window-position and window-size instead.
+        '--window-position=0,0',
+        f'--window-size={screen_resolution}'],
 }
 
 DOWNLOADER_MIDDLEWARES = {
