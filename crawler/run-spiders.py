@@ -6,18 +6,24 @@ with a Twisted deferred chain that keeps them strictly sequential.
 No subprocess is involved; the Twisted reactor is shared across all runs.
 
 Usage (from within the activated virtual environment):
-    python run_spiders.py
+    python run-spiders.py
 """
 
 import logging
 import os
 from pathlib import Path
 
-from scrapy.crawler import CrawlerRunner
-from scrapy.utils.project import get_project_settings
-from twisted.internet import defer, reactor
+# The SeleniumBase CDP middleware requires the asyncio reactor.  It must be
+# installed before any other Twisted import so the reactor singleton is set
+# up correctly before Scrapy validates it.
+from twisted.internet import asyncioreactor
+asyncioreactor.install()
 
-from autoscout.spiders.search import SearchSpider
+from scrapy.crawler import CrawlerRunner  # noqa: E402
+from scrapy.utils.project import get_project_settings  # noqa: E402
+from twisted.internet import defer, reactor  # noqa: E402
+
+from autoscout.spiders.search import SearchSpider  # noqa: E402
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 SEARCHES_DIR = SCRIPT_DIR / 'searches'

@@ -75,7 +75,7 @@ scrapy crawl search -a search_file=audi_rs6.env
 Run all searches (creates `.venv` if needed, updates dependencies, then starts all spiders):
 
 ```bash
-./run_spiders.sh
+./run-spiders.sh
 ```
 
 ### Cron Job
@@ -88,7 +88,7 @@ crontab -e
 ```
 
 ```cron
-0 0 * * * /path/to/crawler/run_spiders.sh >> $HOME/.local/state/autoscout24-trends/cron.log 2>&1
+0 0 * * * /path/to/crawler/run-spiders.sh >> $HOME/.local/state/autoscout24-trends/cron.log 2>&1
 ```
 
 ## Project Structure
@@ -106,7 +106,7 @@ crawler/
 ├── searches/            # Search configuration files (.env)
 ├── output/              # Generated CSV exports and screenshots
 ├── SCHEMA.sql           # PostgreSQL schema
-├── run_spiders.sh       # Shell wrapper: updates deps, runs run_spiders.py
-├── run_spiders.py       # Runs all spiders in-process via CrawlerRunner
+├── run-spiders.sh       # Shell wrapper: updates deps, runs run-spiders.py
+├── run-spiders.py       # Runs all spiders in-process via CrawlerRunner
 └── requirements.txt     # Python dependencies
 ```
