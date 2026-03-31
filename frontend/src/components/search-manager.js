@@ -81,25 +81,44 @@ function SearchRow({ search }) {
             </form>
          </td>
          <td className="p-2 text-right">
-            <div className="flex gap-1 justify-end">
-               <button
-                  onClick={() => setEditing(true)}
-                  className="rounded-md border px-2 py-0.5 text-xs transition-colors hover:bg-muted"
-               >
-                  Edit
-               </button>
-               <form action={submitDelete} className="inline">
-                  <input type="hidden" name="id" value={search.id} />
-                  <button
-                     type="submit"
-                     disabled={deletePending}
-                     className="rounded-md border border-destructive/30 px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-                  >
-                     {deletePending ? '…' : 'Delete'}
-                  </button>
-               </form>
-               {deleteState?.error && (
-                  <span className="text-xs text-destructive">{deleteState.error}</span>
+            <div className="flex gap-1 justify-end items-center flex-wrap">
+               {deleteState?.needsConfirm ? (
+                  <form action={submitDelete} className="inline-flex items-center gap-1" role="alert">
+                     <input type="hidden" name="id" value={search.id} />
+                     <input type="hidden" name="confirmed" value="true" />
+                     <span className="text-xs text-destructive">
+                        Also delete {deleteState.carCount} car{deleteState.carCount !== 1 ? 's' : ''}?
+                     </span>
+                     <button
+                        type="submit"
+                        disabled={deletePending}
+                        className="rounded-md border border-destructive/30 px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                     >
+                        {deletePending ? '…' : 'Confirm'}
+                     </button>
+                  </form>
+               ) : (
+                  <>
+                     <button
+                        onClick={() => setEditing(true)}
+                        className="rounded-md border px-2 py-0.5 text-xs transition-colors hover:bg-muted"
+                     >
+                        Edit
+                     </button>
+                     <form action={submitDelete} className="inline">
+                        <input type="hidden" name="id" value={search.id} />
+                        <button
+                           type="submit"
+                           disabled={deletePending}
+                           className="rounded-md border border-destructive/30 px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                        >
+                           {deletePending ? '…' : 'Delete'}
+                        </button>
+                     </form>
+                     {deleteState?.error && (
+                        <span className="text-xs text-destructive">{deleteState.error}</span>
+                     )}
+                  </>
                )}
             </div>
          </td>
@@ -111,7 +130,7 @@ function AddSearchForm() {
    const [state, submitAction, pending] = useActionState(createSearch, null)
 
    return (
-      <form action={submitAction} className="flex flex-col gap-2 pt-4 border-t">
+      <form action={submitAction} className="flex flex-col gap-2 pt-4">
          <p className="text-sm font-medium">Add new search</p>
          <input
             name="name"
@@ -146,7 +165,7 @@ export default function SearchManager({ searches }) {
             <CardTitle>Searches</CardTitle>
          </CardHeader>
          <CardContent className="flex flex-col gap-4">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
                Manage your AutoScout24 search configurations. Active searches will be crawled on the next scheduled run.
             </p>
             {searches.length > 0 ? (

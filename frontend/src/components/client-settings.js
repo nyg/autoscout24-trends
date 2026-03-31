@@ -44,7 +44,7 @@ export default function ClientSettings() {
                <label htmlFor="maps-api-key" className="text-sm font-medium">
                   Google Maps API Key
                </label>
-               <p className="text-xs text-muted-foreground">
+               <p className="text-sm text-muted-foreground">
                   Used to display seller details from Google Maps.
                   Get an API key from the{' '}
                   <a
@@ -72,7 +72,7 @@ export default function ClientSettings() {
                <label htmlFor="home-address" className="text-sm font-medium">
                   Home Address
                </label>
-               <p className="text-xs text-muted-foreground">
+               <p className="text-sm text-muted-foreground">
                   Used to show directions from your home to car sellers.
                   Enter a full address (e.g. &ldquo;Bahnhofstrasse 1, 8001 Zürich&rdquo;).
                </p>

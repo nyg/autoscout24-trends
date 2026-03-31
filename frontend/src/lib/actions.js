@@ -57,15 +57,20 @@ export async function updateSearch(prevState, formData) {
 
 export async function deleteSearch(prevState, formData) {
    const id = parseInt(formData.get('id'), 10)
+   const confirmed = formData.get('confirmed') === 'true'
 
    try {
       const [row] = await pgSql`
          select count(*)::int as count from cars where search_id = ${id}`
-      if (row.count > 0) {
-         return { error: `Cannot delete: ${row.count} car(s) reference this search. Delete the car data first.` }
+
+      if (row.count > 0 && !confirmed) {
+         return { needsConfirm: true, carCount: row.count }
       }
 
-      await pgSql`delete from searches where id = ${id}`
+      await pgSql.begin(async pgSql => {
+         await pgSql`delete from cars where search_id = ${id}`
+         await pgSql`delete from searches where id = ${id}`
+      })
       revalidatePath('/', 'layout')
       return { success: true }
    } catch {

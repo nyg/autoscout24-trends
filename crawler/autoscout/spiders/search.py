@@ -4,7 +4,6 @@ from datetime import datetime
 from urllib.parse import urlencode
 
 import njsparser
-import psycopg
 from scrapy import Spider
 from scrapy.http import Response
 from scrapy.spidermiddlewares.httperror import HttpError
@@ -51,21 +50,11 @@ class SearchSpider(Spider):
     name = 'search'
     allowed_domains = ['www.autoscout24.ch', 'autoscout24.ch']
 
-    def __init__(self, search_id, *args, **kwargs):
+    def __init__(self, search_id, search_name, url, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        with psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=5) as conn:
-            with conn.cursor() as cur:
-                row = cur.execute(
-                    'SELECT name, url FROM searches WHERE id = %s', (int(search_id),)
-                ).fetchone()
-
-        if not row:
-            raise ValueError(f'Search with id={search_id} not found in database')
-
         self.search_id = int(search_id)
-        self.search_name = row[0]
-        self.url = row[1]
+        self.search_name = search_name
+        self.url = url
         self.failed_requests = []
 
     async def start(self):

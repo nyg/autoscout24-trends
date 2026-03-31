@@ -6,11 +6,15 @@ per search.  Uses Scrapy's CrawlerRunner API to keep them strictly sequential.
 No subprocess is involved; the Twisted reactor is shared across all runs.
 
 Usage (from within the activated virtual environment):
-    python run-spiders.py
+    python run-spiders.py [--id=1,2,3]
+
+Options:
+    --id=1,2,3   Comma-separated list of search IDs to run (default: all active)
 """
 
 import logging
 import os
+import sys
 import warnings
 from pathlib import Path
 
@@ -43,6 +47,14 @@ OUTPUT_DIR = SCRIPT_DIR / 'output'
 log = logging.getLogger(__name__)
 
 
+def _parse_id_filter(argv):
+    """Return a set of integer IDs from a --id=1,2,3 argument, or None."""
+    for arg in argv:
+        if arg.startswith('--id='):
+            return {int(x) for x in arg[len('--id='):].split(',') if x.strip()}
+    return None
+
+
 def main():
     # Anchor the working directory so relative paths used by the feed settings
     # (output/<name>.csv) resolve correctly, regardless of where this script
@@ -56,11 +68,16 @@ def main():
     # CrawlerProcess), so we do it explicitly to see spider output.
     configure_logging(settings)
 
+    id_filter = _parse_id_filter(sys.argv[1:])
+
     with psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=5) as conn:
         with conn.cursor() as cur:
             searches = cur.execute(
-                'SELECT id, name FROM searches WHERE is_active = true ORDER BY name'
+                'SELECT id, name, url FROM searches WHERE is_active = true ORDER BY name'
             ).fetchall()
+
+    if id_filter is not None:
+        searches = [(sid, name, url) for sid, name, url in searches if sid in id_filter]
 
     if not searches:
         log.warning('No active searches found in database')
@@ -73,9 +90,9 @@ def main():
     @defer.inlineCallbacks
     def crawl_all():
         try:
-            for search_id, search_name in searches:
+            for search_id, search_name, url in searches:
                 log.info('Running spider for search: %s (id=%d)', search_name, search_id)
-                yield runner.crawl(SearchSpider, search_id=search_id)
+                yield runner.crawl(SearchSpider, search_id=search_id, search_name=search_name, url=url)
         except Exception:
             log.exception('Spider run failed')
         finally:
