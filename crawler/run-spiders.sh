@@ -19,4 +19,4 @@ echo "Installing/updating dependencies"
 "$SCRIPT_DIR/.venv/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
 
 echo "Starting spiders"
-"$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/run-spiders.py"
+"$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/run-spiders.py" "$@"

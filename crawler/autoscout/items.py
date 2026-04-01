@@ -23,7 +23,7 @@ def parse_iso_datetime(value):
 
 
 class CarItem(Item):
-    search_name = Field()
+    search_id = Field()
     url = Field()
     json_data = Field()
 
@@ -62,7 +62,7 @@ class CarItem(Item):
 
     def merge_with(self, seller):
         car = dict(self)
-        car.pop('search_name')
+        car.pop('search_id')
         car.pop('seller_id')
 
         car['seller_name'] = seller['name']
@@ -78,10 +78,10 @@ class CarItem(Item):
         })
 
     @staticmethod
-    def parse_response(search_name, url, json_response):
+    def parse_response(search_id, url, json_response):
         car = CarItem()
 
-        car['search_name'] = search_name
+        car['search_id'] = search_id
         car['url'] = url
         car['json_data'] = json_response
 

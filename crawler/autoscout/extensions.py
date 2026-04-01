@@ -42,7 +42,7 @@ class EmailAfterFeedExport:
     def __init__(self, spider: SearchSpider, stats: dict[str, Any]):
         self.spider: SearchSpider = spider
         self.stats: dict[str, Any] = stats
-        resend.api_key = os.environ['RESEND_API_KEY']
+        resend.api_key = os.environ.get('RESEND_API_KEY', '')
 
     @classmethod
     def from_crawler(cls, crawler: Crawler):
@@ -52,20 +52,7 @@ class EmailAfterFeedExport:
         return extension
 
     def output_file_written(self, slot: FeedSlot):
-        if not self.spider.emails:
-            self.spider.logger.info('No email address defined, not sending email')
-            return
-
-        stats = self._build_stats()
-        email = Emails.send({
-            'from': 'AutoScout24 Crawler <autscout24-crawler@resend.dev>',
-            'to': self.spider.emails,
-            'subject': self._build_subject(stats),
-            'text': template.render(stats=stats),
-            'attachments': self._create_attachments(slot.uri)
-        })
-
-        self.spider.logger.info(f'Email sent: {email}')
+        self.spider.logger.info('Per-search email disabled, skipping')
 
     def _build_stats(self):
         responses_by_status = {

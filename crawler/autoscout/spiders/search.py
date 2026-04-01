@@ -1,10 +1,9 @@
+import os
 import re
 from datetime import datetime
-from os import path
 from urllib.parse import urlencode
 
 import njsparser
-from dotenv import dotenv_values
 from scrapy import Spider
 from scrapy.http import Response
 from scrapy.spidermiddlewares.httperror import HttpError
@@ -51,20 +50,11 @@ class SearchSpider(Spider):
     name = 'search'
     allowed_domains = ['www.autoscout24.ch', 'autoscout24.ch']
 
-    def __init__(self, search_file, *args, **kwargs):
+    def __init__(self, search_id, search_name, url, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        filepath = path.join('searches', search_file)
-        if not path.exists(filepath):
-            raise FileNotFoundError(f'Search file {filepath} could not be found')
-
-        search_config = dotenv_values(filepath)
-        if any(k not in search_config for k in ('name', 'emails', 'url')):
-            raise ValueError('Missing keys in search file, check example')
-
-        self.search_name = search_config['name']
-        self.emails = [e.strip() for e in search_config['emails'].split(',')] if search_config['emails'] else None
-        self.url = search_config['url']
+        self.search_id = int(search_id)
+        self.search_name = search_name
+        self.url = url
         self.failed_requests = []
 
     async def start(self):
@@ -95,7 +85,7 @@ class SearchSpider(Spider):
             self.logger.info(f'Parsing car: {response.url} ({response.status})')
             flight_data = self._extract_flight_data(response.body)
 
-            car = CarItem.parse_response(self.search_name, response.url, flight_data)
+            car = CarItem.parse_response(self.search_id, response.url, flight_data)
             self._save_screenshot(car['vehicle_id'], response.meta.get('screenshot'))
 
             yield SellerItem.parse_response(flight_data['seller'])
