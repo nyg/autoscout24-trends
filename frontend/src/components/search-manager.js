@@ -19,7 +19,7 @@ function SearchRow({ search }) {
    if (editing) {
       return (
          <tr className="border-b">
-            <td colSpan={4} className="p-2">
+            <td colSpan={5} className="p-2">
                <form action={submitUpdate} className="flex flex-col gap-2">
                   <input type="hidden" name="id" value={search.id} />
                   <input type="hidden" name="is_active" value={String(search.is_active)} />
@@ -59,6 +59,7 @@ function SearchRow({ search }) {
 
    return (
       <tr className="border-b text-sm font-medium">
+         <td className="p-2 text-muted-foreground whitespace-nowrap">{search.id}</td>
          <td className="p-2 whitespace-nowrap">{search.name}</td>
          <td className="p-2 text-muted-foreground truncate max-w-0" title={search.url}>
             {search.url}
@@ -172,6 +173,7 @@ export default function SearchManager({ searches }) {
                <table className="w-full text-left">
                   <thead>
                      <tr className="border-b text-xs font-medium text-muted-foreground">
+                        <th className="p-2 whitespace-nowrap">ID</th>
                         <th className="p-2 whitespace-nowrap">Name</th>
                         <th className="p-2 w-full">URL</th>
                         <th className="p-2 text-center whitespace-nowrap">Active</th>

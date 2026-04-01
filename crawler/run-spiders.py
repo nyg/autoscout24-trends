@@ -70,7 +70,7 @@ def main():
 
     id_filter = _parse_id_filter(sys.argv[1:])
 
-    with psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=5) as conn:
+    with psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1) as conn:
         with conn.cursor() as cur:
             searches = cur.execute(
                 'SELECT id, name, url FROM searches WHERE is_active = true ORDER BY name'
