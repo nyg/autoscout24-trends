@@ -15,8 +15,7 @@ __pycache__
 
 # misc
 *.csv
-*.env*
-!rs6.env
-!.env.example
+*.png
+*.env
 downloaded_files
 output
