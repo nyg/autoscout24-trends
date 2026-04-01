@@ -58,12 +58,12 @@ function SearchRow({ search }) {
    }
 
    return (
-      <tr className="border-b">
-         <td className="p-2 text-sm font-medium">{search.name}</td>
-         <td className="p-2 text-sm text-muted-foreground max-w-[200px] truncate" title={search.url}>
+      <tr className="border-b text-sm font-medium">
+         <td className="p-2 whitespace-nowrap">{search.name}</td>
+         <td className="p-2 text-muted-foreground truncate max-w-0" title={search.url}>
             {search.url}
          </td>
-         <td className="p-2 text-center">
+         <td className="p-2 text-center whitespace-nowrap">
             <form action={submitToggle} className="inline">
                <input type="hidden" name="id" value={search.id} />
                <input type="hidden" name="is_active" value={String(!search.is_active)} />
@@ -80,8 +80,8 @@ function SearchRow({ search }) {
                </button>
             </form>
          </td>
-         <td className="p-2 text-right">
-            <div className="flex gap-1 justify-end items-center flex-wrap">
+         <td className="p-2 text-right whitespace-nowrap">
+            <div className="flex gap-1 justify-end items-center">
                {deleteState?.needsConfirm ? (
                   <form action={submitDelete} className="inline-flex items-center gap-1" role="alert">
                      <input type="hidden" name="id" value={search.id} />
@@ -171,11 +171,11 @@ export default function SearchManager({ searches }) {
             {searches.length > 0 ? (
                <table className="w-full text-left">
                   <thead>
-                     <tr className="border-b text-xs text-muted-foreground">
-                        <th className="p-2 font-medium">Name</th>
-                        <th className="p-2 font-medium">URL</th>
-                        <th className="p-2 font-medium text-center">Active</th>
-                        <th className="p-2 font-medium text-right">Actions</th>
+                     <tr className="border-b text-xs font-medium text-muted-foreground">
+                        <th className="p-2 whitespace-nowrap">Name</th>
+                        <th className="p-2 w-full">URL</th>
+                        <th className="p-2 text-center whitespace-nowrap">Active</th>
+                        <th className="p-2 text-right whitespace-nowrap">Actions</th>
                      </tr>
                   </thead>
                   <tbody>
