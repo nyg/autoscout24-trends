@@ -92,7 +92,10 @@ class SearchSpider(Spider):
             flight_data = self._extract_flight_data(response.body)
 
             car = CarItem.parse_response(self.search_id, response.url, flight_data)
-            self._save_screenshot(car['vehicle_id'], response.meta.get('screenshot'))
+
+            screenshot = response.meta.get('screenshot')
+            car['screenshot'] = screenshot
+            self._save_screenshot(car['vehicle_id'], screenshot)
 
             yield SellerItem.parse_response(flight_data['seller'])
             yield car

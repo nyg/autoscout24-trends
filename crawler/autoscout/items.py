@@ -59,6 +59,7 @@ class CarItem(Item):
     last_inspection_date = Field(type=datetime, serializer=format_date)
 
     seller_id = Field()
+    screenshot = Field()
 
     def merge_with(self, seller):
         car = dict(self)

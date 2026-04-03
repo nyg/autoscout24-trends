@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import PlaceDetails from '@/components/place-details'
 import {
-   ArrowDownIcon, ArrowUpIcon,
+   ArrowDownIcon, ArrowUpIcon, CameraIcon,
    MapIcon, MapPinIcon, NavigationIcon, SlidersHorizontalIcon
 } from 'lucide-react'
 
@@ -45,6 +45,7 @@ const COLUMNS = [
    { key: 'leasing', label: 'Leasing', sortType: 'text', sortKey: 'leasing', align: 'right', defaultVisible: false },
    { key: 'last_inspection_date', label: 'Last inspection', sortType: 'date', sortKey: 'last_inspection_date', align: 'right', defaultVisible: false },
    { key: 'seller_type', label: 'Seller type', sortType: 'text', sortKey: 'seller_type', align: 'right', defaultVisible: false },
+   { key: 'screenshot', label: 'Screenshot', sortType: null, sortKey: null, align: 'center', defaultVisible: false },
 ]
 
 const VISIBILITY_STORAGE_KEY = 'car-table-visible-columns'
@@ -356,6 +357,20 @@ function renderCell(col, car, options) {
       case 'co2_emission':
       case 'cylinders':
          return <TableCell key={col.key} className="text-right tabular-nums">{car[col.sortKey] != null ? asDecimal(car[col.sortKey]) : '-'}</TableCell>
+      case 'screenshot':
+         return (
+            <TableCell key={col.key} className="text-center">
+               <a
+                  href={`/api/screenshot/${car.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors inline-flex"
+                  title="View screenshot"
+               >
+                  <CameraIcon className="size-4" />
+               </a>
+            </TableCell>
+         )
       default:
          return <TableCell key={col.key} className="text-right">{car[col.sortKey] ?? '-'}</TableCell>
    }
@@ -436,8 +451,8 @@ export default function Cars({ name, data, options = {} }) {
                      {visibleColumns.map(col => (
                         <TableHead
                            key={col.key}
-                           className={`${col.align === 'right' ? 'text-right' : ''} cursor-pointer select-none hover:bg-muted/50 transition-colors`}
-                           onClick={() => handleSort(col.key)}
+                           className={`${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''} ${col.sortKey ? 'cursor-pointer hover:bg-muted/50' : ''} select-none transition-colors`}
+                           onClick={col.sortKey ? () => handleSort(col.key) : undefined}
                         >
                            <span className="inline-flex items-center gap-1">
                               {col.key === 'listed_since' && options.listingEnded ? 'Listing duration' : col.label}

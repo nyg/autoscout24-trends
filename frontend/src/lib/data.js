@@ -12,7 +12,12 @@ export async function fetchSearchNames() {
 
 export async function fetchActiveListings(searchName) {
    return pgSql`
-      select c.*,
+      select c.id, c.search_id, c.url, c.date_in, c.title, c.subtitle, c.description,
+             c.vehicle_id, c.seller_vehicle_id, c.certification_number, c.price, c.body_type,
+             c.color, c.mileage, c.has_additional_set_of_tires, c.had_accident, c.fuel_type,
+             c.kilo_watts, c.cm3, c.cylinders, c.cylinder_layout, c.avg_consumption, c.co2_emission,
+             c.warranty, c.leasing, c.created_date, c.last_modified_date, c.first_registration_date,
+             c.last_inspection_date, c.seller_id, c.search_run_id,
              se.type seller_type, se.name seller_name, se.address seller_address, se.zip_code, se.city,
              365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year
         from cars c
@@ -36,7 +41,13 @@ export async function fetchPreviousListings(searchName) {
           where s2.name = ${searchName}
       )
       select * from (
-         select distinct on (c.vehicle_id) c.*,
+         select distinct on (c.vehicle_id)
+                c.id, c.search_id, c.url, c.date_in, c.title, c.subtitle, c.description,
+                c.vehicle_id, c.seller_vehicle_id, c.certification_number, c.price, c.body_type,
+                c.color, c.mileage, c.has_additional_set_of_tires, c.had_accident, c.fuel_type,
+                c.kilo_watts, c.cm3, c.cylinders, c.cylinder_layout, c.avg_consumption, c.co2_emission,
+                c.warranty, c.leasing, c.created_date, c.last_modified_date, c.first_registration_date,
+                c.last_inspection_date, c.seller_id, c.search_run_id,
                 se.type seller_type, se.name seller_name, se.address seller_address, se.zip_code, se.city,
                 365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year
            from cars c
@@ -66,4 +77,10 @@ export async function fetchDailyListingCount(searchName) {
        where s.name = ${searchName}
        group by date
        order by date`
+}
+
+export async function fetchCarScreenshot(carId) {
+   const [row] = await pgSql`
+      select screenshot from cars where id = ${carId}`
+   return row?.screenshot ?? null
 }

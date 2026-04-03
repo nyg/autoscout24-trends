@@ -75,7 +75,8 @@ CREATE TABLE public.cars (
     seller_id text,
     search_run_id integer NOT NULL,
     cm3 integer,
-    cylinder_layout text
+    cylinder_layout text,
+    screenshot bytea
 );
 
 
