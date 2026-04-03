@@ -47,8 +47,9 @@ Create a `.env` file in the crawler directory:
 ```env
 PGSQL_URL=postgresql://username:password@localhost:5432/autoscout24_trends
 RESEND_API_KEY=re_YourApiKeyFromResendCom
-BATCH_EMAIL_TO=you@example.com
 ```
+
+The email recipient is configured in the frontend Settings page (`/settings`).
 
 ## Usage
 

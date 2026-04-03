@@ -10,6 +10,15 @@ export async function fetchSearchNames() {
    return pgSql`select id, name from searches order by name`
 }
 
+export async function fetchConfig() {
+   try {
+      const rows = await pgSql`select key, value from config`
+      return Object.fromEntries(rows.map(r => [r.key, r.value]))
+   } catch {
+      return {}
+   }
+}
+
 export async function fetchActiveListings(searchName) {
    return pgSql`
       select c.*,
