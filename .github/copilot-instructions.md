@@ -8,6 +8,12 @@ Keep this file short and Copilot-specific:
 - If `AGENTS.md` and this file ever drift, treat `AGENTS.md` as authoritative for repository behavior and update this file to match.
 - Make surgical changes that preserve the existing crawler/frontend split and reuse established patterns before introducing new ones.
 
+## Branching workflow
+
+- Never commit directly to `master`. Always open a pull request against `master`.
+- If the current branch is not `master`, do work on that branch.
+- If the current branch is `master`, create a new feature branch before making any changes.
+
 ## Copilot-specific reminders
 
 - For frontend work, keep SQL reads in `frontend/src/lib/data.js`, SQL writes (mutations) in `frontend/src/lib/actions.js`, and preserve the server-passes-promises/client-uses-`use(data)` pattern described in `AGENTS.md`.

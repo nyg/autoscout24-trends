@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from datetime import datetime
@@ -56,6 +57,7 @@ class SearchSpider(Spider):
         self.search_name = search_name
         self.url = url
         self.failed_requests = []
+        self.cars_found = None
 
     async def start(self):
         start_url = self._build_url()
@@ -65,6 +67,10 @@ class SearchSpider(Spider):
     def parse(self, response: Response, **kwargs):
         """Parse the search result page"""
         self.logger.info(f'Parsing search page: {response.meta.get('page')} ({response.url}, {response.status})')
+
+        fd = njsparser.BeautifulFD(response.text)
+        if self.cars_found is None:
+            self.cars_found = self._extract_listing_count(fd)
 
         # for each car url, call parse_car
         for car_url in response.xpath('//a[contains(@data-testid, "listing-card-")]/@href').getall():
@@ -106,6 +112,34 @@ class SearchSpider(Spider):
         self.logger.warning(f'{len(self.failed_requests)} requests have failed:')
         for entry in self.failed_requests:
             self.logger.warning(f"  Scraping {entry['url']} failed due to: {entry['reason']}")
+
+    @staticmethod
+    def _extract_listing_count(fd):
+        """Extract total listing count from search page flight data."""
+        for data_node in fd.find_all([njsparser.T.Data]):
+            pvt = SearchSpider._find_nested_key(data_node.content, 'pageViewTracking')
+            if isinstance(pvt, dict) and isinstance(pvt.get('search_listingCount'), int):
+                return pvt['search_listingCount']
+        return None
+
+    @staticmethod
+    def _find_nested_key(obj, key, depth=0):
+        """Recursively search for a key in nested dict/list structure."""
+        if depth > 20:
+            return None
+        if isinstance(obj, dict):
+            if key in obj:
+                return obj[key]
+            for v in obj.values():
+                result = SearchSpider._find_nested_key(v, key, depth + 1)
+                if result is not None:
+                    return result
+        elif isinstance(obj, list):
+            for item in obj:
+                result = SearchSpider._find_nested_key(item, key, depth + 1)
+                if result is not None:
+                    return result
+        return None
 
     @staticmethod
     def _extract_flight_data(body):
