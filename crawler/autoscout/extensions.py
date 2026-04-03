@@ -76,6 +76,7 @@ class SearchRunExtension:
             stats = self.crawler.stats.get_stats()
 
             cars_scraped = stats.get('db/cars_inserted', 0)
+            cars_found = self.crawler.spider.cars_found
             failed_request_count = len(self.crawler.spider.failed_requests)
             request_count = stats.get('response_received_count', 0)
             error_count = stats.get('log_count/ERROR', 0)
@@ -89,6 +90,7 @@ class SearchRunExtension:
                            SET finished_at = %s,
                                finish_reason = %s,
                                success = %s,
+                               cars_found = %s,
                                cars_scraped = %s,
                                request_count = %s,
                                failed_request_count = %s,
@@ -98,6 +100,7 @@ class SearchRunExtension:
                         stats.get('finish_time'),
                         finish_reason,
                         success,
+                        cars_found,
                         cars_scraped,
                         request_count,
                         failed_request_count,
