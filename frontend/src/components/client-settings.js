@@ -7,11 +7,13 @@ import { updateConfig } from '@/lib/actions'
 const CONFIG_KEYS = {
    mapsApiKey: 'google-maps-api-key',
    homeAddress: 'home-address',
+   emailRecipient: 'email-recipient',
 }
 
 export default function ClientSettings({ config }) {
    const [apiKey, setApiKey] = useState(config[CONFIG_KEYS.mapsApiKey] ?? '')
    const [homeAddress, setHomeAddress] = useState(config[CONFIG_KEYS.homeAddress] ?? '')
+   const [emailRecipient, setEmailRecipient] = useState(config[CONFIG_KEYS.emailRecipient] ?? '')
    const [state, formAction, isPending] = useActionState(updateConfig, {})
    const [showSaved, setShowSaved] = useState(false)
 
@@ -73,6 +75,25 @@ export default function ClientSettings({ config }) {
                      value={homeAddress}
                      onChange={e => setHomeAddress(e.target.value)}
                      placeholder="Enter your home address"
+                     className="rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  />
+               </div>
+
+               <div className="flex flex-col gap-2">
+                  <label htmlFor="email-recipient" className="text-sm font-medium">
+                     Email Recipient
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                     Email address to receive crawler run reports.
+                     Currently used by the <code className="text-xs">EmailAfterFeedExport</code> extension (disabled by default).
+                  </p>
+                  <input
+                     id="email-recipient"
+                     name={`config:${CONFIG_KEYS.emailRecipient}`}
+                     type="email"
+                     value={emailRecipient}
+                     onChange={e => setEmailRecipient(e.target.value)}
+                     placeholder="you@example.com"
                      className="rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                   />
                </div>
