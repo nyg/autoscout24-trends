@@ -69,9 +69,6 @@ class SearchSpider(Spider):
         self.logger.info(f'Parsing search page: {response.meta.get('page')} ({response.url}, {response.status})')
 
         fd = njsparser.BeautifulFD(response.text)
-        with open("main_fd.json", "w") as write:
-            json.dump(fd, write, indent=4, default=njsparser.default)
-
         if self.cars_found is None:
             self.cars_found = self._extract_listing_count(fd)
 
