@@ -1,4 +1,3 @@
-import json
 import os
 import re
 from datetime import datetime
@@ -65,23 +64,35 @@ class SearchSpider(Spider):
         yield SearchPageRequest(self, url=start_url)
 
     def parse(self, response: Response, **kwargs):
-        """Parse the search result page"""
+        """Parse the search result page using flight data."""
         self.logger.info(f'Parsing search page: {response.meta.get('page')} ({response.url}, {response.status})')
 
         fd = njsparser.BeautifulFD(response.text)
+
+        # Extract listing count from pageViewTracking
         if self.cars_found is None:
             self.cars_found = self._extract_listing_count(fd)
 
-        # for each car url, call parse_car
-        for car_url in response.xpath('//a[contains(@data-testid, "listing-card-")]/@href').getall():
-            self.logger.info(f'Car found: {car_url}')
-            yield CarPageRequest(self, url=response.urljoin(car_url))
+        # Extract car URLs from prefetchedListings in flight data
+        listings = self._extract_search_listings(fd)
+        if not listings:
+            self.logger.warning('No listings found in flight data, falling back to XPath')
+            for car_url in response.xpath('//a[contains(@data-testid, "listing-card-")]/@href').getall():
+                self.logger.info(f'Car found (XPath fallback): {car_url}')
+                yield CarPageRequest(self, url=response.urljoin(car_url))
+        else:
+            for listing in listings:
+                car_url = self._build_car_url(listing)
+                self.logger.info(f'Car found: {car_url}')
+                yield CarPageRequest(self, url=car_url)
 
-        # fetch next page, if any
-        go_to_page_links = response.xpath('//button[contains(@aria-label, "go to page")]/text()').getall()
-        page_count = int(go_to_page_links[-1]) if go_to_page_links else 1
+        # fetch next page using flight data pagination info or XPath fallback
+        page_count = self._extract_page_count(fd)
+        if page_count is None:
+            go_to_page_links = response.xpath('//button[contains(@aria-label, "go to page")]/text()').getall()
+            page_count = int(go_to_page_links[-1]) if go_to_page_links else 1
+
         next_page = response.meta.get('page') + 1
-
         if next_page < page_count:
             self.logger.info(f'Next page: {next_page}')
             yield SearchPageRequest(self, url=self._build_url(next_page), page=next_page)
@@ -123,6 +134,32 @@ class SearchSpider(Spider):
         return None
 
     @staticmethod
+    def _extract_search_listings(fd):
+        """Extract car listings from prefetchedListings in search page flight data."""
+        for data_node in fd.find_all([njsparser.T.Data]):
+            prefetched = SearchSpider._find_nested_key(data_node.content, 'prefetchedListings')
+            if isinstance(prefetched, dict) and 'content' in prefetched:
+                return prefetched['content']
+        return None
+
+    @staticmethod
+    def _extract_page_count(fd):
+        """Extract total page count from prefetchedListings pagination in flight data."""
+        for data_node in fd.find_all([njsparser.T.Data]):
+            prefetched = SearchSpider._find_nested_key(data_node.content, 'prefetchedListings')
+            if isinstance(prefetched, dict) and 'totalPages' in prefetched:
+                return prefetched['totalPages']
+        return None
+
+    @staticmethod
+    def _build_car_url(listing):
+        """Build a car detail URL from a prefetchedListings entry."""
+        make_key = listing['make']['key']
+        model_key = listing['model']['key']
+        listing_id = listing['id']
+        return f'https://www.autoscout24.ch/en/cars/{make_key}/{model_key}/id/{listing_id}'
+
+    @staticmethod
     def _find_nested_key(obj, key, depth=0):
         """Recursively search for a key in nested dict/list structure."""
         if depth > 20:
@@ -143,21 +180,48 @@ class SearchSpider(Spider):
 
     @staticmethod
     def _extract_flight_data(body):
-        """Extract Next.js flight data describing the vehicle and seller"""
+        """Extract Next.js flight data describing the vehicle and seller.
+
+        Uses recursive key search instead of hardcoded path navigation to be
+        resilient to DOM structure changes.
+        """
         fd = njsparser.BeautifulFD(body)
-        data = next(x for x in fd.find_all([njsparser.T.Data]) if x.index == 7)
-        nested_data = data.content['children'][3]['children'][3]['children'][3]['children'][3]
         text = {hex(t.index).replace('0x', '$'): t.value for t in fd.find_all([njsparser.T.Text])}
 
+        listing = None
+        seller = None
+        pvt = None
+
+        for data_node in fd.find_all([njsparser.T.Data]):
+            if listing is None:
+                candidate = SearchSpider._find_nested_key(data_node.content, 'listing')
+                # Car detail listing has keys like 'description' and 'bodyColor' that
+                # search result listings (from prefetchedListings) lack.
+                if isinstance(candidate, dict) and 'description' in candidate:
+                    listing = candidate
+            if seller is None:
+                candidate = SearchSpider._find_nested_key(data_node.content, 'seller')
+                # Seller must have 'id' and 'zipCode' (not a shallow reference)
+                if isinstance(candidate, dict) and 'id' in candidate and 'zipCode' in candidate:
+                    seller = candidate
+            if pvt is None:
+                candidate = SearchSpider._find_nested_key(data_node.content, 'pageViewTracking')
+                if isinstance(candidate, dict) and 'listing_typename' in candidate:
+                    pvt = candidate
+            if listing and seller and pvt:
+                break
+
+        if not listing or not seller or not pvt:
+            raise ValueError(f'Could not extract flight data: listing={listing is not None}, seller={seller is not None}, pvt={pvt is not None}')
+
         # sometimes, description is a reference (e.g. "$31") pointing to a separate Text node instead of being inlined
-        listing = nested_data['children'][1][0][3]['listing']
-        if listing['description'] in text:
+        if listing.get('description') in text:
             listing['description'] = text[listing['description']]
 
         return {
-            'pageViewTracking': nested_data['pageViewTracking'],
+            'pageViewTracking': pvt,
             'listing': listing,
-            'seller': nested_data['children'][1][0][3]['seller'],
+            'seller': seller,
         }
 
     def _save_screenshot(self, vehicle_id, data):
