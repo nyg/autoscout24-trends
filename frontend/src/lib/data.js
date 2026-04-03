@@ -64,6 +64,22 @@ export async function fetchPreviousListings(searchName) {
       order by price`
 }
 
+export async function fetchSearchRuns(searchName) {
+   const filter = searchName
+      ? pgSql`where s.name = ${searchName}`
+      : pgSql``
+   return pgSql`
+      select sr.id, s.name search_name,
+             sr.started_at, sr.finished_at,
+             sr.finish_reason, sr.success,
+             sr.cars_found, sr.cars_scraped,
+             sr.request_count, sr.failed_request_count
+        from search_runs sr
+       inner join searches s on sr.search_id = s.id
+       ${filter}
+       order by sr.started_at desc`
+}
+
 export async function fetchDailyListingCount(searchName) {
    return pgSql`
       select extract(epoch from date_trunc('day', date_in))::bigint * 1000 date,
