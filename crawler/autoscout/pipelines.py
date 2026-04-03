@@ -14,6 +14,18 @@ from scrapy.statscollectors import StatsCollector
 
 from .items import CarItem, SellerItem
 
+_PGSQL_CONNECT_TIMEOUT = 1
+
+
+def get_shared_connection(crawler: Crawler) -> psycopg.Connection:
+    """Return the shared DB connection owned by SearchRunExtension.
+
+    The connection is created in SearchRunExtension.spider_opened and stored
+    in Scrapy stats so that pipelines can reuse it without opening a second
+    connection.
+    """
+    return crawler.stats.get_value('db_connection')
+
 
 class ScreenshotPipeline:
     """Compresses screenshots to WebP, deduplicates via MD5, and uploads to Cloudflare R2."""
@@ -131,7 +143,6 @@ class PostgreSQLPipeline:
 
     def __init__(self, crawler: Crawler) -> None:
         self.crawler = crawler
-        self.connection: psycopg.Connection | None = None
 
         self.batch_size = 1000
         self.car_buffer: list[dict[str, Any]] = []
@@ -144,16 +155,16 @@ class PostgreSQLPipeline:
         return cls(crawler)
 
     def close_spider(self) -> None:
-        """Flush any remaining items in buffers and close database connection when spider finishes."""
+        """Flush any remaining items in buffers when spider finishes.
+
+        The shared DB connection is closed later by SearchRunExtension
+        (spider_closed signal fires after pipeline close_spider).
+        """
         try:
             self.flush_buffers()
         except Exception as e:
             self.crawler.spider.logger.error(f'Database error: {e}', exc_info=True)
             raise
-        finally:
-            if self.connection:
-                self.connection.close()
-                self.crawler.spider.logger.info('Database connection closed')
 
     def process_item(self, item: CarItem | SellerItem) -> CarItem | SellerItem:
         """Buffer items and flush to database in batches for better performance."""
@@ -170,22 +181,15 @@ class PostgreSQLPipeline:
 
         return item
 
-    def _ensure_connection(self) -> None:
-        """Establish a database connection if not already done."""
-        if self.connection:
-            return
-
-        self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
-
     def flush_buffers(self) -> None:
         """Insert buffered items into the database and clear buffers. This is called when buffers reach batch size or when spider closes."""
         if not self.seller_buffer and not self.car_buffer:
             return
 
         search_run_id = self.crawler.stats.get_value('search_run_id')
-        self._ensure_connection()
-        with self.connection.transaction():
-            with self.connection.cursor() as cursor:
+        connection = get_shared_connection(self.crawler)
+        with connection.transaction():
+            with connection.cursor() as cursor:
                 if self.seller_buffer:
                     insert_query = sql.SQL('''
                         INSERT INTO sellers (id, type, name, address, zip_code, city)
