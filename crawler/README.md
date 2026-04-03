@@ -7,6 +7,7 @@
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Headless Linux tips](#headless-linux-tips)
 - [Migration](#migration)
 - [Project Structure](#project-structure)
 
@@ -16,7 +17,7 @@
 - Extracts vehicle details (price, mileage, specs) and seller information
 - Stores data in PostgreSQL with batch tracking for historical analysis
 - Search configurations stored in database, manageable from the frontend Settings page
-- Generates CSV exports
+- Sends a batch summary email after all spiders finish (requires [Resend](https://resend.com) API key)
 
 ## Installation
 
@@ -47,6 +48,8 @@ Create a `.env` file in the crawler directory:
 PGSQL_URL=postgresql://username:password@localhost:5432/autoscout24_trends
 RESEND_API_KEY=re_YourApiKeyFromResendCom
 ```
+
+The email recipient is configured in the frontend Settings page (`/settings`).
 
 ## Usage
 
@@ -92,6 +95,13 @@ crontab -e
 0 0 * * * /path/to/crawler/run-spiders.sh >> $HOME/.local/state/autoscout24-trends/cron.log 2>&1
 ```
 
+## Headless Linux tips
+
+When running the crawler headless with Xvfb on a Linux server, you may want to record or inspect browser sessions for debugging. See the [Tips for headless Linux environments](https://github.com/nyg/scrapy-seleniumbase-cdp#tips-for-headless-linux-environments) section in the `scrapy-seleniumbase-cdp` README for instructions on:
+
+- **Recording an Xvfb session** with `ffmpeg`
+- **Connecting via VNC** to a live Xvfb session with `x11vnc`
+
 ## Migration
 
 If upgrading from the file-based search configuration (`.env` files in `searches/`), run the migration script:
@@ -116,11 +126,11 @@ crawler/
 │   │   └── search.py    # Main spider
 │   ├── items.py         # Scrapy item definitions
 │   ├── pipelines.py     # PostgreSQL pipeline
-│   ├── exporters.py     # CSV exporter
-│   ├── extensions.py    # Email extension (currently disabled)
+│   ├── email.py         # Batch summary email
+│   ├── extensions.py    # Search run tracking extension
 │   └── settings.py      # Scrapy settings
 ├── migrations/          # Database migration scripts
-├── output/              # Generated CSV exports and screenshots
+├── output/              # Screenshots (runtime output)
 ├── SCHEMA.sql           # PostgreSQL schema
 ├── run-spiders.sh       # Shell wrapper: updates deps, runs run-spiders.py
 ├── run-spiders.py       # Runs all spiders in-process via CrawlerRunner

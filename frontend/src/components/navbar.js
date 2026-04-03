@@ -1,6 +1,6 @@
 import { fetchSearchNames } from '@/lib/data'
 import Link from 'next/link'
-import { SettingsIcon } from 'lucide-react'
+import { ActivityIcon, SettingsIcon } from 'lucide-react'
 import SearchDropdown from '@/components/search-dropdown'
 
 function GithubIcon(props) {
@@ -23,6 +23,13 @@ export default async function NavBar() {
             </Link>
             <nav className="flex items-center gap-4">
                <SearchDropdown searches={searches} />
+               <Link
+                  href="/search-runs"
+                  aria-label="Search Runs"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+               >
+                  <ActivityIcon className="size-4" />
+               </Link>
                <Link
                   href="/settings"
                   aria-label="Settings"

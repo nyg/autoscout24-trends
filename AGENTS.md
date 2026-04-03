@@ -5,12 +5,13 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 ## Repo map
 - This repo has two coupled parts: `crawler/` scrapes AutoScout24 into PostgreSQL, and `frontend/` reads the same DB directly to render charts/tables.
 - The main cross-component contract is the PostgreSQL schema in `crawler/SCHEMA.sql` plus the `searches`, `search_runs` tables and `search_id`/`search_run_id` semantics used by both `crawler/autoscout/pipelines.py` and `frontend/src/lib/data.js`.
-- Generated artifacts live in `crawler/output/` (CSV exports, screenshots). Treat that directory as runtime output, not source.
+- Generated artifacts live in `crawler/output/` (screenshots). Treat that directory as runtime output, not source.
 
 ## Fast paths
 - Crawler entrypoint: `crawler/autoscout/spiders/search.py`
 - DB writes: `crawler/autoscout/pipelines.py`
-- CSV/email post-processing: `crawler/autoscout/exporters.py`, `crawler/autoscout/extensions.py` (email currently disabled)
+- Batch summary email: `crawler/autoscout/email.py`
+- Search run tracking: `crawler/autoscout/extensions.py`
 - Frontend DB queries: `frontend/src/lib/data.js`
 - Frontend Server Actions (search CRUD): `frontend/src/lib/actions.js`
 - Main UI route: `frontend/src/app/search/[searchName]/page.js`
@@ -30,12 +31,11 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 ## Crawler architecture and patterns
 - `SearchSpider` loads a search config from the `searches` database table by `search_id`. It connects to the DB at init time to fetch the search `name` and `url`.
 - Search result pages yield `CarPageRequest`s; car detail pages are parsed from Next.js flight data via `njsparser`, not from visible HTML. Keep `_extract_flight_data()` in `search.py` in sync with site structure changes.
-- The spider yields `SellerItem` before `CarItem`; `CarWithSellerCsvItemExporter` depends on that ordering to merge seller fields into exported car rows.
-- `PostgreSQLPipeline` buffers sellers and cars separately, inserts sellers with `ON CONFLICT DO NOTHING`, then inserts cars with a shared `search_run_id` created by `SearchRunPipeline`.
+- The spider yields `SellerItem` before `CarItem`; the pipeline processes them in that order.
+- `PostgreSQLPipeline` buffers sellers and cars separately, inserts sellers with `ON CONFLICT DO NOTHING`, then inserts cars with a shared `search_run_id` created by `SearchRunExtension`.
 - `SearchRunExtension` (EXTENSIONS priority 500) creates a `search_runs` row on `spider_opened` and updates it with final stats on `spider_closed`. It publishes `search_run_id` to Scrapy stats so `PostgreSQLPipeline` can read it.
 - If you add/remove car fields, update all of these together: `crawler/autoscout/items.py`, `crawler/autoscout/pipelines.py`, `crawler/SCHEMA.sql`, and any frontend queries/components that read the field.
-- Output CSV filenames are generated through `FEEDS` + `FEED_URI_PARAMS` in `crawler/autoscout/settings.py`; the filename uses a sanitized `search_name` (from `spider.search_name` attribute).
-- Per-search email sending is currently disabled in `EmailAfterFeedExport`. The extension stub remains for future daily summary email work.
+- A batch summary email is sent after all spiders finish in `run-spiders.py`. The email logic lives in `crawler/autoscout/email.py` and uses the Resend SDK. It queries the `search_runs` table for stats. The recipient address is read from the `config` database table (key `email-recipient`, set in the frontend Settings page). Configure `RESEND_API_KEY` in `.env` to enable it.
 - The `cars` table uses `search_id` (FK to `searches.id`) and `search_run_id` (FK to `search_runs.id`). `search_id` is kept for query convenience. Renaming a search in the `searches` table automatically propagates to all historical car data.
 
 ## Frontend architecture and patterns
@@ -58,7 +58,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 ## Settings page (`/settings`)
 - The settings page is a server component that fetches searches from the database and renders two sections:
   - **SearchManager** (`search-manager.js`): CRUD for search configurations (name, URL, active toggle). Uses Server Actions from `actions.js`.
-  - **ClientSettings** (`client-settings.js`): Google Maps API key and home address stored in localStorage.
+  - **ClientSettings** (`client-settings.js`): Google Maps API key, home address, and email recipient. Settings are stored in the database `config` table via the `updateConfig` server action.
 - Maps API key is consumed by `place-details.js` via `useSyncExternalStore` in `cars.js`.
 - Home address is consumed by the directions link in `SellerCell` via `useSyncExternalStore`.
 - Does not dispatch custom events itself; components that depend on these values read them from localStorage (e.g. via `useSyncExternalStore`) for same-tab sync.
@@ -82,7 +82,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 ## Integration pitfalls to remember
 - `frontend/src/lib/data.js` connects with `postgres(process.env.PGSQL_URL)`, so frontend pages require the same DB env var as the crawler.
 - Search names are user-facing labels stored in DB; do not replace them with slugified values in queries or routes.
-- When changing seller/car relationships, remember the exporter and frontend both assume seller data is joinable by `seller_id`.
+- When changing seller/car relationships, remember the frontend assumes seller data is joinable by `seller_id`.
 - Do not "clean up" `crawler/output/` unless the task is explicitly about runtime data/configuration.
 - localStorage keys used by the frontend: `'car-table-visible-columns'`, `'google-maps-api-key'`, `'home-address'`. Avoid collisions.
 - Seller types are only `'professional'` and `'private'`. Maps place details are only shown for professional sellers. Address building differs by type: private → "address, zip_code city", professional → "name, address, zip_code city".

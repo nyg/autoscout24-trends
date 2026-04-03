@@ -94,3 +94,30 @@ export async function toggleSearchActive(prevState, formData) {
       return { error: 'Failed to update search.' }
    }
 }
+
+export async function updateConfig(prevState, formData) {
+   const entries = []
+   for (const [key, value] of formData.entries()) {
+      if (key.startsWith('config:')) {
+         entries.push({ key: key.slice('config:'.length), value: value.toString().trim() })
+      }
+   }
+
+   if (entries.length === 0) {
+      return { error: 'No config values provided.' }
+   }
+
+   try {
+      await pgSql.begin(async pgSql => {
+         for (const { key, value } of entries) {
+            await pgSql`
+               insert into config (key, value) values (${key}, ${value})
+               on conflict (key) do update set value = ${value}`
+         }
+      })
+      revalidatePath('/settings')
+      return { success: true }
+   } catch {
+      return { error: 'Failed to save settings.' }
+   }
+}

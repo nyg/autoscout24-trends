@@ -10,6 +10,15 @@ export async function fetchSearchNames() {
    return pgSql`select id, name from searches order by name`
 }
 
+export async function fetchConfig() {
+   try {
+      const rows = await pgSql`select key, value from config`
+      return Object.fromEntries(rows.map(r => [r.key, r.value]))
+   } catch {
+      return {}
+   }
+}
+
 export async function fetchActiveListings(searchName) {
    return pgSql`
       select c.id, c.search_id, c.url, c.date_in, c.title, c.subtitle, c.description,
@@ -64,6 +73,22 @@ export async function fetchPreviousListings(searchName) {
           order by c.vehicle_id, c.search_run_id desc
       ) as prev
       order by price`
+}
+
+export async function fetchSearchRuns(searchName) {
+   const filter = searchName
+      ? pgSql`where s.name = ${searchName}`
+      : pgSql``
+   return pgSql`
+      select sr.id, s.name search_name,
+             sr.started_at, sr.finished_at,
+             sr.finish_reason, sr.success,
+             sr.cars_found, sr.cars_scraped,
+             sr.request_count, sr.failed_request_count
+        from search_runs sr
+       inner join searches s on sr.search_id = s.id
+       ${filter}
+       order by sr.started_at desc`
 }
 
 export async function fetchDailyListingCount(searchName) {

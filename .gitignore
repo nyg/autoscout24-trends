@@ -19,3 +19,4 @@ __pycache__
 *.env
 downloaded_files
 output
+crawler/main_fd.json

@@ -134,3 +134,13 @@ ALTER TABLE ONLY public.cars
 
 ALTER TABLE ONLY public.cars
     ADD CONSTRAINT cars_seller_id_fkey FOREIGN KEY (seller_id) REFERENCES public.sellers(id);
+
+
+CREATE TABLE public.config (
+    key text NOT NULL,
+    value text NOT NULL DEFAULT ''
+);
+
+
+ALTER TABLE ONLY public.config
+    ADD CONSTRAINT config_pkey PRIMARY KEY (key);
