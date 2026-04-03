@@ -3,18 +3,6 @@ from datetime import datetime
 from scrapy import Item, Field
 
 
-def format_bool(value):
-    return 'Yes' if value else 'No'
-
-
-def format_datetime(value):
-    return value.strftime('%Y-%m-%d %H:%M:%S')
-
-
-def format_date(value):
-    return value.date().isoformat()
-
-
 def parse_iso_datetime(value):
     try:
         return datetime.fromisoformat(value)
@@ -39,8 +27,8 @@ class CarItem(Item):
     body_type = Field()
     color = Field()
     mileage = Field()
-    has_additional_set_of_tires = Field(type=bool, serializer=format_bool)
-    had_accident = Field(type=bool, serializer=format_bool)
+    has_additional_set_of_tires = Field()
+    had_accident = Field()
 
     fuel_type = Field()
     kilo_watts = Field()
@@ -50,26 +38,15 @@ class CarItem(Item):
     avg_consumption = Field()
     co2_emission = Field()
 
-    warranty = Field(type=bool, serializer=format_bool)
-    leasing = Field(type=bool, serializer=format_bool)
+    warranty = Field()
+    leasing = Field()
 
-    created_date = Field(type=datetime, serializer=format_datetime)
-    last_modified_date = Field(type=datetime, serializer=format_datetime)
-    first_registration_date = Field(type=datetime, serializer=format_date)
-    last_inspection_date = Field(type=datetime, serializer=format_date)
+    created_date = Field()
+    last_modified_date = Field()
+    first_registration_date = Field()
+    last_inspection_date = Field()
 
     seller_id = Field()
-
-    def merge_with(self, seller):
-        car = dict(self)
-        car.pop('search_id')
-        car.pop('seller_id')
-
-        car['seller_name'] = seller['name']
-        car['seller_zip_code'] = seller['zip_code']
-        car['seller_city'] = seller['city']
-
-        return car
 
     def __repr__(self):
         return repr({
