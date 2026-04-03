@@ -65,10 +65,10 @@ DOWNLOADER_MIDDLEWARES = {
 EXTENSIONS = {
     'scrapy.extensions.logstats.LogStats': None,
     'autoscout.extensions.EmailAfterFeedExport': 1,
+    'autoscout.pipelines.SearchRunExtension': 500,
 }
 
 ITEM_PIPELINES = {
-    'autoscout.pipelines.SearchRunPipeline': 100,
     'autoscout.pipelines.ItemTypeStatsPipeline': 200,
     'autoscout.pipelines.PostgreSQLPipeline': 300,
 }

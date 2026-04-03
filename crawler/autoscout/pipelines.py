@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import psycopg
 from psycopg import sql
 from psycopg.types.json import Jsonb
+from scrapy import signals
 
 from .items import CarItem, SellerItem
 
@@ -94,8 +95,12 @@ class PostgreSQLPipeline:
                     self.car_buffer.clear()
 
 
-class SearchRunPipeline:
-    """Records each spider run in the search_runs table with stats."""
+class SearchRunExtension:
+    """Records each spider run in the search_runs table with stats.
+
+    Uses spider_opened/spider_closed signals (not pipeline open/close_spider)
+    so that CoreStats has already set finish_time, finish_reason, etc.
+    """
 
     def __init__(self, crawler):
         self.crawler = crawler
@@ -104,9 +109,12 @@ class SearchRunPipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(crawler)
+        ext = cls(crawler)
+        crawler.signals.connect(ext.spider_opened, signal=signals.spider_opened)
+        crawler.signals.connect(ext.spider_closed, signal=signals.spider_closed)
+        return ext
 
-    def open_spider(self):
+    def spider_opened(self):
         """Create a search_runs row and publish search_run_id to Scrapy stats."""
         self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
         with self.connection.transaction():
@@ -118,14 +126,14 @@ class SearchRunPipeline:
         self.crawler.stats.set_value('search_run_id', self.search_run_id)
         self.crawler.spider.logger.info(f'Created search run {self.search_run_id}')
 
-    def close_spider(self):
+    def spider_closed(self):
         """Update the search_runs row with final stats."""
         try:
             stats = self.crawler.stats.get_stats()
 
             cars_scraped = stats.get('db/cars_inserted', 0)
             failed_request_count = len(self.crawler.spider.failed_requests)
-            request_count = stats.get('downloader/request_count', 0)
+            request_count = stats.get('response_received_count', 0)
             error_count = stats.get('log_count/ERROR', 0)
             finish_reason = stats.get('finish_reason', 'unknown')
             success = finish_reason == 'finished' and failed_request_count == 0 and error_count == 0
@@ -158,9 +166,6 @@ class SearchRunPipeline:
         finally:
             if self.connection:
                 self.connection.close()
-
-    def process_item(self, item):
-        return item
 
 
 class ItemTypeStatsPipeline:

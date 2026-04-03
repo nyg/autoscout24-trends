@@ -32,7 +32,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Search result pages yield `CarPageRequest`s; car detail pages are parsed from Next.js flight data via `njsparser`, not from visible HTML. Keep `_extract_flight_data()` in `search.py` in sync with site structure changes.
 - The spider yields `SellerItem` before `CarItem`; `CarWithSellerCsvItemExporter` depends on that ordering to merge seller fields into exported car rows.
 - `PostgreSQLPipeline` buffers sellers and cars separately, inserts sellers with `ON CONFLICT DO NOTHING`, then inserts cars with a shared `search_run_id` created by `SearchRunPipeline`.
-- `SearchRunPipeline` (priority 400) creates a `search_runs` row in `open_spider()` and updates it with final stats in `close_spider()`. It publishes `search_run_id` to Scrapy stats so `PostgreSQLPipeline` can read it.
+- `SearchRunExtension` (EXTENSIONS priority 500) creates a `search_runs` row on `spider_opened` and updates it with final stats on `spider_closed`. It publishes `search_run_id` to Scrapy stats so `PostgreSQLPipeline` can read it.
 - If you add/remove car fields, update all of these together: `crawler/autoscout/items.py`, `crawler/autoscout/pipelines.py`, `crawler/SCHEMA.sql`, and any frontend queries/components that read the field.
 - Output CSV filenames are generated through `FEEDS` + `FEED_URI_PARAMS` in `crawler/autoscout/settings.py`; the filename uses a sanitized `search_name` (from `spider.search_name` attribute).
 - Per-search email sending is currently disabled in `EmailAfterFeedExport`. The extension stub remains for future daily summary email work.
