@@ -7,6 +7,7 @@
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Headless Linux tips](#headless-linux-tips)
 - [Migration](#migration)
 - [Project Structure](#project-structure)
 
@@ -92,6 +93,13 @@ crontab -e
 ```cron
 0 0 * * * /path/to/crawler/run-spiders.sh >> $HOME/.local/state/autoscout24-trends/cron.log 2>&1
 ```
+
+## Headless Linux tips
+
+When running the crawler headless with Xvfb on a Linux server, you may want to record or inspect browser sessions for debugging. See the [Tips for headless Linux environments](https://github.com/nyg/scrapy-seleniumbase-cdp#tips-for-headless-linux-environments) section in the `scrapy-seleniumbase-cdp` README for instructions on:
+
+- **Recording an Xvfb session** with `ffmpeg`
+- **Connecting via VNC** to a live Xvfb session with `x11vnc`
 
 ## Migration
 
