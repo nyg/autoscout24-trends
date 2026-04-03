@@ -68,6 +68,7 @@ EXTENSIONS = {
 }
 
 ITEM_PIPELINES = {
+    'autoscout.pipelines.SearchRunPipeline': 100,
     'autoscout.pipelines.ItemTypeStatsPipeline': 200,
     'autoscout.pipelines.PostgreSQLPipeline': 300,
 }

@@ -18,6 +18,31 @@ ALTER TABLE public.searches ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
 );
 
 
+CREATE TABLE public.search_runs (
+    id integer NOT NULL,
+    search_id integer NOT NULL,
+    started_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    finished_at timestamp without time zone,
+    finish_reason text,
+    success boolean,
+    cars_found integer,
+    cars_scraped integer,
+    request_count integer,
+    failed_request_count integer,
+    stats jsonb
+);
+
+
+ALTER TABLE public.search_runs ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.search_runs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
 CREATE TABLE public.cars (
     id integer NOT NULL,
     search_id integer NOT NULL,
@@ -48,7 +73,7 @@ CREATE TABLE public.cars (
     first_registration_date date,
     last_inspection_date date,
     seller_id text,
-    batch_id integer NOT NULL,
+    search_run_id integer NOT NULL,
     cm3 integer,
     cylinder_layout text
 );
@@ -62,9 +87,6 @@ ALTER TABLE public.cars ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
     NO MAXVALUE
     CACHE 1
 );
-
-
-CREATE SEQUENCE car_batch_id_seq;
 
 
 CREATE TABLE public.sellers (
@@ -85,6 +107,10 @@ ALTER TABLE ONLY public.searches
     ADD CONSTRAINT searches_name_key UNIQUE (name);
 
 
+ALTER TABLE ONLY public.search_runs
+    ADD CONSTRAINT search_runs_pkey PRIMARY KEY (id);
+
+
 ALTER TABLE ONLY public.cars
     ADD CONSTRAINT cars_pkey PRIMARY KEY (id);
 
@@ -93,8 +119,16 @@ ALTER TABLE ONLY public.sellers
     ADD CONSTRAINT sellers_pkey PRIMARY KEY (id);
 
 
+ALTER TABLE ONLY public.search_runs
+    ADD CONSTRAINT search_runs_search_id_fkey FOREIGN KEY (search_id) REFERENCES public.searches(id);
+
+
 ALTER TABLE ONLY public.cars
     ADD CONSTRAINT cars_search_id_fkey FOREIGN KEY (search_id) REFERENCES public.searches(id);
+
+
+ALTER TABLE ONLY public.cars
+    ADD CONSTRAINT cars_search_run_id_fkey FOREIGN KEY (search_run_id) REFERENCES public.search_runs(id);
 
 
 ALTER TABLE ONLY public.cars

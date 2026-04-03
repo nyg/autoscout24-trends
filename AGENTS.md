@@ -4,7 +4,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 
 ## Repo map
 - This repo has two coupled parts: `crawler/` scrapes AutoScout24 into PostgreSQL, and `frontend/` reads the same DB directly to render charts/tables.
-- The main cross-component contract is the PostgreSQL schema in `crawler/SCHEMA.sql` plus the `searches` table, `search_id`/`batch_id` semantics used by both `crawler/autoscout/pipelines.py` and `frontend/src/lib/data.js`.
+- The main cross-component contract is the PostgreSQL schema in `crawler/SCHEMA.sql` plus the `searches`, `search_runs` tables and `search_id`/`search_run_id` semantics used by both `crawler/autoscout/pipelines.py` and `frontend/src/lib/data.js`.
 - Generated artifacts live in `crawler/output/` (CSV exports, screenshots). Treat that directory as runtime output, not source.
 
 ## Fast paths
@@ -31,17 +31,18 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - `SearchSpider` loads a search config from the `searches` database table by `search_id`. It connects to the DB at init time to fetch the search `name` and `url`.
 - Search result pages yield `CarPageRequest`s; car detail pages are parsed from Next.js flight data via `njsparser`, not from visible HTML. Keep `_extract_flight_data()` in `search.py` in sync with site structure changes.
 - The spider yields `SellerItem` before `CarItem`; `CarWithSellerCsvItemExporter` depends on that ordering to merge seller fields into exported car rows.
-- `PostgreSQLPipeline` buffers sellers and cars separately, inserts sellers with `ON CONFLICT DO NOTHING`, then inserts cars with a shared `batch_id` fetched once per spider run.
+- `PostgreSQLPipeline` buffers sellers and cars separately, inserts sellers with `ON CONFLICT DO NOTHING`, then inserts cars with a shared `search_run_id` created by `SearchRunPipeline`.
+- `SearchRunPipeline` (priority 400) creates a `search_runs` row in `open_spider()` and updates it with final stats in `close_spider()`. It publishes `search_run_id` to Scrapy stats so `PostgreSQLPipeline` can read it.
 - If you add/remove car fields, update all of these together: `crawler/autoscout/items.py`, `crawler/autoscout/pipelines.py`, `crawler/SCHEMA.sql`, and any frontend queries/components that read the field.
 - Output CSV filenames are generated through `FEEDS` + `FEED_URI_PARAMS` in `crawler/autoscout/settings.py`; the filename uses a sanitized `search_name` (from `spider.search_name` attribute).
 - Per-search email sending is currently disabled in `EmailAfterFeedExport`. The extension stub remains for future daily summary email work.
-- The `cars` table uses `search_id` (FK to `searches.id`) instead of a text `search_name`. Renaming a search in the `searches` table automatically propagates to all historical car data.
+- The `cars` table uses `search_id` (FK to `searches.id`) and `search_run_id` (FK to `search_runs.id`). `search_id` is kept for query convenience. Renaming a search in the `searches` table automatically propagates to all historical car data.
 
 ## Frontend architecture and patterns
 - The frontend uses App Router server components for data fetching and passes unresolved promises into client components, which call `use(data)` (`cars.js`, `daily-listing-count.js`, `mileage-price-comparison.js`). Preserve that pattern when adding new visualizations.
 - `frontend/src/lib/data.js` owns all SQL reads. `frontend/src/lib/actions.js` owns all SQL writes (Server Actions for search CRUD). Prefer extending queries in these files instead of embedding SQL in pages/components.
 - Route params are URL-encoded search names. `navbar.js` links with `encodeURIComponent(search.name)` and `search/[searchName]/page.js` decodes them before querying.
-- "Active listings" means rows from the latest `batch_id` for a given search; "Previous listings" means the most recent older row per `vehicle_id` that is absent from the latest batch.
+- "Active listings" means rows from the latest `search_run_id` for a given search; "Previous listings" means the most recent older row per `vehicle_id` that is absent from the latest run.
 - All car queries join through the `searches` table via `cars.search_id` and filter by `searches.name`.
 - The daily chart aggregates by `date_in`, not by listing creation time.
 - Styling uses Tailwind utility classes with local UI primitives under `frontend/src/components/ui/`; avoid introducing a second styling system.

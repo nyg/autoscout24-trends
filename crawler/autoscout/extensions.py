@@ -54,29 +54,6 @@ class EmailAfterFeedExport:
     def output_file_written(self, slot: FeedSlot):
         self.spider.logger.info('Per-search email disabled, skipping')
 
-    def _build_stats(self):
-        responses_by_status = {
-            int(key.split('/')[2]): value
-            for key, value in self.stats.items()
-            if key.startswith('downloader/response_status_count/')
-        }
-
-        return {
-            'start_time': self.stats['start_time'],
-            'finish_time': self.stats['finish_time'],
-            'elapsed_time': self.stats['elapsed_time_seconds'],
-            'status': self.stats['finish_reason'],
-            'cars_scraped': self.stats.get('item_scraped_count/CarItem', 0),
-            'sellers_scraped': self.stats.get('item_scraped_count/SellerItem', 0),
-            'responses_by_status': responses_by_status,
-            'failed_requests': len(responses_by_status.keys() - {200}),
-            'error_logs': self.stats.get('log_count/ERROR', 0),
-        }
-
-    def _build_subject(self, stats):
-        errors_detected = ' (errors detected!)' if stats['error_logs'] or stats['failed_requests'] else ''
-        return f'{stats['cars_scraped']} car(s) scraped for {self.spider.search_name}{errors_detected}'
-
     @staticmethod
     def _create_attachments(filepath):
         file = Path(filepath)
