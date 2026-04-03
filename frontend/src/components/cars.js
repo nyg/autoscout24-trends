@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import PlaceDetails from '@/components/place-details'
 import {
-   ArrowDownIcon, ArrowUpIcon,
+   ArrowDownIcon, ArrowUpIcon, CameraIcon,
    MapIcon, MapPinIcon, NavigationIcon, SlidersHorizontalIcon
 } from 'lucide-react'
 
@@ -45,11 +45,10 @@ const COLUMNS = [
    { key: 'leasing', label: 'Leasing', sortType: 'text', sortKey: 'leasing', align: 'right', defaultVisible: false },
    { key: 'last_inspection_date', label: 'Last inspection', sortType: 'date', sortKey: 'last_inspection_date', align: 'right', defaultVisible: false },
    { key: 'seller_type', label: 'Seller type', sortType: 'text', sortKey: 'seller_type', align: 'right', defaultVisible: false },
+   { key: 'screenshot', label: 'Screenshot', sortType: null, sortKey: null, align: 'center', defaultVisible: false },
 ]
 
 const VISIBILITY_STORAGE_KEY = 'car-table-visible-columns'
-const MAPS_API_KEY_STORAGE_KEY = 'google-maps-api-key'
-const HOME_ADDRESS_STORAGE_KEY = 'home-address'
 
 function getDefaultVisibleKeys() {
    return COLUMNS.filter(c => c.defaultVisible).map(c => c.key)
@@ -115,25 +114,6 @@ function getVisibleColumnsServerSnapshot() {
    return defaultVisibleKeys
 }
 
-function createStorageHook(storageKey) {
-   const subscribe = (callback) => {
-      window.addEventListener('storage', callback)
-      return () => window.removeEventListener('storage', callback)
-   }
-   const getSnapshot = () => {
-      try {
-         return localStorage.getItem(storageKey) || ''
-      } catch {
-         return ''
-      }
-   }
-   const getServerSnapshot = () => ''
-   return () => useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
-}
-
-const useMapsApiKey = createStorageHook(MAPS_API_KEY_STORAGE_KEY)
-const useHomeAddress = createStorageHook(HOME_ADDRESS_STORAGE_KEY)
-
 
 // --- Sorting ---
 
@@ -195,9 +175,7 @@ function TruncatedText({ text, maxLength, className, scrollable = false }) {
 
 // --- Seller cell ---
 
-function SellerCell({ car }) {
-   const mapsApiKey = useMapsApiKey()
-   const homeAddress = useHomeAddress()
+function SellerCell({ car, mapsApiKey, homeAddress }) {
    const address = buildAddress(car)
    const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
    const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(homeAddress)}&destination=${encodeURIComponent(address)}`
@@ -291,7 +269,7 @@ function MapPreviewButton({ car, apiKey }) {
 
 // --- Cell renderers ---
 
-function renderCell(col, car, options) {
+function renderCell(col, car, options, config) {
    switch (col.key) {
       case 'title': {
          const desc = car.subtitle || car.description || '-'
@@ -334,7 +312,7 @@ function renderCell(col, car, options) {
       case 'km_year':
          return <TableCell key={col.key} className="text-right tabular-nums" suppressHydrationWarning>{asDecimal(car.km_year)}</TableCell>
       case 'seller':
-         return <TableCell key={col.key} className="text-right"><SellerCell car={car} /></TableCell>
+         return <TableCell key={col.key} className="text-right"><SellerCell car={car} mapsApiKey={config['google-maps-api-key']} homeAddress={config['home-address']} /></TableCell>
       case 'listed_since':
          return (
             <TableCell key={col.key} className="text-right tabular-nums" suppressHydrationWarning>
@@ -356,6 +334,26 @@ function renderCell(col, car, options) {
       case 'co2_emission':
       case 'cylinders':
          return <TableCell key={col.key} className="text-right tabular-nums">{car[col.sortKey] != null ? asDecimal(car[col.sortKey]) : '-'}</TableCell>
+      case 'screenshot':
+         return (
+            <TableCell key={col.key} className="text-center">
+               {car.screenshot_url ? (
+                  <a
+                     href={car.screenshot_url}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex"
+                     title="View screenshot"
+                  >
+                     <CameraIcon className="size-4" />
+                  </a>
+               ) : (
+                  <span className="text-muted-foreground/40 inline-flex">
+                     <CameraIcon className="size-4" />
+                  </span>
+               )}
+            </TableCell>
+         )
       default:
          return <TableCell key={col.key} className="text-right">{car[col.sortKey] ?? '-'}</TableCell>
    }
@@ -364,7 +362,7 @@ function renderCell(col, car, options) {
 
 // --- Main component ---
 
-export default function Cars({ name, data, options = {} }) {
+export default function Cars({ name, data, options = {}, config = {} }) {
    const cars = use(data)
 
    // Force re-render after hydration so client locale formatters take effect
@@ -436,8 +434,8 @@ export default function Cars({ name, data, options = {} }) {
                      {visibleColumns.map(col => (
                         <TableHead
                            key={col.key}
-                           className={`${col.align === 'right' ? 'text-right' : ''} cursor-pointer select-none hover:bg-muted/50 transition-colors`}
-                           onClick={() => handleSort(col.key)}
+                           className={`${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''} ${col.sortKey ? 'cursor-pointer hover:bg-muted/50' : ''} select-none transition-colors`}
+                           onClick={col.sortKey ? () => handleSort(col.key) : undefined}
                         >
                            <span className="inline-flex items-center gap-1">
                               {col.key === 'listed_since' && options.listingEnded ? 'Listing duration' : col.label}
@@ -454,7 +452,7 @@ export default function Cars({ name, data, options = {} }) {
                <TableBody>
                   {sortedCars.map(car => (
                      <TableRow key={car.id}>
-                        {visibleColumns.map(col => renderCell(col, car, options))}
+                        {visibleColumns.map(col => renderCell(col, car, options, config))}
                      </TableRow>
                   ))}
                </TableBody>

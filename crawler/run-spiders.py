@@ -16,6 +16,7 @@ import logging
 import os
 import sys
 import warnings
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Suppress the Pydantic V1 compatibility warning emitted by itemadapter on
@@ -39,10 +40,10 @@ from scrapy.utils.log import configure_logging  # noqa: E402
 from scrapy.utils.project import get_project_settings  # noqa: E402
 from twisted.internet import defer, reactor  # noqa: E402
 
+from autoscout.email import send_batch_summary_email  # noqa: E402
 from autoscout.spiders.search import SearchSpider  # noqa: E402
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-OUTPUT_DIR = SCRIPT_DIR / 'output'
 
 log = logging.getLogger(__name__)
 
@@ -56,11 +57,9 @@ def _parse_id_filter(argv):
 
 
 def main():
-    # Anchor the working directory so relative paths used by the feed settings
-    # (output/<name>.csv) resolve correctly, regardless of where this script
-    # is invoked from.
+    # Anchor the working directory so Scrapy finds the project settings,
+    # regardless of where this script is invoked from.
     os.chdir(SCRIPT_DIR)
-    OUTPUT_DIR.mkdir(exist_ok=True)
 
     settings = get_project_settings()
 
@@ -86,6 +85,7 @@ def main():
     # CrawlerRunner, unlike CrawlerProcess, does not own the reactor lifecycle.
     # We start it manually below and stop it once all crawlers have finished.
     runner = CrawlerRunner(settings)
+    batch_started_at = datetime.now(timezone.utc)
 
     @defer.inlineCallbacks
     def crawl_all():
@@ -96,6 +96,7 @@ def main():
         except Exception:
             log.exception('Spider run failed')
         finally:
+            send_batch_summary_email(batch_started_at, [s[0] for s in searches])
             reactor.stop()
 
     d = crawl_all()  # noqa: F841 – hold a reference so Twisted won't GC the deferred

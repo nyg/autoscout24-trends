@@ -1,6 +1,4 @@
 import logging
-import re
-from datetime import datetime
 
 from dotenv import load_dotenv
 
@@ -23,27 +21,7 @@ LOG_LEVEL = 'INFO'
 TWISTED_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
 
 
-def customize_params(params, spider):
-    params['search_name'] = re.sub(r'\W+', '_', params['search_name']).lower().strip('_')
-    params['time'] = datetime.now().strftime('%Y-%m-%dT%H-%M-%SZ')
-    return params
-
-
-FEED_URI_PARAMS = customize_params
-
-FEED_EXPORTERS = {
-    'csv': 'autoscout.exporters.CarWithSellerCsvItemExporter'
-}
-
-FEEDS = {
-    'output/%(name)s_%(search_name)s_%(time)s.csv': {
-        'format': 'csv',
-        'encoding': 'utf8',
-        'store_empty': True,
-    },
-}
-
-screen_resolution = '1440,900'
+screen_resolution = '1026,720'
 SELENIUMBASE_BROWSER_OPTIONS = {
     'ad_block': True,
     'use_chromium': True,
@@ -64,11 +42,11 @@ DOWNLOADER_MIDDLEWARES = {
 
 EXTENSIONS = {
     'scrapy.extensions.logstats.LogStats': None,
-    'autoscout.extensions.EmailAfterFeedExport': 1,
     'autoscout.extensions.SearchRunExtension': 500,
 }
 
 ITEM_PIPELINES = {
     'autoscout.pipelines.ItemTypeStatsPipeline': 200,
+    'autoscout.pipelines.ScreenshotPipeline': 250,
     'autoscout.pipelines.PostgreSQLPipeline': 300,
 }
