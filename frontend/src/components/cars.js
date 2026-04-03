@@ -348,7 +348,7 @@ function renderCell(col, car, options, config) {
                      <CameraIcon className="size-4" />
                   </a>
                ) : (
-                  <span className="text-muted-foreground/40">
+                  <span className="text-muted-foreground/40 inline-flex">
                      <CameraIcon className="size-4" />
                   </span>
                )}

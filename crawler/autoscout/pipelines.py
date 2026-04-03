@@ -109,6 +109,13 @@ class ScreenshotPipeline:
         from PIL import Image
         img = Image.open(io.BytesIO(png_data))
         width, height = img.size
+        # WebP format limit: max 16383px in either dimension
+        max_dim = 16383
+        if width > max_dim or height > max_dim:
+            scale = min(max_dim / width, max_dim / height)
+            width = int(width * scale)
+            height = int(height * scale)
+            img = img.resize((width, height), Image.LANCZOS)
         webp_buffer = io.BytesIO()
         img.save(webp_buffer, format='WebP', quality=80)
         return webp_buffer.getvalue(), width, height, len(png_data)
