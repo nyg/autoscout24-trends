@@ -18,8 +18,8 @@ export async function fetchActiveListings(searchName) {
         from cars c
        inner join sellers se on c.seller_id = se.id
        inner join searches s on c.search_id = s.id
-       where c.batch_id = (
-          select max(c2.batch_id)
+       where c.search_run_id = (
+          select max(c2.search_run_id)
             from cars c2
            inner join searches s2 on c2.search_id = s2.id
            where s2.name = ${searchName}
@@ -29,8 +29,8 @@ export async function fetchActiveListings(searchName) {
 
 export async function fetchPreviousListings(searchName) {
    return pgSql`
-      with latest_batch as (
-         select max(c2.batch_id) batch_id
+      with latest_run as (
+         select max(c2.search_run_id) search_run_id
            from cars c2
           inner join searches s2 on c2.search_id = s2.id
           where s2.name = ${searchName}
@@ -47,10 +47,10 @@ export async function fetchPreviousListings(searchName) {
                 select 1 from cars l
                  inner join searches ls on l.search_id = ls.id
                  where ls.name = ${searchName}
-                   and l.batch_id = (select batch_id from latest_batch)
+                   and l.search_run_id = (select search_run_id from latest_run)
                    and l.vehicle_id = c.vehicle_id
             )
-          order by c.vehicle_id, c.batch_id desc
+          order by c.vehicle_id, c.search_run_id desc
       ) as prev
       order by price`
 }
