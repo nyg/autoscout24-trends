@@ -105,17 +105,17 @@ class SearchRunPipeline:
     def from_crawler(cls, crawler):
         return cls(crawler)
 
-    def open_spider(self, spider):
+    def open_spider(self):
         """Create a search_runs row and publish search_run_id to Scrapy stats."""
         self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
         with self.connection.transaction():
             with self.connection.cursor() as cursor:
                 (self.search_run_id,) = cursor.execute(
                     'INSERT INTO search_runs (search_id, started_at) VALUES (%s, %s) RETURNING id',
-                    (spider.search_id, self.crawler.stats.get_value('start_time'))
+                    (self.crawler.spider.search_id, self.crawler.stats.get_value('start_time'))
                 ).fetchone()
         self.crawler.stats.set_value('search_run_id', self.search_run_id)
-        spider.logger.info(f'Created search run {self.search_run_id}')
+        self.crawler.spider.logger.info(f'Created search run {self.search_run_id}')
 
     def close_spider(self):
         """Update the search_runs row with final stats."""
