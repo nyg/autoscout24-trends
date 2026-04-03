@@ -20,3 +20,4 @@ __pycache__
 downloaded_files
 output
 crawler/main_fd.json
+.playwright-mcp

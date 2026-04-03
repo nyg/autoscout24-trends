@@ -21,7 +21,7 @@ LOG_LEVEL = 'INFO'
 TWISTED_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
 
 
-screen_resolution = '1440,900'
+screen_resolution = '1026,720'
 SELENIUMBASE_BROWSER_OPTIONS = {
     'ad_block': True,
     'use_chromium': True,
