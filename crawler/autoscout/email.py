@@ -41,18 +41,26 @@ def _format_duration(start, end):
 def send_batch_summary_email(batch_started_at, search_ids):
     """Send a summary email for search runs started after batch_started_at.
 
-    Silently skips if RESEND_API_KEY or BATCH_EMAIL_TO are not configured.
+    Silently skips if RESEND_API_KEY is not set or no email recipient is
+    configured in the database config table.
     """
     api_key = os.environ.get('RESEND_API_KEY', '')
-    email_to = os.environ.get('BATCH_EMAIL_TO', '')
-
-    if not api_key or not email_to:
-        log.info('Batch email skipped (RESEND_API_KEY or BATCH_EMAIL_TO not set)')
+    if not api_key:
+        log.info('Batch email skipped (RESEND_API_KEY not set)')
         return
 
     try:
         with psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1) as conn:
             with conn.cursor() as cur:
+                row = cur.execute(
+                    "SELECT value FROM config WHERE key = 'email-recipient'"
+                ).fetchone()
+                email_to = (row[0] or '').strip() if row else ''
+
+                if not email_to:
+                    log.info('Batch email skipped (no email-recipient in config table)')
+                    return
+
                 rows = cur.execute('''
                     SELECT s.name, sr.success, sr.cars_found, sr.cars_scraped,
                            sr.request_count, sr.failed_request_count,

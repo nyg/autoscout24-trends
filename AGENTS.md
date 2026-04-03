@@ -35,7 +35,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - `PostgreSQLPipeline` buffers sellers and cars separately, inserts sellers with `ON CONFLICT DO NOTHING`, then inserts cars with a shared `search_run_id` created by `SearchRunExtension`.
 - `SearchRunExtension` (EXTENSIONS priority 500) creates a `search_runs` row on `spider_opened` and updates it with final stats on `spider_closed`. It publishes `search_run_id` to Scrapy stats so `PostgreSQLPipeline` can read it.
 - If you add/remove car fields, update all of these together: `crawler/autoscout/items.py`, `crawler/autoscout/pipelines.py`, `crawler/SCHEMA.sql`, and any frontend queries/components that read the field.
-- A batch summary email is sent after all spiders finish in `run-spiders.py`. The email logic lives in `crawler/autoscout/email.py` and uses the Resend SDK. It queries the `search_runs` table for stats. Configure `BATCH_EMAIL_TO` and `RESEND_API_KEY` in `.env` to enable it.
+- A batch summary email is sent after all spiders finish in `run-spiders.py`. The email logic lives in `crawler/autoscout/email.py` and uses the Resend SDK. It queries the `search_runs` table for stats. The recipient address is read from the `config` database table (key `email-recipient`, set in the frontend Settings page). Configure `RESEND_API_KEY` in `.env` to enable it.
 - The `cars` table uses `search_id` (FK to `searches.id`) and `search_run_id` (FK to `search_runs.id`). `search_id` is kept for query convenience. Renaming a search in the `searches` table automatically propagates to all historical car data.
 
 ## Frontend architecture and patterns
