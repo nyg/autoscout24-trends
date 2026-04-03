@@ -47,6 +47,8 @@ class CarItem(Item):
     last_inspection_date = Field()
 
     seller_id = Field()
+    screenshot = Field()
+    screenshot_id = Field()
 
     def __repr__(self):
         return repr({

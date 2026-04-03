@@ -75,7 +75,8 @@ CREATE TABLE public.cars (
     seller_id text,
     search_run_id integer NOT NULL,
     cm3 integer,
-    cylinder_layout text
+    cylinder_layout text,
+    screenshot_id integer
 );
 
 
@@ -133,6 +134,42 @@ ALTER TABLE ONLY public.cars
 
 ALTER TABLE ONLY public.cars
     ADD CONSTRAINT cars_seller_id_fkey FOREIGN KEY (seller_id) REFERENCES public.sellers(id);
+
+
+CREATE TABLE public.screenshots (
+    id integer NOT NULL,
+    md5_hash character(32) NOT NULL,
+    r2_key text NOT NULL,
+    r2_url text NOT NULL,
+    format text NOT NULL DEFAULT 'webp',
+    width integer,
+    height integer,
+    original_size integer,
+    compressed_size integer,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.screenshots ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.screenshots_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+ALTER TABLE ONLY public.screenshots
+    ADD CONSTRAINT screenshots_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.screenshots
+    ADD CONSTRAINT screenshots_md5_hash_key UNIQUE (md5_hash);
+
+
+ALTER TABLE ONLY public.cars
+    ADD CONSTRAINT cars_screenshot_id_fkey FOREIGN KEY (screenshot_id) REFERENCES public.screenshots(id);
 
 
 CREATE TABLE public.config (
