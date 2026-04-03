@@ -42,7 +42,6 @@ from twisted.internet import defer, reactor  # noqa: E402
 from autoscout.spiders.search import SearchSpider  # noqa: E402
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-OUTPUT_DIR = SCRIPT_DIR / 'output'
 
 log = logging.getLogger(__name__)
 
@@ -60,7 +59,6 @@ def main():
     # (output/<name>.csv) resolve correctly, regardless of where this script
     # is invoked from.
     os.chdir(SCRIPT_DIR)
-    OUTPUT_DIR.mkdir(exist_ok=True)
 
     settings = get_project_settings()
 
