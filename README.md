@@ -20,3 +20,10 @@ The system enables users to track car listings over time, analyze pricing trends
 - **Database Storage**: Persists car, seller, and search configuration data in PostgreSQL
 - **Data Visualization**: Interactive charts and tables for analyzing trends
 - **Search Management**: Configure and manage searches from the web UI
+
+## Headless Linux tips
+
+When running the crawler headless with Xvfb on a Linux server, you may want to record or inspect browser sessions for debugging. See the [Tips for headless Linux environments](https://github.com/nyg/scrapy-seleniumbase-cdp#tips-for-headless-linux-environments) section in the `scrapy-seleniumbase-cdp` README for instructions on:
+
+- **Recording an Xvfb session** with `ffmpeg`
+- **Connecting via VNC** to a live Xvfb session with `x11vnc`
