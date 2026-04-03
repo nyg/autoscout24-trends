@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 
 import psycopg
 from psycopg import sql
@@ -112,7 +113,7 @@ class SearchRunPipeline:
             with self.connection.cursor() as cursor:
                 (self.search_run_id,) = cursor.execute(
                     'INSERT INTO search_runs (search_id, started_at) VALUES (%s, %s) RETURNING id',
-                    (self.crawler.spider.search_id, self.crawler.stats.get_value('start_time'))
+                    (self.crawler.spider.search_id, datetime.now(timezone.utc))
                 ).fetchone()
         self.crawler.stats.set_value('search_run_id', self.search_run_id)
         self.crawler.spider.logger.info(f'Created search run {self.search_run_id}')
