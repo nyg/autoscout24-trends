@@ -28,10 +28,12 @@ export async function fetchActiveListings(searchName) {
              c.warranty, c.leasing, c.created_date, c.last_modified_date, c.first_registration_date,
              c.last_inspection_date, c.seller_id, c.search_run_id,
              se.type seller_type, se.name seller_name, se.address seller_address, se.zip_code, se.city,
-             365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year
+             365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year,
+             sc.r2_url as screenshot_url
         from cars c
        inner join sellers se on c.seller_id = se.id
        inner join searches s on c.search_id = s.id
+        left join screenshots sc on c.screenshot_id = sc.id
        where c.search_run_id = (
           select max(c2.search_run_id)
             from cars c2
@@ -58,10 +60,12 @@ export async function fetchPreviousListings(searchName) {
                 c.warranty, c.leasing, c.created_date, c.last_modified_date, c.first_registration_date,
                 c.last_inspection_date, c.seller_id, c.search_run_id,
                 se.type seller_type, se.name seller_name, se.address seller_address, se.zip_code, se.city,
-                365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year
+                365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year,
+                sc.r2_url as screenshot_url
            from cars c
           inner join sellers se on c.seller_id = se.id
           inner join searches s on c.search_id = s.id
+           left join screenshots sc on c.screenshot_id = sc.id
           where s.name = ${searchName}
             and not exists (
                 select 1 from cars l
@@ -104,8 +108,11 @@ export async function fetchDailyListingCount(searchName) {
        order by date`
 }
 
-export async function fetchCarScreenshot(carId) {
+export async function fetchCarScreenshotUrl(carId) {
    const [row] = await pgSql`
-      select screenshot from cars where id = ${carId}`
-   return row?.screenshot ?? null
+      select sc.r2_url
+        from cars c
+        left join screenshots sc on c.screenshot_id = sc.id
+       where c.id = ${carId}`
+   return row?.r2_url ?? null
 }

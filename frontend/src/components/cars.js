@@ -337,15 +337,21 @@ function renderCell(col, car, options, config) {
       case 'screenshot':
          return (
             <TableCell key={col.key} className="text-center">
-               <a
-                  href={`/api/screenshot/${car.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground transition-colors inline-flex"
-                  title="View screenshot"
-               >
-                  <CameraIcon className="size-4" />
-               </a>
+               {car.screenshot_url ? (
+                  <a
+                     href={car.screenshot_url}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex"
+                     title="View screenshot"
+                  >
+                     <CameraIcon className="size-4" />
+                  </a>
+               ) : (
+                  <span className="text-muted-foreground/40">
+                     <CameraIcon className="size-4" />
+                  </span>
+               )}
             </TableCell>
          )
       default:
