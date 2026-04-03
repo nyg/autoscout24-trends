@@ -15,7 +15,9 @@ import { CheckCircle2Icon, ChevronDownIcon, FilterIcon, XCircleIcon } from 'luci
 
 
 function formatDuration(start, end) {
-   if (!start || !end) return '–'
+   if (!start || !end) {
+      return '–'
+   }
    const ms = new Date(end) - new Date(start)
    const totalSeconds = Math.floor(ms / 1000)
    const minutes = Math.floor(totalSeconds / 60)
@@ -24,12 +26,16 @@ function formatDuration(start, end) {
 }
 
 function formatDateTime(timestamp) {
-   if (!timestamp) return '–'
+   if (!timestamp) {
+      return '–'
+   }
    return asMediumDate(new Date(timestamp))
 }
 
 function formatTime(timestamp) {
-   if (!timestamp) return ''
+   if (!timestamp) {
+      return ''
+   }
    const d = new Date(timestamp)
    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
