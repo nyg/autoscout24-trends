@@ -16,7 +16,7 @@
 - Extracts vehicle details (price, mileage, specs) and seller information
 - Stores data in PostgreSQL with batch tracking for historical analysis
 - Search configurations stored in database, manageable from the frontend Settings page
-- Generates CSV exports
+- Sends a batch summary email after all spiders finish (requires [Resend](https://resend.com) API key)
 
 ## Installation
 
@@ -46,6 +46,7 @@ Create a `.env` file in the crawler directory:
 ```env
 PGSQL_URL=postgresql://username:password@localhost:5432/autoscout24_trends
 RESEND_API_KEY=re_YourApiKeyFromResendCom
+BATCH_EMAIL_TO=you@example.com
 ```
 
 ## Usage
@@ -116,11 +117,11 @@ crawler/
 │   │   └── search.py    # Main spider
 │   ├── items.py         # Scrapy item definitions
 │   ├── pipelines.py     # PostgreSQL pipeline
-│   ├── exporters.py     # CSV exporter
-│   ├── extensions.py    # Email extension (currently disabled)
+│   ├── email.py         # Batch summary email
+│   ├── extensions.py    # Search run tracking extension
 │   └── settings.py      # Scrapy settings
 ├── migrations/          # Database migration scripts
-├── output/              # Generated CSV exports and screenshots
+├── output/              # Screenshots (runtime output)
 ├── SCHEMA.sql           # PostgreSQL schema
 ├── run-spiders.sh       # Shell wrapper: updates deps, runs run-spiders.py
 ├── run-spiders.py       # Runs all spiders in-process via CrawlerRunner
