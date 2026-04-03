@@ -85,7 +85,9 @@ export default function ClientSettings({ config }) {
                   </label>
                   <p className="text-sm text-muted-foreground">
                      Email address to receive crawler run reports.
-                     Currently used by the <code className="text-xs">EmailAfterFeedExport</code> extension (disabled by default).
+                     A batch summary email is sent after each <code className="text-xs">run-spiders.py</code> run.
+                     Configure <code className="text-xs">RESEND_API_KEY</code> and <code className="text-xs">BATCH_EMAIL_TO</code> in
+                     the crawler <code className="text-xs">.env</code> file to enable it.
                   </p>
                   <input
                      id="email-recipient"

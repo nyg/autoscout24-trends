@@ -58,7 +58,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 ## Settings page (`/settings`)
 - The settings page is a server component that fetches searches from the database and renders two sections:
   - **SearchManager** (`search-manager.js`): CRUD for search configurations (name, URL, active toggle). Uses Server Actions from `actions.js`.
-  - **ClientSettings** (`client-settings.js`): Google Maps API key and home address stored in localStorage.
+  - **ClientSettings** (`client-settings.js`): Google Maps API key, home address, and email recipient. Settings are stored in the database `config` table via the `updateConfig` server action.
 - Maps API key is consumed by `place-details.js` via `useSyncExternalStore` in `cars.js`.
 - Home address is consumed by the directions link in `SellerCell` via `useSyncExternalStore`.
 - Does not dispatch custom events itself; components that depend on these values read them from localStorage (e.g. via `useSyncExternalStore`) for same-tab sync.
