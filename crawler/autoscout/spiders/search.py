@@ -48,11 +48,12 @@ class SearchSpider(Spider):
     name = 'search'
     allowed_domains = ['www.autoscout24.ch', 'autoscout24.ch']
 
-    def __init__(self, search_id: int | str, search_name: str, url: str, *args, **kwargs) -> None:
+    def __init__(self, search_id: int | str, search_name: str, url: str, crawled_car_urls: set[str] | None = None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.search_id = int(search_id)
         self.search_name = search_name
         self.url = urlparse(url)
+        self.crawled_car_urls = crawled_car_urls
         self.failed_requests: list[dict[str, str | int]] = []
         self.total_car_count = 0
 
@@ -70,6 +71,9 @@ class SearchSpider(Spider):
 
         for listing in listings:
             car_url = self._listing_url(listing)
+            if self.crawled_car_urls is not None and car_url in self.crawled_car_urls:
+                self.logger.info(f'Car already crawled in this batch, skipping: {car_url}')
+                continue
             self.logger.info(f'Car found: {car_url}')
             yield CarPageRequest(self, url=car_url)
 
@@ -81,6 +85,10 @@ class SearchSpider(Spider):
         try:
             self.logger.info(f'Parsing car: {response.url}')
             listing_data = self._extract_listing_data(response.body)
+
+            if self.crawled_car_urls is not None:
+                self.crawled_car_urls.add(response.url)
+
             yield SellerItem.from_listing(listing_data['seller'])
             yield CarItem.from_listing(self.search_id, response.url, response.meta.get('screenshot'), listing_data)
         except Exception as e:

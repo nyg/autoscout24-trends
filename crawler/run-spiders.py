@@ -87,12 +87,17 @@ def main() -> None:
     runner = CrawlerRunner(settings)
     batch_started_at = datetime.now(timezone.utc)
 
+    # Track car URLs already crawled across spiders so that the same car
+    # detail page is not fetched more than once in a single batch run.
+    crawled_car_urls = set()
+
     @defer.inlineCallbacks
     def crawl_all():
         try:
             for search_id, search_name, url in searches:
                 log.info('Running spider for search: %s (id=%d)', search_name, search_id)
-                yield runner.crawl(SearchSpider, search_id=search_id, search_name=search_name, url=url)
+                yield runner.crawl(SearchSpider, search_id=search_id, search_name=search_name, url=url,
+                                   crawled_car_urls=crawled_car_urls)
         except Exception:
             log.exception('Spider run failed')
         finally:
