@@ -1,4 +1,4 @@
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode, urlparse, urlunparse
 
 import njsparser
 from scrapy import Spider
@@ -50,7 +50,7 @@ class SearchSpider(Spider):
         super().__init__(*args, **kwargs)
         self.search_id = int(search_id)
         self.search_name = search_name
-        self.url = url
+        self.url = urlparse(url)
         self.failed_requests = []
         self.total_car_count = 0
 
@@ -61,12 +61,13 @@ class SearchSpider(Spider):
 
     def parse(self, response: Response, **kwargs):
         """Parse the search result page using flight data."""
-        page_index, page_count, total_car_count, car_urls = self._extract_search_results(response)
+        page_index, page_count, total_car_count, listings = self._extract_search_results(response)
         self.logger.info(f'Parsing search page: {page_index + 1}/{page_count} {response.url}')
 
         self.total_car_count = total_car_count
 
-        for car_url in car_urls:
+        for listing in listings:
+            car_url = self._listing_url(listing)
             self.logger.info(f'Car found: {car_url}')
             yield CarPageRequest(self, url=car_url)
 
@@ -88,8 +89,7 @@ class SearchSpider(Spider):
         """Extract Next.js flight data describing the search results, including pagination info and listing URLs."""
         fd = njsparser.BeautifulFD(response.body)
         prefetched, _ = SearchSpider._find_nested_key(fd, 'prefetchedListings', lambda e: 'totalPages' in e)
-        listing_urls = [SearchSpider._listing_url(listing) for listing in prefetched['content']]
-        return prefetched['number'], prefetched['totalPages'], prefetched['totalElements'], listing_urls
+        return prefetched['number'], prefetched['totalPages'], prefetched['totalElements'], prefetched['content']
 
     @staticmethod
     def _extract_listing_data(body):
@@ -151,12 +151,12 @@ class SearchSpider(Spider):
 
         return None, None
 
-    @staticmethod
-    def _listing_url(listing):
-        return f'https://www.autoscout24.ch/en/d/{listing['id']}'
+    def _listing_url(self, listing):
+        return f'{self.url.scheme}://{self.url.netloc}/en/d/{listing['id']}'
 
     def _result_page_url(self, page=0):
-        return f'{self.url}&{urlencode({'pagination[page]': page})}'
+        query = f'{self.url.query}&{urlencode({'pagination[page]': page})}' if self.url.query else urlencode({'pagination[page]': page})
+        return urlunparse(self.url._replace(query=query))
 
     def handle_error(self, failure: Failure):
         """Handle request errors by logging the failed URL and reason, and storing it for summary on spider close."""
