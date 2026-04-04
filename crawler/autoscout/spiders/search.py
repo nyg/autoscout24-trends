@@ -1,4 +1,4 @@
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import njsparser
 from scrapy import Spider
@@ -52,19 +52,19 @@ class SearchSpider(Spider):
         self.search_name = search_name
         self.url = url
         self.failed_requests = []
-        self.cars_found = None
+        self.total_car_count = 0
 
     async def start(self):
-        start_url = self._build_search_page_url()
+        start_url = self._result_page_url()
         self.logger.info(f'Starting crawl with URL: {start_url}')
         yield SearchPageRequest(self, url=start_url)
 
     def parse(self, response: Response, **kwargs):
         """Parse the search result page using flight data."""
         page_index, page_count, total_car_count, car_urls = self._extract_search_results(response)
-        self.logger.info(f'Parsing search page: {page_index}/{page_count} {response.url}')
+        self.logger.info(f'Parsing search page: {page_index + 1}/{page_count} {response.url}')
 
-        self.cars_found = total_car_count
+        self.total_car_count = total_car_count
 
         for car_url in car_urls:
             self.logger.info(f'Car found: {car_url}')
@@ -72,65 +72,40 @@ class SearchSpider(Spider):
 
         next_page = page_index + 1
         if next_page < page_count:
-            self.logger.info(f'Next page: {next_page}')
-            yield SearchPageRequest(self, url=self._build_search_page_url(next_page), page=next_page)
+            yield SearchPageRequest(self, url=self._result_page_url(next_page))
 
     def parse_car(self, response: Response):
         try:
-            self.logger.info(f'Parsing car: {response.url} ({response.status})')
-            car_data = self._extract_car_data(response.body)
-
-            car = CarItem.parse_response(self.search_id, response.url, car_data)
-
-            screenshot = response.meta.get('screenshot')
-            car['screenshot'] = screenshot
-
-            yield SellerItem.parse_response(car_data['seller'])
-            yield car
+            self.logger.info(f'Parsing car: {response.url}')
+            listing_data = self._extract_listing_data(response.body)
+            yield SellerItem.from_listing(listing_data['seller'])
+            yield CarItem.from_listing(self.search_id, response.url, response.meta.get('screenshot'), listing_data)
         except Exception as e:
             self.logger.error(f'Error parsing car: {e}')
 
-    def handle_error(self, failure: Failure):
-        """Handle request errors by logging the failed URL and reason, and storing it for summary on spider close."""
-        reason = failure.value.response.status if failure.check(HttpError) else repr(failure.value)
-        self.failed_requests.append({'url': failure.request.url, 'reason': reason})
-
-    def closed(self, reason):
-        """Log a summary of failed URLs when the spider finishes, if there are any."""
-        if not self.failed_requests:
-            return
-
-        self.logger.warning(f'{len(self.failed_requests)} requests have failed:')
-        for entry in self.failed_requests:
-            self.logger.warning(f"  Scraping {entry['url']} failed due to: {entry['reason']}")
-
     @staticmethod
     def _extract_search_results(response):
+        """Extract Next.js flight data describing the search results, including pagination info and listing URLs."""
         fd = njsparser.BeautifulFD(response.body)
-        prefetched, _ = SearchSpider._find_nested_key(fd, 'prefetchedListings', lambda p: isinstance(p, dict) and 'totalPages' in p)
-        listing_urls = [SearchSpider._build_car_url(listing) for listing in prefetched['content']]
+        prefetched, _ = SearchSpider._find_nested_key(fd, 'prefetchedListings', lambda e: 'totalPages' in e)
+        listing_urls = [SearchSpider._listing_url(listing) for listing in prefetched['content']]
         return prefetched['number'], prefetched['totalPages'], prefetched['totalElements'], listing_urls
 
     @staticmethod
-    def _extract_car_data(body):
-        """Extract Next.js flight data describing the vehicle and seller.
-
-        Uses recursive key search instead of hardcoded path navigation to be
-        resilient to DOM structure changes.
-        """
+    def _extract_listing_data(body):
+        """Extract Next.js flight data describing the vehicle and seller."""
         fd = njsparser.BeautifulFD(body)
-        text = {hex(t.index).replace('0x', '$'): t.value for t in fd.find_iter([njsparser.T.Text])}
 
-        pvt, parent = SearchSpider._find_nested_key(fd, 'pageViewTracking',
-                                                    lambda pvt: pvt['englishVirtualPagePath'] == 'details')
+        pvt, parent = SearchSpider._find_nested_key(fd, 'pageViewTracking', lambda e: e['englishVirtualPagePath'] == 'details')
         listing, _ = SearchSpider._find_nested_key(parent, 'listing')
         seller, _ = SearchSpider._find_nested_key(parent, 'seller')
 
         if not pvt or not listing or not seller:
             raise ValueError(
-                f'Could not extract complete flight data: pvt={pvt is not None}, listing={listing is not None}, seller={seller is not None}')
+                f'Could not extract complete listing data: pvt={pvt is not None}, listing={listing is not None}, seller={seller is not None}')
 
         # sometimes, description is a reference (e.g. "$31") pointing to a separate Text node instead of being inlined
+        text = {hex(t.index).replace('0x', '$'): t.value for t in fd.find_iter([njsparser.T.Text])}
         if listing.get('description') in text:
             listing['description'] = text[listing['description']]
 
@@ -141,7 +116,7 @@ class SearchSpider(Spider):
         }
 
     @staticmethod
-    def _find_nested_key(obj, key, condition=lambda candidate: True, _depth=0):
+    def _find_nested_key(obj, key, condition=lambda e: True, _depth=0):
         """Recursively search for a key in nested dict/list structure.
         Accepts a BeautifulFD (searches all Data node contents) or a dict/list.
         Returns (value, parent_dict) if found, or (None, None)."""
@@ -153,8 +128,10 @@ class SearchSpider(Spider):
                 if result is not None:
                     return result, parent
             return None, None
+
         if _depth > 20:
             return None, None
+
         if isinstance(obj, dict):
             if key in obj:
                 try:
@@ -171,11 +148,26 @@ class SearchSpider(Spider):
                 result, parent = SearchSpider._find_nested_key(item, key, condition, _depth + 1)
                 if result is not None:
                     return result, parent
+
         return None, None
 
     @staticmethod
-    def _build_car_url(listing):
+    def _listing_url(listing):
         return f'https://www.autoscout24.ch/en/d/{listing['id']}'
 
-    def _build_search_page_url(self, page=0):
+    def _result_page_url(self, page=0):
         return f'{self.url}&{urlencode({'pagination[page]': page})}'
+
+    def handle_error(self, failure: Failure):
+        """Handle request errors by logging the failed URL and reason, and storing it for summary on spider close."""
+        reason = failure.value.response.status if failure.check(HttpError) else repr(failure.value)
+        self.failed_requests.append({'url': failure.request.url, 'reason': reason})
+
+    def closed(self, reason):
+        """Log a summary of failed URLs when the spider finishes, if there are any."""
+        if not self.failed_requests:
+            return
+
+        self.logger.warning(f'{len(self.failed_requests)} requests have failed:')
+        for entry in self.failed_requests:
+            self.logger.warning(f"  Scraping {entry['url']} failed due to: {entry['reason']}")

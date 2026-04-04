@@ -42,7 +42,7 @@ class SearchRunExtension:
             stats = self.crawler.stats.get_stats()
 
             cars_scraped = stats.get('db/cars_inserted', 0)
-            cars_found = self.crawler.spider.cars_found
+            cars_found = self.crawler.spider.total_car_count
             failed_request_count = len(self.crawler.spider.failed_requests)
             request_count = stats.get('response_received_count', 0)
             finish_reason = stats.get('finish_reason', 'unknown')
