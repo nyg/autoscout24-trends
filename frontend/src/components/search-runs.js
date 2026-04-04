@@ -1,6 +1,7 @@
 'use client'
 
-import { use, useMemo, useState } from 'react'
+import { use, useMemo } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { asMediumDate } from '@/lib/format'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -11,7 +12,7 @@ import {
    DropdownMenuItem, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2Icon, ChevronDownIcon, FilterIcon, XCircleIcon } from 'lucide-react'
+import { CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, FilterIcon, XCircleIcon } from 'lucide-react'
 
 
 function formatDuration(start, end) {
@@ -40,42 +41,54 @@ function formatTime(timestamp) {
    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+function buildUrl(params) {
+   const sp = new URLSearchParams()
+   if (params.search) {
+      sp.set('search', params.search)
+   }
+   if (params.page && params.page > 1) {
+      sp.set('page', String(params.page))
+   }
+   const qs = sp.toString()
+   return `/search-runs${qs ? `?${qs}` : ''}`
+}
 
-export default function SearchRuns({ data, searches }) {
+
+export default function SearchRuns({ data, searches, totalCount, page, pageSize, searchFilter }) {
 
    const runs = use(data)
    const searchList = use(searches)
-   const [filter, setFilter] = useState(null)
+   const total = use(totalCount)
+   const router = useRouter()
 
-   const filteredRuns = useMemo(
-      () => filter ? runs.filter(r => r.search_name === filter) : runs,
-      [runs, filter],
-   )
+   const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+   const navigate = (params) => router.push(buildUrl(params))
 
    return (
       <Card>
          <CardHeader>
-            <CardTitle>Search Runs ({filteredRuns.length})</CardTitle>
+            <CardTitle>Search Runs ({total})</CardTitle>
             <CardAction>
                <DropdownMenu>
                   <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
                      <FilterIcon className="size-3.5" />
-                     {filter ?? 'All searches'}
+                     {searchFilter ?? 'All searches'}
                      <ChevronDownIcon data-icon="inline-end" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                      <DropdownMenuGroup>
                         <DropdownMenuItem
-                           onClick={() => setFilter(null)}
-                           className={!filter ? 'font-semibold' : ''}
+                           onClick={() => navigate({ search: null, page: 1 })}
+                           className={!searchFilter ? 'font-semibold' : ''}
                         >
                            All searches
                         </DropdownMenuItem>
                         {searchList.map(s => (
                            <DropdownMenuItem
                               key={s.id}
-                              onClick={() => setFilter(s.name)}
-                              className={filter === s.name ? 'font-semibold' : ''}
+                              onClick={() => navigate({ search: s.name, page: 1 })}
+                              className={searchFilter === s.name ? 'font-semibold' : ''}
                            >
                               {s.name}
                            </DropdownMenuItem>
@@ -102,14 +115,14 @@ export default function SearchRuns({ data, searches }) {
                   </TableRow>
                </TableHeader>
                <TableBody>
-                  {filteredRuns.length === 0 && (
+                  {runs.length === 0 && (
                      <TableRow>
                         <TableCell colSpan={10} className="text-center text-muted-foreground">
                            No search runs found.
                         </TableCell>
                      </TableRow>
                   )}
-                  {filteredRuns.map(run => (
+                  {runs.map(run => (
                      <TableRow key={run.id} className={run.success === false ? 'bg-destructive/5' : ''}>
                         <TableCell className="whitespace-nowrap font-medium">{run.search_name}</TableCell>
                         <TableCell className="whitespace-nowrap text-right">{formatDateTime(run.started_at)}</TableCell>
@@ -136,6 +149,35 @@ export default function SearchRuns({ data, searches }) {
                   ))}
                </TableBody>
             </Table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+               <div className="flex items-center justify-between border-t px-4 py-3">
+                  <span className="text-sm text-muted-foreground">
+                     Page {page} of {totalPages}
+                  </span>
+                  <div className="flex gap-1">
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page <= 1}
+                        onClick={() => navigate({ search: searchFilter, page: page - 1 })}
+                     >
+                        <ChevronLeftIcon className="size-4" />
+                        Previous
+                     </Button>
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page >= totalPages}
+                        onClick={() => navigate({ search: searchFilter, page: page + 1 })}
+                     >
+                        Next
+                        <ChevronRightIcon className="size-4" />
+                     </Button>
+                  </div>
+               </div>
+            )}
          </CardContent>
       </Card>
    )

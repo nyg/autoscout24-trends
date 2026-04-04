@@ -3,6 +3,34 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createSearch, deleteSearch, toggleSearchActive, updateSearch } from '@/lib/actions'
 import { useActionState, useState } from 'react'
+import { CheckIcon, CopyIcon } from 'lucide-react'
+
+
+function CopyUrlButton({ url }) {
+   const [copied, setCopied] = useState(false)
+
+   const handleCopy = async () => {
+      try {
+         await navigator.clipboard.writeText(url)
+         setCopied(true)
+         setTimeout(() => setCopied(false), 1500)
+      } catch { /* ignore */ }
+   }
+
+   return (
+      <button
+         onClick={handleCopy}
+         className="text-muted-foreground hover:text-foreground transition-colors"
+         title="Copy URL"
+         aria-label="Copy URL to clipboard"
+      >
+         {copied
+            ? <CheckIcon className="size-3.5 text-green-600" />
+            : <CopyIcon className="size-3.5" />
+         }
+      </button>
+   )
+}
 
 function SearchRow({ search }) {
    const [editing, setEditing] = useState(false)
@@ -62,7 +90,10 @@ function SearchRow({ search }) {
          <td className="p-2 text-muted-foreground whitespace-nowrap">{search.id}</td>
          <td className="p-2 whitespace-nowrap">{search.name}</td>
          <td className="p-2 text-muted-foreground truncate max-w-0" title={search.url}>
-            {search.url}
+            <span className="inline-flex items-center gap-1.5">
+               <CopyUrlButton url={search.url} />
+               {search.url}
+            </span>
          </td>
          <td className="p-2 text-center whitespace-nowrap">
             <form action={submitToggle} className="inline">

@@ -79,10 +79,11 @@ export async function fetchPreviousListings(searchName) {
       order by price`
 }
 
-export async function fetchSearchRuns(searchName) {
+export async function fetchSearchRuns(searchName, page = 1, pageSize = 25) {
    const filter = searchName
       ? pgSql`where s.name = ${searchName}`
       : pgSql``
+   const offset = (page - 1) * pageSize
    return pgSql`
       select sr.id, s.name search_name,
              sr.started_at, sr.finished_at,
@@ -92,7 +93,20 @@ export async function fetchSearchRuns(searchName) {
         from search_runs sr
        inner join searches s on sr.search_id = s.id
        ${filter}
-       order by sr.started_at desc`
+       order by sr.started_at desc
+       limit ${pageSize} offset ${offset}`
+}
+
+export async function fetchSearchRunsCount(searchName) {
+   const filter = searchName
+      ? pgSql`where s.name = ${searchName}`
+      : pgSql``
+   const [row] = await pgSql`
+      select count(*)::int as total
+        from search_runs sr
+       inner join searches s on sr.search_id = s.id
+       ${filter}`
+   return row.total
 }
 
 export async function fetchDailyListingCount(searchName) {

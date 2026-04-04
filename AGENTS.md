@@ -34,7 +34,8 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - The spider yields `SellerItem` before `CarItem`; the pipeline processes them in that order.
 - `PostgreSQLPipeline` buffers sellers and cars separately, inserts sellers with `ON CONFLICT DO NOTHING`, then inserts cars with a shared `search_run_id` created by `SearchRunExtension`.
 - `SearchRunExtension` (EXTENSIONS priority 500) creates a `search_runs` row on `spider_opened` and updates it with final stats on `spider_closed`. It publishes `search_run_id` to Scrapy stats so `PostgreSQLPipeline` can read it.
-- `ScreenshotPipeline` (priority 250) compresses screenshots from raw PNG to WebP lossy, deduplicates via MD5 hash, uploads to Cloudflare R2, and stores metadata in the `screenshots` table. It sets `car['screenshot_id']` for `PostgreSQLPipeline` to insert. Requires R2 env vars (`R2_ENDPOINT_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`); gracefully skips if not configured.
+- `ScreenshotPipeline` (priority 250) compresses screenshots from raw PNG to WebP lossy, deduplicates via MD5 hash, uploads to Cloudflare R2 with UUID-based keys (`screenshots/{uuid}.webp`), and stores metadata in the `screenshots` table. It sets `car['screenshot_id']` for `PostgreSQLPipeline` to insert. Requires R2 env vars (`R2_ENDPOINT_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`); gracefully skips if not configured.
+- Failed URLs (with reason) are stored in Scrapy stats via `self.crawler.stats.set_value('failed_urls', self.failed_requests)` in the spider's `closed()` method. This list is automatically persisted in the `search_runs.stats` JSONB column by `SearchRunExtension`.
 - If you add/remove car fields, update all of these together: `crawler/autoscout/items.py`, `crawler/autoscout/pipelines.py`, `crawler/SCHEMA.sql`, and any frontend queries/components that read the field.
 - A batch summary email is sent after all spiders finish in `run-spiders.py`. The email logic lives in `crawler/autoscout/email.py` and uses the Resend SDK. It queries the `search_runs` table for stats. The recipient address is read from the `config` database table (key `email-recipient`, set in the frontend Settings page). Configure `RESEND_API_KEY` in `.env` to enable it.
 - The `cars` table uses `search_id` (FK to `searches.id`) and `search_run_id` (FK to `search_runs.id`). `search_id` is kept for query convenience. Renaming a search in the `searches` table automatically propagates to all historical car data.
@@ -53,12 +54,18 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Column definitions live in the `COLUMNS` array at the top of the file. Add new columns there (key, label, sortType, sortKey, align, defaultVisible).
 - Sorting: click column headers to toggle asc/desc. Sort comparison is type-aware (numeric, text, date). Default sort is price ascending.
 - Column visibility: stored in localStorage (`'car-table-visible-columns'`), synced across tables via a custom `'visible-columns-changed'` event (since `storage` events only fire in other tabs). Uses `useSyncExternalStore` with a server snapshot of default columns to avoid hydration mismatches.
+- Screenshot/photo viewing: clicking the camera icon opens a `Lightbox` component (fullscreen overlay with left/right navigation, keyboard support, Escape to close). The lightbox is rendered via `createPortal` at the document root.
 - Seller cell: shows seller name (truncated), location, and three icons — Google Maps link (MapPinIcon), directions from home (NavigationIcon, requires home address in Settings), and place details popover (MapIcon, requires Google Maps API key, disabled for private sellers).
 - Text truncation: title (100 chars), description (100 chars, scrollable tooltip), seller name (30 chars). All use `TruncatedText` component with `Tooltip`.
 
+## Search runs page (`/search-runs`)
+- Server-side paginated: page and search filter are URL query params (`?page=2&search=Audi`).
+- `fetchSearchRuns(searchName, page, pageSize)` in `data.js` uses `LIMIT`/`OFFSET`; `fetchSearchRunsCount(searchName)` returns the total for pagination controls.
+- Filter dropdown navigates with `router.push()` to update query params (resets to page 1 on filter change).
+
 ## Settings page (`/settings`)
 - The settings page is a server component that fetches searches from the database and renders two sections:
-  - **SearchManager** (`search-manager.js`): CRUD for search configurations (name, URL, active toggle). Uses Server Actions from `actions.js`.
+  - **SearchManager** (`search-manager.js`): CRUD for search configurations (name, URL, active toggle, copy URL button). Uses Server Actions from `actions.js`.
   - **ClientSettings** (`client-settings.js`): Google Maps API key, home address, and email recipient. Settings are stored in the database `config` table via the `updateConfig` server action.
 - Maps API key is consumed by `place-details.js` via `useSyncExternalStore` in `cars.js`.
 - Home address is consumed by the directions link in `SellerCell` via `useSyncExternalStore`.

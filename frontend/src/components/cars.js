@@ -14,6 +14,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import PlaceDetails from '@/components/place-details'
+import Lightbox from '@/components/lightbox'
 import {
    ArrowDownIcon, ArrowUpIcon, CameraIcon,
    MapIcon, MapPinIcon, NavigationIcon, SlidersHorizontalIcon
@@ -269,7 +270,7 @@ function MapPreviewButton({ car, apiKey }) {
 
 // --- Cell renderers ---
 
-function renderCell(col, car, options, config) {
+function renderCell(col, car, options, config, callbacks) {
    switch (col.key) {
       case 'title': {
          const desc = car.subtitle || car.description || '-'
@@ -338,15 +339,13 @@ function renderCell(col, car, options, config) {
          return (
             <TableCell key={col.key} className="text-center">
                {car.screenshot_url ? (
-                  <a
-                     href={car.screenshot_url}
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex"
+                  <button
+                     onClick={() => callbacks.onScreenshotClick(car)}
+                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer"
                      title="View screenshot"
                   >
                      <CameraIcon className="size-4" />
-                  </a>
+                  </button>
                ) : (
                   <span className="text-muted-foreground/40 inline-flex">
                      <CameraIcon className="size-4" />
@@ -371,6 +370,14 @@ export default function Cars({ name, data, options = {}, config = {} }) {
 
    const activeKeys = useSyncExternalStore(subscribeVisibleColumns, getVisibleColumnsSnapshot, getVisibleColumnsServerSnapshot)
    const [sort, setSort] = useState({ key: 'price', direction: 'asc' })
+   const [lightbox, setLightbox] = useState(null)
+
+   const onScreenshotClick = useCallback((car) => {
+      const images = [car.screenshot_url].filter(Boolean)
+      if (images.length > 0) {
+         setLightbox({ images, index: 0 })
+      }
+   }, [])
 
    const toggleColumn = useCallback((key) => {
       const current = getVisibleColumnsSnapshot()
@@ -452,12 +459,19 @@ export default function Cars({ name, data, options = {}, config = {} }) {
                <TableBody>
                   {sortedCars.map(car => (
                      <TableRow key={car.id}>
-                        {visibleColumns.map(col => renderCell(col, car, options, config))}
+                        {visibleColumns.map(col => renderCell(col, car, options, config, { onScreenshotClick }))}
                      </TableRow>
                   ))}
                </TableBody>
             </Table>
          </CardContent>
+         {lightbox && (
+            <Lightbox
+               images={lightbox.images}
+               initialIndex={lightbox.index}
+               onClose={() => setLightbox(null)}
+            />
+         )}
       </Card>
    )
 }
