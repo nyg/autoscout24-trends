@@ -57,12 +57,13 @@ class CarItem(Item):
         })
 
     @staticmethod
-    def parse_response(search_id, url, json_response):
+    def from_listing(search_id, url, screenshot, json_response):
         car = CarItem()
 
         car['search_id'] = search_id
         car['url'] = url
         car['json_data'] = json_response
+        car['screenshot'] = screenshot
 
         car['title'] = json_response['pageViewTracking']['listing_typename']
         car['subtitle'] = json_response['listing']['teaser']
@@ -116,7 +117,7 @@ class SellerItem(Item):
         })
 
     @staticmethod
-    def parse_response(json_response):
+    def from_listing(json_response):
         seller = SellerItem()
         seller['id'] = json_response['id']
         seller['type'] = json_response['type']
