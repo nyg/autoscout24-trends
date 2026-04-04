@@ -107,8 +107,10 @@ class SearchSpider(Spider):
     @staticmethod
     def _extract_search_results(response):
         fd = njsparser.BeautifulFD(response.body)
-        for data_node in fd.find_all([njsparser.T.Data]):
+        for data_node in fd.find_iter([njsparser.T.Data]):
             prefetched, _ = SearchSpider._find_nested_key(data_node.content, 'prefetchedListings', lambda p: isinstance(p, dict) and 'totalPages' in p)
+            if prefetched is None:
+                continue
             listing_urls = [SearchSpider._build_car_url(listing) for listing in prefetched['content']]
             return prefetched['number'], prefetched['totalPages'], prefetched['totalElements'], listing_urls
         return None
@@ -121,13 +123,13 @@ class SearchSpider(Spider):
         resilient to DOM structure changes.
         """
         fd = njsparser.BeautifulFD(body)
-        text = {hex(t.index).replace('0x', '$'): t.value for t in fd.find_all([njsparser.T.Text])}
+        text = {hex(t.index).replace('0x', '$'): t.value for t in fd.find_iter([njsparser.T.Text])}
 
         pvt = None
         listing = None
         seller = None
 
-        for data_node in fd.find_all([njsparser.T.Data]):
+        for data_node in fd.find_iter([njsparser.T.Data]):
             if pvt is not None:
                 break
 
