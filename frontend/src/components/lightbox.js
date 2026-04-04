@@ -1,12 +1,30 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, Loader2Icon, XIcon } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 
-export default function Lightbox({ images, initialIndex = 0, onClose }) {
+export default function Lightbox({ images: initialImages, initialIndex = 0, onClose, fetchMoreUrl }) {
+   const [images, setImages] = useState(initialImages)
    const [index, setIndex] = useState(initialIndex)
+   const [loading, setLoading] = useState(!!fetchMoreUrl)
+
+   // Lazy-load additional photos (e.g., listing photos) when lightbox opens
+   useEffect(() => {
+      if (!fetchMoreUrl) {
+         return
+      }
+      fetch(fetchMoreUrl)
+         .then(res => res.ok ? res.json() : [])
+         .then(urls => {
+            if (urls.length > 0) {
+               setImages(prev => [...prev, ...urls])
+            }
+         })
+         .catch(() => {})
+         .finally(() => setLoading(false))
+   }, [fetchMoreUrl])
 
    const goPrev = useCallback(() => {
       setIndex(i => (i > 0 ? i - 1 : images.length - 1))
@@ -58,11 +76,10 @@ export default function Lightbox({ images, initialIndex = 0, onClose }) {
          </button>
 
          {/* Counter */}
-         {images.length > 1 && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white">
-               {index + 1} / {images.length}
-            </div>
-         )}
+         <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white">
+            {images.length > 1 && <span>{index + 1} / {images.length}</span>}
+            {loading && <Loader2Icon className="size-4 animate-spin" />}
+         </div>
 
          {/* Previous button */}
          {images.length > 1 && (

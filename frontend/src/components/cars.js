@@ -335,16 +335,22 @@ function renderCell(col, car, options, config, callbacks) {
       case 'co2_emission':
       case 'cylinders':
          return <TableCell key={col.key} className="text-right tabular-nums">{car[col.sortKey] != null ? asDecimal(car[col.sortKey]) : '-'}</TableCell>
-      case 'screenshot':
+      case 'screenshot': {
+         const hasMedia = car.screenshot_url || car.photo_count > 0
          return (
             <TableCell key={col.key} className="text-center">
-               {car.screenshot_url ? (
+               {hasMedia ? (
                   <button
                      onClick={() => callbacks.onScreenshotClick(car)}
-                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer"
-                     title="View screenshot"
+                     className="relative text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer"
+                     title={car.photo_count > 0 ? `${car.photo_count} photos` : 'View screenshot'}
                   >
                      <CameraIcon className="size-4" />
+                     {car.photo_count > 0 && (
+                        <span className="absolute -top-1.5 -right-2 flex size-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-medium text-primary-foreground">
+                           {car.photo_count}
+                        </span>
+                     )}
                   </button>
                ) : (
                   <span className="text-muted-foreground/40 inline-flex">
@@ -353,6 +359,7 @@ function renderCell(col, car, options, config, callbacks) {
                )}
             </TableCell>
          )
+      }
       default:
          return <TableCell key={col.key} className="text-right">{car[col.sortKey] ?? '-'}</TableCell>
    }
@@ -374,8 +381,13 @@ export default function Cars({ name, data, options = {}, config = {} }) {
 
    const onScreenshotClick = useCallback((car) => {
       const images = [car.screenshot_url].filter(Boolean)
-      if (images.length > 0) {
-         setLightbox({ images, index: 0 })
+      const hasMedia = images.length > 0 || car.photo_count > 0
+      if (hasMedia) {
+         setLightbox({
+            images,
+            index: 0,
+            fetchMoreUrl: car.photo_count > 0 ? `/api/photos/${car.id}` : null,
+         })
       }
    }, [])
 
@@ -470,6 +482,7 @@ export default function Cars({ name, data, options = {}, config = {} }) {
                images={lightbox.images}
                initialIndex={lightbox.index}
                onClose={() => setLightbox(null)}
+               fetchMoreUrl={lightbox.fetchMoreUrl}
             />
          )}
       </Card>

@@ -75,6 +75,8 @@ class CarItem:
     screenshot: bytes | None = field(default=None, repr=False)
     screenshot_id: int | None = None
     search_run_id: int | None = None
+    image_keys: list[str] = field(default_factory=list)
+    photo_ids: list[int] = field(default_factory=list)
 
     def __repr__(self) -> str:
         return repr({'vehicle_id': self.vehicle_id, 'title': self.title})
@@ -113,4 +115,5 @@ class CarItem:
             last_inspection_date=parse_iso_datetime(listing['lastInspectionDate']),
             seller_id=str(json_response['seller']['id']),
             screenshot=screenshot,
+            image_keys=[img['key'] for img in listing.get('images', []) if 'key' in img],
         )

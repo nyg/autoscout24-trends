@@ -180,3 +180,57 @@ CREATE TABLE public.config (
 
 ALTER TABLE ONLY public.config
     ADD CONSTRAINT config_pkey PRIMARY KEY (key);
+
+
+CREATE TABLE public.photos (
+    id integer NOT NULL,
+    md5_hash character(32) NOT NULL,
+    r2_key text NOT NULL,
+    r2_url text NOT NULL,
+    format text NOT NULL DEFAULT 'webp',
+    width integer,
+    height integer,
+    original_size integer,
+    compressed_size integer,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.photos ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.photos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+ALTER TABLE ONLY public.photos
+    ADD CONSTRAINT photos_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.photos
+    ADD CONSTRAINT photos_md5_hash_key UNIQUE (md5_hash);
+
+
+CREATE TABLE public.car_photos (
+    car_id integer NOT NULL,
+    photo_id integer NOT NULL,
+    position integer NOT NULL
+);
+
+
+ALTER TABLE ONLY public.car_photos
+    ADD CONSTRAINT car_photos_pkey PRIMARY KEY (car_id, photo_id);
+
+
+CREATE INDEX idx_car_photos_car_id ON public.car_photos (car_id);
+
+
+ALTER TABLE ONLY public.car_photos
+    ADD CONSTRAINT car_photos_car_id_fkey FOREIGN KEY (car_id) REFERENCES public.cars(id) ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY public.car_photos
+    ADD CONSTRAINT car_photos_photo_id_fkey FOREIGN KEY (photo_id) REFERENCES public.photos(id);

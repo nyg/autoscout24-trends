@@ -10,6 +10,7 @@ dependencies = [
     "pillow==12.2.0",
     "psycopg[binary]==3.3.3",
     "python-dotenv==1.2.2",
+    "requests==2.33.1",
     "resend==2.27.0",
     "scrapy==2.14.2",
     "scrapy-seleniumbase-cdp==2.0.0",
