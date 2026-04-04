@@ -107,13 +107,9 @@ class SearchSpider(Spider):
     @staticmethod
     def _extract_search_results(response):
         fd = njsparser.BeautifulFD(response.body)
-        for data_node in fd.find_iter([njsparser.T.Data]):
-            prefetched, _ = SearchSpider._find_nested_key(data_node.content, 'prefetchedListings', lambda p: isinstance(p, dict) and 'totalPages' in p)
-            if prefetched is None:
-                continue
-            listing_urls = [SearchSpider._build_car_url(listing) for listing in prefetched['content']]
-            return prefetched['number'], prefetched['totalPages'], prefetched['totalElements'], listing_urls
-        return None
+        prefetched, _ = SearchSpider._find_nested_key(fd, 'prefetchedListings', lambda p: isinstance(p, dict) and 'totalPages' in p)
+        listing_urls = [SearchSpider._build_car_url(listing) for listing in prefetched['content']]
+        return prefetched['number'], prefetched['totalPages'], prefetched['totalElements'], listing_urls
 
     @staticmethod
     def _extract_car_data(body):
@@ -125,21 +121,10 @@ class SearchSpider(Spider):
         fd = njsparser.BeautifulFD(body)
         text = {hex(t.index).replace('0x', '$'): t.value for t in fd.find_iter([njsparser.T.Text])}
 
-        pvt = None
-        listing = None
-        seller = None
-
-        for data_node in fd.find_iter([njsparser.T.Data]):
-            if pvt is not None:
-                break
-
-            pvt, parent = SearchSpider._find_nested_key(data_node.content, 'pageViewTracking',
-                                                        lambda pvt: pvt['englishVirtualPagePath'] == 'details')
-            if pvt is None:
-                continue
-
-            listing, _ = SearchSpider._find_nested_key(parent, 'listing')
-            seller, _ = SearchSpider._find_nested_key(parent, 'seller')
+        pvt, parent = SearchSpider._find_nested_key(fd, 'pageViewTracking',
+                                                    lambda pvt: pvt['englishVirtualPagePath'] == 'details')
+        listing, _ = SearchSpider._find_nested_key(parent, 'listing')
+        seller, _ = SearchSpider._find_nested_key(parent, 'seller')
 
         if not pvt or not listing or not seller:
             raise ValueError(
@@ -156,10 +141,19 @@ class SearchSpider(Spider):
         }
 
     @staticmethod
-    def _find_nested_key(obj, key, condition=lambda candidate: True, depth=0):
+    def _find_nested_key(obj, key, condition=lambda candidate: True, _depth=0):
         """Recursively search for a key in nested dict/list structure.
+        Accepts a BeautifulFD (searches all Data node contents) or a dict/list.
         Returns (value, parent_dict) if found, or (None, None)."""
-        if depth > 20:
+        if isinstance(obj, njsparser.BeautifulFD):
+            for data_node in obj.find_iter([njsparser.T.Data]):
+                if data_node.content is None:
+                    continue
+                result, parent = SearchSpider._find_nested_key(data_node.content, key, condition)
+                if result is not None:
+                    return result, parent
+            return None, None
+        if _depth > 20:
             return None, None
         if isinstance(obj, dict):
             if key in obj:
@@ -169,12 +163,12 @@ class SearchSpider(Spider):
                 except Exception:
                     pass
             for v in obj.values():
-                result, parent = SearchSpider._find_nested_key(v, key, condition, depth + 1)
+                result, parent = SearchSpider._find_nested_key(v, key, condition, _depth + 1)
                 if result is not None:
                     return result, parent
         elif isinstance(obj, list):
             for item in obj:
-                result, parent = SearchSpider._find_nested_key(item, key, condition, depth + 1)
+                result, parent = SearchSpider._find_nested_key(item, key, condition, _depth + 1)
                 if result is not None:
                     return result, parent
         return None, None
