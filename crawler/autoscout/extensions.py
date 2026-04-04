@@ -6,14 +6,16 @@ from psycopg.types.json import Jsonb
 from scrapy import signals
 from scrapy.crawler import Crawler
 
-from .pipelines import _PGSQL_CONNECT_TIMEOUT
-
 
 class SearchRunExtension:
     """Records each spider run in the search_runs table with stats.
 
     Uses spider_opened/spider_closed signals (not pipeline open/close_spider)
     so that CoreStats has already set finish_time, finish_reason, etc.
+
+    Owns the shared DB connection lifecycle: creates it in spider_opened,
+    attaches it to crawler.db_connection for pipelines to reuse, and closes
+    it in spider_closed (which fires after pipeline close_spider).
     """
 
     def __init__(self, crawler: Crawler) -> None:
@@ -29,9 +31,9 @@ class SearchRunExtension:
         return ext
 
     def spider_opened(self) -> None:
-        """Create a shared DB connection and a search_runs row, then publish both to Scrapy stats."""
-        self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=_PGSQL_CONNECT_TIMEOUT)
-        self.crawler.stats.set_value('db_connection', self.connection)
+        """Create a shared DB connection and a search_runs row, then publish search_run_id to Scrapy stats."""
+        self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=self.crawler.settings.getint('PGSQL_CONNECT_TIMEOUT'))
+        self.crawler.db_connection = self.connection
         with self.connection.transaction():
             with self.connection.cursor() as cursor:
                 (self.search_run_id,) = cursor.execute(
@@ -83,4 +85,5 @@ class SearchRunExtension:
         finally:
             if self.connection:
                 self.connection.close()
+                self.crawler.db_connection = None
                 self.crawler.spider.logger.info('Shared database connection closed')

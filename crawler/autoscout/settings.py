@@ -50,3 +50,5 @@ ITEM_PIPELINES = {
     'autoscout.pipelines.ScreenshotPipeline': 250,
     'autoscout.pipelines.PostgreSQLPipeline': 300,
 }
+
+PGSQL_CONNECT_TIMEOUT = 1

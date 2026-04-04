@@ -14,17 +14,21 @@ from scrapy.statscollectors import StatsCollector
 
 from .items import CarItem, SellerItem
 
-_PGSQL_CONNECT_TIMEOUT = 1
-
 
 def get_shared_connection(crawler: Crawler) -> psycopg.Connection:
     """Return the shared DB connection owned by SearchRunExtension.
 
     The connection is created in SearchRunExtension.spider_opened and stored
-    in Scrapy stats so that pipelines can reuse it without opening a second
-    connection.
+    on the crawler instance so that pipelines can reuse it without opening
+    a second connection.
     """
-    return crawler.stats.get_value('db_connection')
+    connection = getattr(crawler, 'db_connection', None)
+    if connection is None:
+        raise RuntimeError(
+            'Shared DB connection not available. '
+            'Ensure SearchRunExtension is enabled and has run spider_opened.'
+        )
+    return connection
 
 
 class ScreenshotPipeline:
@@ -33,7 +37,6 @@ class ScreenshotPipeline:
     def __init__(self, crawler: Crawler) -> None:
         self.crawler = crawler
         self.s3_client: Any = None
-        self.connection: psycopg.Connection | None = None
         self.r2_configured = all(os.environ.get(k) for k in (
             'R2_ENDPOINT_URL', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY',
             'R2_BUCKET_NAME', 'R2_PUBLIC_URL'
@@ -50,8 +53,7 @@ class ScreenshotPipeline:
             self.crawler.spider.logger.warning('R2 not configured — screenshots will not be uploaded')
 
     def close_spider(self) -> None:
-        if self.connection:
-            self.connection.close()
+        pass
 
     def process_item(self, item: CarItem | SellerItem) -> CarItem | SellerItem:
         if not isinstance(item, CarItem):
@@ -68,13 +70,14 @@ class ScreenshotPipeline:
 
     def _upload_screenshot(self, item: CarItem, screenshot_data: bytes) -> None:
         try:
-            self._ensure_clients()
+            self._ensure_s3_client()
+            connection = get_shared_connection(self.crawler)
             webp_data, width, height, original_size = self._compress(screenshot_data)
             compressed_size = len(webp_data)
             md5_hash = hashlib.md5(webp_data).hexdigest()
 
-            with self.connection.transaction():
-                with self.connection.cursor() as cursor:
+            with connection.transaction():
+                with connection.cursor() as cursor:
                     cursor.execute('SELECT id FROM screenshots WHERE md5_hash = %s', (md5_hash,))
 
                     if existing := cursor.fetchone():
@@ -108,7 +111,7 @@ class ScreenshotPipeline:
         except Exception as e:
             self.crawler.spider.logger.error(f'Screenshot processing failed for {item.vehicle_id}: {e}')
 
-    def _ensure_clients(self) -> None:
+    def _ensure_s3_client(self) -> None:
         if self.s3_client is None:
             import boto3
             self.s3_client = boto3.client(
@@ -118,8 +121,6 @@ class ScreenshotPipeline:
                 aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'],
                 region_name='auto',
             )
-        if self.connection is None:
-            self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
 
     @staticmethod
     def _compress(png_data: bytes) -> tuple[bytes, int, int, int]:
