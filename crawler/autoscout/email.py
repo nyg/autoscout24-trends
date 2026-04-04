@@ -2,7 +2,9 @@
 
 import logging
 import os
+from datetime import datetime
 from textwrap import dedent
+from typing import Any
 
 import psycopg
 import resend
@@ -28,24 +30,21 @@ template = Template(lstrip_blocks=True, trim_blocks=True, source=dedent('''
 ''').strip())
 
 
-def _format_duration(start, end):
+def _format_duration(start: datetime | None, end: datetime | None) -> str:
     if not start or not end:
         return 'N/A'
     delta = end - start
     minutes, seconds = divmod(int(delta.total_seconds()), 60)
-    if minutes:
-        return f'{minutes}m {seconds}s'
-    return f'{seconds}s'
+    return f'{minutes}m {seconds}s' if minutes else f'{seconds}s'
 
 
-def send_batch_summary_email(batch_started_at, search_ids):
+def send_batch_summary_email(batch_started_at: datetime, search_ids: list[int]) -> None:
     """Send a summary email for search runs started after batch_started_at.
 
     Silently skips if RESEND_API_KEY is not set or no email recipient is
     configured in the database config table.
     """
-    api_key = os.environ.get('RESEND_API_KEY', '')
-    if not api_key:
+    if not (api_key := os.environ.get('RESEND_API_KEY', '')):
         log.info('Batch email skipped (RESEND_API_KEY not set)')
         return
 
@@ -76,9 +75,8 @@ def send_batch_summary_email(batch_started_at, search_ids):
             log.warning('No search runs found for batch email')
             return
 
-        runs = []
-        for name, success, found, scraped, req, failed_req, reason, started, finished in rows:
-            runs.append({
+        runs: list[dict[str, Any]] = [
+            {
                 'search_name': name,
                 'success': success,
                 'cars_found': found or 0,
@@ -87,7 +85,9 @@ def send_batch_summary_email(batch_started_at, search_ids):
                 'failed_request_count': failed_req or 0,
                 'finish_reason': reason or 'unknown',
                 'duration': _format_duration(started, finished),
-            })
+            }
+            for name, success, found, scraped, req, failed_req, reason, started, finished in rows
+        ]
 
         successful = sum(1 for r in runs if r['success'])
         total_found = sum(r['cars_found'] for r in runs)

@@ -1,12 +1,16 @@
+import dataclasses
 import hashlib
 import io
 import os
 import re
 from datetime import datetime
+from typing import Any
 
 import psycopg
 from psycopg import sql
 from psycopg.types.json import Jsonb
+from scrapy.crawler import Crawler
+from scrapy.statscollectors import StatsCollector
 
 from .items import CarItem, SellerItem
 
@@ -14,10 +18,10 @@ from .items import CarItem, SellerItem
 class ScreenshotPipeline:
     """Compresses screenshots to WebP, deduplicates via MD5, and uploads to Cloudflare R2."""
 
-    def __init__(self, crawler):
+    def __init__(self, crawler: Crawler) -> None:
         self.crawler = crawler
-        self.s3_client = None
-        self.connection = None
+        self.s3_client: Any = None
+        self.connection: psycopg.Connection | None = None
         self.r2_configured = all(os.environ.get(k) for k in (
             'R2_ENDPOINT_URL', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY',
             'R2_BUCKET_NAME', 'R2_PUBLIC_URL'
@@ -26,27 +30,31 @@ class ScreenshotPipeline:
         self.public_url = (os.environ.get('R2_PUBLIC_URL') or '').rstrip('/')
 
     @classmethod
-    def from_crawler(cls, crawler):
+    def from_crawler(cls, crawler: Crawler) -> ScreenshotPipeline:
         return cls(crawler)
 
-    def open_spider(self):
+    def open_spider(self) -> None:
         if not self.r2_configured:
             self.crawler.spider.logger.warning('R2 not configured — screenshots will not be uploaded')
 
-    def close_spider(self):
+    def close_spider(self) -> None:
         if self.connection:
             self.connection.close()
 
-    def process_item(self, item):
+    def process_item(self, item: CarItem | SellerItem) -> CarItem | SellerItem:
         if not isinstance(item, CarItem):
             return item
 
-        screenshot_data = item.pop('screenshot', None)
-        item['screenshot_id'] = None
+        screenshot_data = item.screenshot
+        item.screenshot = None
+        item.screenshot_id = None
 
-        if not screenshot_data or not self.r2_configured:
-            return item
+        if screenshot_data and self.r2_configured:
+            self._upload_screenshot(item, screenshot_data)
 
+        return item
+
+    def _upload_screenshot(self, item: CarItem, screenshot_data: bytes) -> None:
         try:
             self._ensure_clients()
             webp_data, width, height, original_size = self._compress(screenshot_data)
@@ -56,16 +64,15 @@ class ScreenshotPipeline:
             with self.connection.transaction():
                 with self.connection.cursor() as cursor:
                     cursor.execute('SELECT id FROM screenshots WHERE md5_hash = %s', (md5_hash,))
-                    existing = cursor.fetchone()
 
-                    if existing:
-                        item['screenshot_id'] = existing[0]
+                    if existing := cursor.fetchone():
+                        item.screenshot_id = existing[0]
                         self.crawler.spider.logger.info(
-                            f'Screenshot for {item["vehicle_id"]}: dedup hit (hash={md5_hash[:8]})')
+                            f'Screenshot for {item.vehicle_id}: dedup hit (hash={md5_hash[:8]})')
                     else:
                         search_name = re.sub(r'\W+', '_', self.crawler.spider.search_name).lower().strip('_')
                         timestamp = datetime.now().strftime('%Y-%m-%dT%H-%M-%SZ')
-                        r2_key = f'screenshots/{search_name}/{item["vehicle_id"]}/{timestamp}.webp'
+                        r2_key = f'screenshots/{search_name}/{item.vehicle_id}/{timestamp}.webp'
                         r2_url = f'{self.public_url}/{r2_key}'
 
                         self.s3_client.put_object(
@@ -80,18 +87,16 @@ class ScreenshotPipeline:
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                             RETURNING id
                         ''', (md5_hash, r2_key, r2_url, 'webp', width, height, original_size, compressed_size))
-                        item['screenshot_id'] = cursor.fetchone()[0]
+                        item.screenshot_id = cursor.fetchone()[0]
 
                         self.crawler.spider.logger.info(
-                            f'Screenshot for {item["vehicle_id"]}: '
+                            f'Screenshot for {item.vehicle_id}: '
                             f'{original_size / 1024:.0f}KB → {compressed_size / 1024:.0f}KB '
                             f'({compressed_size / original_size * 100:.0f}%), hash={md5_hash[:8]}')
         except Exception as e:
-            self.crawler.spider.logger.error(f'Screenshot processing failed for {item.get("vehicle_id")}: {e}')
+            self.crawler.spider.logger.error(f'Screenshot processing failed for {item.vehicle_id}: {e}')
 
-        return item
-
-    def _ensure_clients(self):
+    def _ensure_clients(self) -> None:
         if self.s3_client is None:
             import boto3
             self.s3_client = boto3.client(
@@ -105,7 +110,7 @@ class ScreenshotPipeline:
             self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
 
     @staticmethod
-    def _compress(png_data):
+    def _compress(png_data: bytes) -> tuple[bytes, int, int, int]:
         from PIL import Image
         from PIL.Image import Resampling
         img = Image.open(io.BytesIO(png_data))
@@ -124,21 +129,21 @@ class ScreenshotPipeline:
 
 class PostgreSQLPipeline:
 
-    def __init__(self, crawler):
+    def __init__(self, crawler: Crawler) -> None:
         self.crawler = crawler
-        self.connection = None
+        self.connection: psycopg.Connection | None = None
 
         self.batch_size = 1000
-        self.car_buffer = []
-        self.seller_buffer = []
+        self.car_buffer: list[dict[str, Any]] = []
+        self.seller_buffer: list[dict[str, Any]] = []
         self.cars_inserted = 0
         self.sellers_inserted = 0
 
     @classmethod
-    def from_crawler(cls, crawler):
+    def from_crawler(cls, crawler: Crawler) -> PostgreSQLPipeline:
         return cls(crawler)
 
-    def close_spider(self):
+    def close_spider(self) -> None:
         """Flush any remaining items in buffers and close database connection when spider finishes."""
         try:
             self.flush_buffers()
@@ -150,26 +155,29 @@ class PostgreSQLPipeline:
                 self.connection.close()
                 self.crawler.spider.logger.info('Database connection closed')
 
-    def process_item(self, item):
+    def process_item(self, item: CarItem | SellerItem) -> CarItem | SellerItem:
         """Buffer items and flush to database in batches for better performance."""
-        if isinstance(item, SellerItem):
-            self.seller_buffer.append(dict(item))
-        if isinstance(item, CarItem):
-            self.car_buffer.append(dict(item))
+        match item:
+            case SellerItem():
+                self.seller_buffer.append(dataclasses.asdict(item))
+            case CarItem():
+                car_dict = dataclasses.asdict(item)
+                car_dict.pop('screenshot', None)
+                self.car_buffer.append(car_dict)
 
         if len(self.seller_buffer) >= self.batch_size or len(self.car_buffer) >= self.batch_size:
             self.flush_buffers()
 
         return item
 
-    def _ensure_connection(self):
+    def _ensure_connection(self) -> None:
         """Establish a database connection if not already done."""
         if self.connection:
             return
 
         self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
 
-    def flush_buffers(self):
+    def flush_buffers(self) -> None:
         """Insert buffered items into the database and clear buffers. This is called when buffers reach batch size or when spider closes."""
         if not self.seller_buffer and not self.car_buffer:
             return
@@ -200,8 +208,6 @@ class PostgreSQLPipeline:
                     for car in self.car_buffer:
                         car['search_run_id'] = search_run_id
                         car['json_data'] = Jsonb(car['json_data'])
-                        car.setdefault('screenshot_id', None)
-                        car.pop('screenshot', None)
 
                     cursor.executemany(insert_query, self.car_buffer)
                     self.cars_inserted += cursor.rowcount
@@ -211,14 +217,13 @@ class PostgreSQLPipeline:
 
 
 class ItemTypeStatsPipeline:
-    def __init__(self, stats):
+    def __init__(self, stats: StatsCollector) -> None:
         self.stats = stats
 
     @classmethod
-    def from_crawler(cls, crawler):
+    def from_crawler(cls, crawler: Crawler) -> ItemTypeStatsPipeline:
         return cls(stats=crawler.stats)
 
-    def process_item(self, item):
-        item_type = type(item).__name__
-        self.stats.inc_value(f'item_scraped_count/{item_type}')
+    def process_item(self, item: CarItem | SellerItem) -> CarItem | SellerItem:
+        self.stats.inc_value(f'item_scraped_count/{type(item).__name__}')
         return item

@@ -1,8 +1,10 @@
 import os
+from typing import Any
 
 import psycopg
 from psycopg.types.json import Jsonb
 from scrapy import signals
+from scrapy.crawler import Crawler
 
 
 class SearchRunExtension:
@@ -12,19 +14,19 @@ class SearchRunExtension:
     so that CoreStats has already set finish_time, finish_reason, etc.
     """
 
-    def __init__(self, crawler):
+    def __init__(self, crawler: Crawler) -> None:
         self.crawler = crawler
-        self.connection = None
-        self.search_run_id = None
+        self.connection: psycopg.Connection | None = None
+        self.search_run_id: int | None = None
 
     @classmethod
-    def from_crawler(cls, crawler):
+    def from_crawler(cls, crawler: Crawler) -> SearchRunExtension:
         ext = cls(crawler)
         crawler.signals.connect(ext.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(ext.spider_closed, signal=signals.spider_closed)
         return ext
 
-    def spider_opened(self):
+    def spider_opened(self) -> None:
         """Create a search_runs row and publish search_run_id to Scrapy stats."""
         self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
         with self.connection.transaction():
@@ -36,10 +38,10 @@ class SearchRunExtension:
         self.crawler.stats.set_value('search_run_id', self.search_run_id)
         self.crawler.spider.logger.info(f'Created search run {self.search_run_id}')
 
-    def spider_closed(self):
+    def spider_closed(self) -> None:
         """Update the search_runs row with final stats."""
         try:
-            stats = self.crawler.stats.get_stats()
+            stats: dict[str, Any] = self.crawler.stats.get_stats()
 
             cars_scraped = stats.get('db/cars_inserted', 0)
             cars_found = self.crawler.spider.total_car_count

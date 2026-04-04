@@ -1,128 +1,116 @@
+from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any, Self
 
-from scrapy import Item, Field
 
-
-def parse_iso_datetime(value):
+def parse_iso_datetime(value: str | None) -> datetime | None:
     try:
         return datetime.fromisoformat(value)
     except (ValueError, TypeError):
         return None
 
 
-class CarItem(Item):
-    search_id = Field()
-    url = Field()
-    json_data = Field()
+@dataclass
+class SellerItem:
+    id: str
+    type: str
+    name: str
+    address: str | None
+    zip_code: str | None
+    city: str | None
 
-    title = Field()
-    subtitle = Field()
-    description = Field()
+    def __repr__(self) -> str:
+        return repr({'id': self.id, 'name': self.name})
 
-    vehicle_id = Field()
-    seller_vehicle_id = Field()
-    certification_number = Field()
-
-    price = Field()
-    body_type = Field()
-    color = Field()
-    mileage = Field()
-    has_additional_set_of_tires = Field()
-    had_accident = Field()
-
-    fuel_type = Field()
-    kilo_watts = Field()
-    cm3 = Field()
-    cylinders = Field()
-    cylinder_layout = Field()
-    avg_consumption = Field()
-    co2_emission = Field()
-
-    warranty = Field()
-    leasing = Field()
-
-    created_date = Field()
-    last_modified_date = Field()
-    first_registration_date = Field()
-    last_inspection_date = Field()
-
-    seller_id = Field()
-    screenshot = Field()
-    screenshot_id = Field()
-
-    def __repr__(self):
-        return repr({
-            'vehicle_id': self['vehicle_id'],
-            'title': self['title']
-        })
-
-    @staticmethod
-    def from_listing(search_id, url, screenshot, json_response):
-        car = CarItem()
-
-        car['search_id'] = search_id
-        car['url'] = url
-        car['json_data'] = json_response
-        car['screenshot'] = screenshot
-
-        car['title'] = json_response['pageViewTracking']['listing_typename']
-        car['subtitle'] = json_response['listing']['teaser']
-        car['description'] = json_response['listing']['description']
-
-        car['vehicle_id'] = json_response['listing']['id']
-        car['seller_vehicle_id'] = json_response['listing']['sellerVehicleId']
-        car['certification_number'] = json_response['listing']['certificationNumber']
-
-        car['price'] = json_response['listing']['price']
-        car['body_type'] = json_response['listing']['bodyType']
-        car['color'] = json_response['listing']['bodyColor']
-        car['mileage'] = json_response['listing']['mileage']
-        car['has_additional_set_of_tires'] = json_response['listing']['hasAdditionalSetOfTires']
-        car['had_accident'] = json_response['listing']['hadAccident']
-
-        car['fuel_type'] = json_response['listing']['fuelType']
-        car['kilo_watts'] = json_response['listing']['kiloWatts']
-        car['cm3'] = json_response['listing']['cubicCapacity']
-        car['cylinders'] = json_response['listing']['cylinders']
-        car['cylinder_layout'] = json_response['listing']['cylinderArrangement']
-        car['avg_consumption'] = json_response['listing']['consumption']['combined']
-        car['co2_emission'] = json_response['listing']['co2Emission']
-
-        car['warranty'] = json_response['listing']['warranty']['type'] != 'none'
-        car['leasing'] = json_response['listing']['leasing'] is not None
-
-        car['created_date'] = parse_iso_datetime(json_response['listing']['createdDate'])
-        car['last_modified_date'] = parse_iso_datetime(json_response['listing']['lastModifiedDate'])
-        car['first_registration_date'] = parse_iso_datetime(json_response['listing']['firstRegistrationDate'])
-
-        last_inspection = json_response['listing']['lastInspectionDate']
-        car['last_inspection_date'] = parse_iso_datetime(last_inspection)
-
-        car['seller_id'] = json_response['seller']['id']
-        return car
+    @classmethod
+    def from_listing(cls, json_response: dict[str, Any]) -> Self:
+        return cls(
+            id=str(json_response['id']),
+            type=json_response['type'],
+            name=json_response['name'] or 'Unknown seller',
+            address=json_response['address'],
+            zip_code=json_response['zipCode'],
+            city=json_response['city'],
+        )
 
 
-class SellerItem(Item):
-    id = Field()
-    type = Field()
-    name = Field()
-    address = Field()
-    zip_code = Field()
-    city = Field()
+@dataclass
+class CarItem:
+    search_id: int
+    url: str
+    json_data: dict[str, Any]
 
-    def __repr__(self):
-        return repr({
-            'id': self['id'],
-            'name': self['name']
-        })
+    title: str
+    subtitle: str | None
+    description: str | None
 
-    @staticmethod
-    def from_listing(json_response):
-        seller = SellerItem()
-        seller['id'] = json_response['id']
-        seller['type'] = json_response['type']
-        seller['name'] = json_response['name'] or 'Unknown seller'
-        seller['address'] = json_response['address']
-        seller['zip_code'] = json_response['zipCode']
-        seller['city'] = json_response['city']
-        return seller
+    vehicle_id: str
+    seller_vehicle_id: str | None
+    certification_number: str | None
+
+    price: int | None
+    body_type: str | None
+    color: str | None
+    mileage: int | None
+    has_additional_set_of_tires: bool | None
+    had_accident: bool | None
+
+    fuel_type: str | None
+    kilo_watts: int | None
+    cm3: int | None
+    cylinders: int | None
+    cylinder_layout: str | None
+    avg_consumption: float | None
+    co2_emission: int | None
+
+    warranty: bool
+    leasing: bool
+
+    created_date: datetime | None
+    last_modified_date: datetime | None
+    first_registration_date: datetime | None
+    last_inspection_date: datetime | None
+
+    seller_id: str
+    screenshot: bytes | None = field(default=None, repr=False)
+    screenshot_id: int | None = None
+    search_run_id: int | None = None
+
+    def __repr__(self) -> str:
+        return repr({'vehicle_id': self.vehicle_id, 'title': self.title})
+
+    @classmethod
+    def from_listing(cls, search_id: int, url: str, screenshot: bytes | None, json_response: dict[str, Any]) -> Self:
+        listing = json_response['listing']
+        return cls(
+            search_id=search_id,
+            url=url,
+            json_data=json_response,
+            title=json_response['pageViewTracking']['listing_typename'],
+            subtitle=listing['teaser'],
+            description=listing['description'],
+            vehicle_id=str(listing['id']),
+            seller_vehicle_id=listing['sellerVehicleId'],
+            certification_number=listing['certificationNumber'],
+            price=listing['price'],
+            body_type=listing['bodyType'],
+            color=listing['bodyColor'],
+            mileage=listing['mileage'],
+            has_additional_set_of_tires=listing['hasAdditionalSetOfTires'],
+            had_accident=listing['hadAccident'],
+            fuel_type=listing['fuelType'],
+            kilo_watts=listing['kiloWatts'],
+            cm3=listing['cubicCapacity'],
+            cylinders=listing['cylinders'],
+            cylinder_layout=listing['cylinderArrangement'],
+            avg_consumption=listing['consumption']['combined'],
+            co2_emission=listing['co2Emission'],
+            warranty=listing['warranty']['type'] != 'none',
+            leasing=listing['leasing'] is not None,
+            created_date=parse_iso_datetime(listing['createdDate']),
+            last_modified_date=parse_iso_datetime(listing['lastModifiedDate']),
+            first_registration_date=parse_iso_datetime(listing['firstRegistrationDate']),
+            last_inspection_date=parse_iso_datetime(listing['lastInspectionDate']),
+            seller_id=str(json_response['seller']['id']),
+            screenshot=screenshot,
+        )

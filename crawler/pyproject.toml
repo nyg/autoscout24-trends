@@ -1,0 +1,24 @@
+[project]
+name = "autoscout24-crawler"
+version = "1.0.0"
+description = "AutoScout24 car listings crawler"
+requires-python = ">=3.14"
+dependencies = [
+    "boto3==1.42.83",
+    "jinja2==3.1.6",
+    "njsparser==2.16",
+    "pillow==12.2.0",
+    "psycopg[binary]==3.3.3",
+    "python-dotenv==1.2.2",
+    "resend==2.27.0",
+    "scrapy==2.14.2",
+    "scrapy-seleniumbase-cdp==2.0.0",
+    "seleniumbase==4.47.9",
+]
+
+[build-system]
+requires = ["setuptools==75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["autoscout*"]
