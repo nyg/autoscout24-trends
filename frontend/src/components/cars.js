@@ -1,7 +1,7 @@
 'use client'
 
-import { asDecimal, asMediumDate, asShortDate } from '@/lib/format'
-import { use, useCallback, useEffect, useMemo, useReducer, useState, useSyncExternalStore } from 'react'
+import { createFormatters } from '@/lib/format'
+import { use, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
@@ -269,7 +269,7 @@ function MapPreviewButton({ car, apiKey }) {
 
 // --- Cell renderers ---
 
-function renderCell(col, car, options, config) {
+function renderCell(col, car, options, config, fmt) {
    switch (col.key) {
       case 'title': {
          const desc = car.subtitle || car.description || '-'
@@ -302,22 +302,22 @@ function renderCell(col, car, options, config) {
          )
       }
       case 'price':
-         return <TableCell key={col.key} className="text-right tabular-nums" suppressHydrationWarning>{asDecimal(car.price)}</TableCell>
+         return <TableCell key={col.key} className="text-right tabular-nums">{fmt.asDecimal(car.price)}</TableCell>
       case 'color':
          return <TableCell key={col.key} className="text-right">{car.color}</TableCell>
       case 'year':
-         return <TableCell key={col.key} className="text-right tabular-nums" suppressHydrationWarning>{asShortDate(car.first_registration_date)}</TableCell>
+         return <TableCell key={col.key} className="text-right tabular-nums">{fmt.asShortDate(car.first_registration_date)}</TableCell>
       case 'mileage':
-         return <TableCell key={col.key} className="text-right tabular-nums" suppressHydrationWarning>{asDecimal(car.mileage)}</TableCell>
+         return <TableCell key={col.key} className="text-right tabular-nums">{fmt.asDecimal(car.mileage)}</TableCell>
       case 'km_year':
-         return <TableCell key={col.key} className="text-right tabular-nums" suppressHydrationWarning>{asDecimal(car.km_year)}</TableCell>
+         return <TableCell key={col.key} className="text-right tabular-nums">{fmt.asDecimal(car.km_year)}</TableCell>
       case 'seller':
          return <TableCell key={col.key} className="text-right"><SellerCell car={car} mapsApiKey={config['google-maps-api-key']} homeAddress={config['home-address']} /></TableCell>
       case 'listed_since':
          return (
-            <TableCell key={col.key} className="text-right tabular-nums" suppressHydrationWarning>
-               {asMediumDate(car.created_date)}
-               {options.listingEnded ? <><br />{asMediumDate(car.date_in)}</> : null}
+            <TableCell key={col.key} className="text-right tabular-nums">
+               {fmt.asMediumDate(car.created_date)}
+               {options.listingEnded ? <><br />{fmt.asMediumDate(car.date_in)}</> : null}
             </TableCell>
          )
       case 'has_additional_set_of_tires':
@@ -326,14 +326,14 @@ function renderCell(col, car, options, config) {
       case 'leasing':
          return <TableCell key={col.key} className="text-right">{car[col.sortKey] === true ? 'Yes' : car[col.sortKey] === false ? 'No' : '-'}</TableCell>
       case 'last_inspection_date':
-         return <TableCell key={col.key} className="text-right tabular-nums" suppressHydrationWarning>{car.last_inspection_date ? asShortDate(car.last_inspection_date) : '-'}</TableCell>
+         return <TableCell key={col.key} className="text-right tabular-nums">{car.last_inspection_date ? fmt.asShortDate(car.last_inspection_date) : '-'}</TableCell>
       case 'avg_consumption':
          return <TableCell key={col.key} className="text-right tabular-nums">{car.avg_consumption != null ? Number(car.avg_consumption).toFixed(1) : '-'}</TableCell>
       case 'kilo_watts':
       case 'cm3':
       case 'co2_emission':
       case 'cylinders':
-         return <TableCell key={col.key} className="text-right tabular-nums">{car[col.sortKey] != null ? asDecimal(car[col.sortKey]) : '-'}</TableCell>
+         return <TableCell key={col.key} className="text-right tabular-nums">{car[col.sortKey] != null ? fmt.asDecimal(car[col.sortKey]) : '-'}</TableCell>
       case 'screenshot':
          return (
             <TableCell key={col.key} className="text-center">
@@ -362,12 +362,10 @@ function renderCell(col, car, options, config) {
 
 // --- Main component ---
 
-export default function Cars({ name, data, options = {}, config = {} }) {
+export default function Cars({ name, data, options = {}, config = {}, locale }) {
    const cars = use(data)
 
-   // Force re-render after hydration so client locale formatters take effect
-   const [, rerender] = useReducer(x => x + 1, 0)
-   useEffect(rerender, [])
+   const fmt = useMemo(() => createFormatters(locale), [locale])
 
    const activeKeys = useSyncExternalStore(subscribeVisibleColumns, getVisibleColumnsSnapshot, getVisibleColumnsServerSnapshot)
    const [sort, setSort] = useState({ key: 'price', direction: 'asc' })
@@ -452,7 +450,7 @@ export default function Cars({ name, data, options = {}, config = {} }) {
                <TableBody>
                   {sortedCars.map(car => (
                      <TableRow key={car.id}>
-                        {visibleColumns.map(col => renderCell(col, car, options, config))}
+                        {visibleColumns.map(col => renderCell(col, car, options, config, fmt))}
                      </TableRow>
                   ))}
                </TableBody>

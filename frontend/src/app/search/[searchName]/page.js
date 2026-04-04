@@ -3,6 +3,8 @@ import Cars from '@/components/cars'
 import DailyListingCount from '@/components/daily-listing-count'
 import MileagePriceComparison from '@/components/mileage-price-comparison'
 import { fetchActiveListings, fetchConfig, fetchDailyListingCount, fetchPreviousListings } from '@/lib/data'
+import { parseAcceptLanguage } from '@/lib/format'
+import { headers } from 'next/headers'
 
 
 export async function generateMetadata({ params }) {
@@ -14,6 +16,9 @@ export default async function Home({ params }) {
 
    const awaitedParams = await params
    const searchName = decodeURIComponent(awaitedParams.searchName)
+
+   const hdrs = await headers()
+   const locale = parseAcceptLanguage(hdrs.get('accept-language'))
 
    const activeListings = fetchActiveListings(searchName)
    const previousListings = fetchPreviousListings(searchName)
@@ -27,8 +32,8 @@ export default async function Home({ params }) {
             <MileagePriceComparison data={activeListings} />
          </div>
          <div className="mt-4 flex flex-col gap-4">
-            <Cars name="Active listings" data={activeListings} config={config} />
-            <Cars name="Previous listings" data={previousListings} options={{ listingEnded: true }} config={config} />
+            <Cars name="Active listings" data={activeListings} config={config} locale={locale} />
+            <Cars name="Previous listings" data={previousListings} options={{ listingEnded: true }} config={config} locale={locale} />
          </div>
       </Suspense>
    )

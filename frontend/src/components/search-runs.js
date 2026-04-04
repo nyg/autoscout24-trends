@@ -1,7 +1,7 @@
 'use client'
 
 import { use, useMemo, useState } from 'react'
-import { asMediumDate } from '@/lib/format'
+import { createFormatters } from '@/lib/format'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -25,27 +25,22 @@ function formatDuration(start, end) {
    return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
 }
 
-function formatDateTime(timestamp) {
-   if (!timestamp) {
-      return '–'
-   }
-   return asMediumDate(new Date(timestamp))
-}
-
-function formatTime(timestamp) {
+function formatTime(timestamp, locale) {
    if (!timestamp) {
       return ''
    }
    const d = new Date(timestamp)
-   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+   return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
 }
 
 
-export default function SearchRuns({ data, searches }) {
+export default function SearchRuns({ data, searches, locale }) {
 
    const runs = use(data)
    const searchList = use(searches)
    const [filter, setFilter] = useState(null)
+
+   const fmt = useMemo(() => createFormatters(locale), [locale])
 
    const filteredRuns = useMemo(
       () => filter ? runs.filter(r => r.search_name === filter) : runs,
@@ -112,8 +107,8 @@ export default function SearchRuns({ data, searches }) {
                   {filteredRuns.map(run => (
                      <TableRow key={run.id} className={run.success === false ? 'bg-destructive/5' : ''}>
                         <TableCell className="whitespace-nowrap font-medium">{run.search_name}</TableCell>
-                        <TableCell className="whitespace-nowrap text-right">{formatDateTime(run.started_at)}</TableCell>
-                        <TableCell className="whitespace-nowrap text-right">{formatTime(run.started_at)}</TableCell>
+                        <TableCell className="whitespace-nowrap text-right">{fmt.asMediumDate(run.started_at)}</TableCell>
+                        <TableCell className="whitespace-nowrap text-right">{formatTime(run.started_at, locale)}</TableCell>
                         <TableCell className="whitespace-nowrap text-right">{formatDuration(run.started_at, run.finished_at)}</TableCell>
                         <TableCell className="text-center">
                            {run.success === true && <CheckCircle2Icon className="mx-auto size-4 text-green-600" />}
