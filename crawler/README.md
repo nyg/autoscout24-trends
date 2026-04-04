@@ -87,13 +87,16 @@ Run all active searches (creates `.venv` if needed, updates dependencies, then s
 Schedule daily crawls:
 
 ```bash
-mkdir -p $HOME/.local/state/autoscout24-trends
 crontab -e
 ```
 
 ```cron
-0 0 * * * /path/to/crawler/run-spiders.sh >> $HOME/.local/state/autoscout24-trends/cron.log 2>&1
+0 0 * * * /path/to/crawler/run-spiders.sh
 ```
+
+Logs are automatically written to `$XDG_STATE_HOME/autoscout24-trends/` (defaults to `~/.local/state/autoscout24-trends/`) with daily rotation and 30-day retention. Shell-level output redirection (`>> ... 2>&1`) is no longer needed.
+
+You can override the log directory by setting the `XDG_STATE_HOME` environment variable.
 
 ## Headless Linux tips
 

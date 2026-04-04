@@ -13,6 +13,7 @@ Options:
 """
 
 import logging
+import logging.handlers
 import os
 import sys
 import warnings
@@ -48,6 +49,33 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 log = logging.getLogger(__name__)
 
 
+def _setup_file_logging() -> Path | None:
+    """Add a daily-rotating file handler to the root logger.
+
+    Writes to $XDG_STATE_HOME/autoscout24-trends/ (default
+    ~/.local/state/autoscout24-trends/).  Returns the log directory path,
+    or None if setup failed.
+    """
+    xdg_state = os.environ.get('XDG_STATE_HOME', os.path.expanduser('~/.local/state'))
+    log_dir = Path(xdg_state) / 'autoscout24-trends'
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        log.warning('Cannot create log directory %s, file logging disabled', log_dir)
+        return None
+
+    log_file = log_dir / 'crawl.log'
+    handler = logging.handlers.TimedRotatingFileHandler(
+        log_file, when='midnight', backupCount=30, encoding='utf-8',
+    )
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    ))
+    logging.getLogger().addHandler(handler)
+    return log_dir
+
+
 def _parse_id_filter(argv: list[str]) -> set[int] | None:
     """Return a set of integer IDs from a --id=1,2,3 argument, or None."""
     for arg in argv:
@@ -66,6 +94,10 @@ def main() -> None:
     # CrawlerRunner does not configure logging on its own (unlike
     # CrawlerProcess), so we do it explicitly to see spider output.
     configure_logging(settings)
+
+    log_dir = _setup_file_logging()
+    if log_dir:
+        log.info('File logging enabled: %s (daily rotation, 30-day retention)', log_dir)
 
     id_filter = _parse_id_filter(sys.argv[1:])
 
