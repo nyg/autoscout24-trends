@@ -48,15 +48,15 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 log = logging.getLogger(__name__)
 
 
-def _parse_id_filter(argv):
+def _parse_id_filter(argv: list[str]) -> set[int] | None:
     """Return a set of integer IDs from a --id=1,2,3 argument, or None."""
     for arg in argv:
         if arg.startswith('--id='):
-            return {int(x) for x in arg[len('--id='):].split(',') if x.strip()}
+            return {int(x) for x in arg.removeprefix('--id=').split(',') if x.strip()}
     return None
 
 
-def main():
+def main() -> None:
     # Anchor the working directory so Scrapy finds the project settings,
     # regardless of where this script is invoked from.
     os.chdir(SCRIPT_DIR)
@@ -71,7 +71,7 @@ def main():
 
     with psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1) as conn:
         with conn.cursor() as cur:
-            searches = cur.execute(
+            searches: list[tuple[int, str, str]] = cur.execute(
                 'SELECT id, name, url FROM searches WHERE is_active = true ORDER BY name'
             ).fetchall()
 

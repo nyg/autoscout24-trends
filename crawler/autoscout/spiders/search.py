@@ -1,3 +1,5 @@
+from collections.abc import Callable, Generator
+from typing import Any
 from urllib.parse import urlencode, urlparse, urlunparse
 
 import njsparser
@@ -22,7 +24,7 @@ ACCEPT_COOKIES_AND_EXPAND_FIELDS = {
 class SearchPageRequest(SeleniumBaseRequest):
     """Request for a search result page."""
 
-    def __init__(self, spider=None, **kwargs):
+    def __init__(self, spider: 'SearchSpider | None' = None, **kwargs) -> None:
         if spider:
             meta = kwargs.pop('meta', {})
             kwargs.update(callback=spider.parse, errback=spider.handle_error, meta=meta, wait_for_element='h1.chakra-text')
@@ -32,7 +34,7 @@ class SearchPageRequest(SeleniumBaseRequest):
 class CarPageRequest(SeleniumBaseRequest):
     """Request for a car page."""
 
-    def __init__(self, spider=None, **kwargs):
+    def __init__(self, spider: 'SearchSpider | None' = None, **kwargs) -> None:
         if spider:
             kwargs.update(callback=spider.parse_car,
                           errback=spider.handle_error,
@@ -46,20 +48,20 @@ class SearchSpider(Spider):
     name = 'search'
     allowed_domains = ['www.autoscout24.ch', 'autoscout24.ch']
 
-    def __init__(self, search_id, search_name, url, *args, **kwargs):
+    def __init__(self, search_id: int | str, search_name: str, url: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.search_id = int(search_id)
         self.search_name = search_name
         self.url = urlparse(url)
-        self.failed_requests = []
+        self.failed_requests: list[dict[str, str | int]] = []
         self.total_car_count = 0
 
-    async def start(self):
+    async def start(self) -> Generator:
         start_url = self._result_page_url()
         self.logger.info(f'Starting crawl with URL: {start_url}')
         yield SearchPageRequest(self, url=start_url)
 
-    def parse(self, response: Response, **kwargs):
+    def parse(self, response: Response, **kwargs) -> Generator:
         """Parse the search result page using flight data."""
         page_index, page_count, total_car_count, listings = self._extract_search_results(response)
         self.logger.info(f'Parsing search page: {page_index + 1}/{page_count} {response.url}')
@@ -75,7 +77,7 @@ class SearchSpider(Spider):
         if next_page < page_count:
             yield SearchPageRequest(self, url=self._result_page_url(next_page))
 
-    def parse_car(self, response: Response):
+    def parse_car(self, response: Response) -> Generator:
         try:
             self.logger.info(f'Parsing car: {response.url}')
             listing_data = self._extract_listing_data(response.body)
@@ -85,14 +87,14 @@ class SearchSpider(Spider):
             self.logger.error(f'Error parsing car: {e}')
 
     @staticmethod
-    def _extract_search_results(response):
+    def _extract_search_results(response: Response) -> tuple[int, int, int, list[dict[str, Any]]]:
         """Extract Next.js flight data describing the search results, including pagination info and listing URLs."""
         fd = njsparser.BeautifulFD(response.body)
         prefetched, _ = SearchSpider._find_nested_key(fd, 'prefetchedListings', lambda e: 'totalPages' in e)
         return prefetched['number'], prefetched['totalPages'], prefetched['totalElements'], prefetched['content']
 
     @staticmethod
-    def _extract_listing_data(body):
+    def _extract_listing_data(body: bytes) -> dict[str, Any]:
         """Extract Next.js flight data describing the vehicle and seller."""
         fd = njsparser.BeautifulFD(body)
 
@@ -116,54 +118,59 @@ class SearchSpider(Spider):
         }
 
     @staticmethod
-    def _find_nested_key(obj, key, condition=lambda e: True, _depth=0):
+    def _find_nested_key(
+        obj: Any,
+        key: str,
+        condition: Callable[[Any], bool] = lambda e: True,
+        _depth: int = 0,
+    ) -> tuple[Any, dict | None]:
         """Recursively search for a key in nested dict/list structure.
         Accepts a BeautifulFD (searches all Data node contents) or a dict/list.
         Returns (value, parent_dict) if found, or (None, None)."""
-        if isinstance(obj, njsparser.BeautifulFD):
-            for data_node in obj.find_iter([njsparser.T.Data]):
-                if data_node.content is None:
-                    continue
-                result, parent = SearchSpider._find_nested_key(data_node.content, key, condition)
-                if result is not None:
-                    return result, parent
-            return None, None
-
         if _depth > 20:
             return None, None
 
-        if isinstance(obj, dict):
-            if key in obj:
-                try:
-                    if condition(obj[key]):
-                        return obj[key], obj
-                except Exception:
-                    pass
-            for v in obj.values():
-                result, parent = SearchSpider._find_nested_key(v, key, condition, _depth + 1)
-                if result is not None:
-                    return result, parent
-        elif isinstance(obj, list):
-            for item in obj:
-                result, parent = SearchSpider._find_nested_key(item, key, condition, _depth + 1)
-                if result is not None:
-                    return result, parent
+        match obj:
+            case njsparser.BeautifulFD():
+                for data_node in obj.find_iter([njsparser.T.Data]):
+                    if data_node.content is not None:
+                        result, parent = SearchSpider._find_nested_key(data_node.content, key, condition)
+                        if result is not None:
+                            return result, parent
+
+            case dict():
+                if key in obj:
+                    try:
+                        if condition(obj[key]):
+                            return obj[key], obj
+                    except Exception:
+                        pass
+                for v in obj.values():
+                    result, parent = SearchSpider._find_nested_key(v, key, condition, _depth + 1)
+                    if result is not None:
+                        return result, parent
+
+            case list():
+                for entry in obj:
+                    result, parent = SearchSpider._find_nested_key(entry, key, condition, _depth + 1)
+                    if result is not None:
+                        return result, parent
 
         return None, None
 
-    def _listing_url(self, listing):
+    def _listing_url(self, listing: dict[str, Any]) -> str:
         return f'{self.url.scheme}://{self.url.netloc}/en/d/{listing['id']}'
 
-    def _result_page_url(self, page=0):
+    def _result_page_url(self, page: int = 0) -> str:
         query = f'{self.url.query}&{urlencode({'pagination[page]': page})}' if self.url.query else urlencode({'pagination[page]': page})
         return urlunparse(self.url._replace(query=query))
 
-    def handle_error(self, failure: Failure):
+    def handle_error(self, failure: Failure) -> None:
         """Handle request errors by logging the failed URL and reason, and storing it for summary on spider close."""
         reason = failure.value.response.status if failure.check(HttpError) else repr(failure.value)
         self.failed_requests.append({'url': failure.request.url, 'reason': reason})
 
-    def closed(self, reason):
+    def closed(self, reason: str) -> None:
         """Log a summary of failed URLs when the spider finishes, if there are any."""
         if not self.failed_requests:
             return
