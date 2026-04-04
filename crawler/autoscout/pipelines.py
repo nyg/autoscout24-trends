@@ -15,13 +15,28 @@ from scrapy.statscollectors import StatsCollector
 from .items import CarItem, SellerItem
 
 
+def get_shared_connection(crawler: Crawler) -> psycopg.Connection:
+    """Return the shared DB connection owned by SearchRunExtension.
+
+    The connection is created in SearchRunExtension.spider_opened and stored
+    on the crawler instance so that pipelines can reuse it without opening
+    a second connection.
+    """
+    connection = getattr(crawler, 'db_connection', None)
+    if connection is None:
+        raise RuntimeError(
+            'Shared DB connection not available. '
+            'Ensure SearchRunExtension is enabled and has run spider_opened.'
+        )
+    return connection
+
+
 class ScreenshotPipeline:
     """Compresses screenshots to WebP, deduplicates via MD5, and uploads to Cloudflare R2."""
 
     def __init__(self, crawler: Crawler) -> None:
         self.crawler = crawler
         self.s3_client: Any = None
-        self.connection: psycopg.Connection | None = None
         self.r2_configured = all(os.environ.get(k) for k in (
             'R2_ENDPOINT_URL', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY',
             'R2_BUCKET_NAME', 'R2_PUBLIC_URL'
@@ -38,8 +53,7 @@ class ScreenshotPipeline:
             self.crawler.spider.logger.warning('R2 not configured — screenshots will not be uploaded')
 
     def close_spider(self) -> None:
-        if self.connection:
-            self.connection.close()
+        pass
 
     def process_item(self, item: CarItem | SellerItem) -> CarItem | SellerItem:
         if not isinstance(item, CarItem):
@@ -56,13 +70,14 @@ class ScreenshotPipeline:
 
     def _upload_screenshot(self, item: CarItem, screenshot_data: bytes) -> None:
         try:
-            self._ensure_clients()
+            self._ensure_s3_client()
+            connection = get_shared_connection(self.crawler)
             webp_data, width, height, original_size = self._compress(screenshot_data)
             compressed_size = len(webp_data)
             md5_hash = hashlib.md5(webp_data).hexdigest()
 
-            with self.connection.transaction():
-                with self.connection.cursor() as cursor:
+            with connection.transaction():
+                with connection.cursor() as cursor:
                     cursor.execute('SELECT id FROM screenshots WHERE md5_hash = %s', (md5_hash,))
 
                     if existing := cursor.fetchone():
@@ -96,7 +111,7 @@ class ScreenshotPipeline:
         except Exception as e:
             self.crawler.spider.logger.error(f'Screenshot processing failed for {item.vehicle_id}: {e}')
 
-    def _ensure_clients(self) -> None:
+    def _ensure_s3_client(self) -> None:
         if self.s3_client is None:
             import boto3
             self.s3_client = boto3.client(
@@ -106,8 +121,6 @@ class ScreenshotPipeline:
                 aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'],
                 region_name='auto',
             )
-        if self.connection is None:
-            self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
 
     @staticmethod
     def _compress(png_data: bytes) -> tuple[bytes, int, int, int]:
@@ -131,7 +144,6 @@ class PostgreSQLPipeline:
 
     def __init__(self, crawler: Crawler) -> None:
         self.crawler = crawler
-        self.connection: psycopg.Connection | None = None
 
         self.batch_size = 1000
         self.car_buffer: list[dict[str, Any]] = []
@@ -144,16 +156,16 @@ class PostgreSQLPipeline:
         return cls(crawler)
 
     def close_spider(self) -> None:
-        """Flush any remaining items in buffers and close database connection when spider finishes."""
+        """Flush any remaining items in buffers when spider finishes.
+
+        The shared DB connection is closed later by SearchRunExtension
+        (spider_closed signal fires after pipeline close_spider).
+        """
         try:
             self.flush_buffers()
         except Exception as e:
             self.crawler.spider.logger.error(f'Database error: {e}', exc_info=True)
             raise
-        finally:
-            if self.connection:
-                self.connection.close()
-                self.crawler.spider.logger.info('Database connection closed')
 
     def process_item(self, item: CarItem | SellerItem) -> CarItem | SellerItem:
         """Buffer items and flush to database in batches for better performance."""
@@ -170,22 +182,15 @@ class PostgreSQLPipeline:
 
         return item
 
-    def _ensure_connection(self) -> None:
-        """Establish a database connection if not already done."""
-        if self.connection:
-            return
-
-        self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
-
     def flush_buffers(self) -> None:
         """Insert buffered items into the database and clear buffers. This is called when buffers reach batch size or when spider closes."""
         if not self.seller_buffer and not self.car_buffer:
             return
 
         search_run_id = self.crawler.stats.get_value('search_run_id')
-        self._ensure_connection()
-        with self.connection.transaction():
-            with self.connection.cursor() as cursor:
+        connection = get_shared_connection(self.crawler)
+        with connection.transaction():
+            with connection.cursor() as cursor:
                 if self.seller_buffer:
                     insert_query = sql.SQL('''
                         INSERT INTO sellers (id, type, name, address, zip_code, city)

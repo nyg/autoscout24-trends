@@ -20,6 +20,7 @@ TELNETCONSOLE_ENABLED = False
 LOG_LEVEL = 'INFO'
 TWISTED_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
 
+PGSQL_CONNECT_TIMEOUT = 1
 
 screen_resolution = '1026,720'
 SELENIUMBASE_BROWSER_OPTIONS = {

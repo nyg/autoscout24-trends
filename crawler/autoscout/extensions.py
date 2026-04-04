@@ -12,6 +12,10 @@ class SearchRunExtension:
 
     Uses spider_opened/spider_closed signals (not pipeline open/close_spider)
     so that CoreStats has already set finish_time, finish_reason, etc.
+
+    Owns the shared DB connection lifecycle: creates it in spider_opened,
+    attaches it to crawler.db_connection for pipelines to reuse, and closes
+    it in spider_closed (which fires after pipeline close_spider).
     """
 
     def __init__(self, crawler: Crawler) -> None:
@@ -27,8 +31,9 @@ class SearchRunExtension:
         return ext
 
     def spider_opened(self) -> None:
-        """Create a search_runs row and publish search_run_id to Scrapy stats."""
-        self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1)
+        """Create a shared DB connection and a search_runs row, then publish search_run_id to Scrapy stats."""
+        self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=self.crawler.settings.getint('PGSQL_CONNECT_TIMEOUT'))
+        self.crawler.db_connection = self.connection
         with self.connection.transaction():
             with self.connection.cursor() as cursor:
                 (self.search_run_id,) = cursor.execute(
@@ -80,3 +85,5 @@ class SearchRunExtension:
         finally:
             if self.connection:
                 self.connection.close()
+                self.crawler.db_connection = None
+                self.crawler.spider.logger.info('Shared database connection closed')
