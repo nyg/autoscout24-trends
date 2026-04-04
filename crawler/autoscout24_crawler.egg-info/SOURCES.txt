@@ -1,0 +1,15 @@
+README.md
+pyproject.toml
+autoscout/__init__.py
+autoscout/email.py
+autoscout/extensions.py
+autoscout/items.py
+autoscout/pipelines.py
+autoscout/settings.py
+autoscout/spiders/__init__.py
+autoscout/spiders/search.py
+autoscout24_crawler.egg-info/PKG-INFO
+autoscout24_crawler.egg-info/SOURCES.txt
+autoscout24_crawler.egg-info/dependency_links.txt
+autoscout24_crawler.egg-info/requires.txt
+autoscout24_crawler.egg-info/top_level.txt

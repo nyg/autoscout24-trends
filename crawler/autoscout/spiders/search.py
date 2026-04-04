@@ -24,7 +24,7 @@ ACCEPT_COOKIES_AND_EXPAND_FIELDS = {
 class SearchPageRequest(SeleniumBaseRequest):
     """Request for a search result page."""
 
-    def __init__(self, spider: 'SearchSpider | None' = None, **kwargs) -> None:
+    def __init__(self, spider: SearchSpider | None = None, **kwargs) -> None:
         if spider:
             meta = kwargs.pop('meta', {})
             kwargs.update(callback=spider.parse, errback=spider.handle_error, meta=meta, wait_for_element='h1.chakra-text')
@@ -34,7 +34,7 @@ class SearchPageRequest(SeleniumBaseRequest):
 class CarPageRequest(SeleniumBaseRequest):
     """Request for a car page."""
 
-    def __init__(self, spider: 'SearchSpider | None' = None, **kwargs) -> None:
+    def __init__(self, spider: SearchSpider | None = None, **kwargs) -> None:
         if spider:
             kwargs.update(callback=spider.parse_car,
                           errback=spider.handle_error,

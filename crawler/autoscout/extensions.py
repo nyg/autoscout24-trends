@@ -20,7 +20,7 @@ class SearchRunExtension:
         self.search_run_id: int | None = None
 
     @classmethod
-    def from_crawler(cls, crawler: Crawler) -> 'SearchRunExtension':
+    def from_crawler(cls, crawler: Crawler) -> SearchRunExtension:
         ext = cls(crawler)
         crawler.signals.connect(ext.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(ext.spider_closed, signal=signals.spider_closed)

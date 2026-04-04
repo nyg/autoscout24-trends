@@ -30,7 +30,7 @@ class ScreenshotPipeline:
         self.public_url = (os.environ.get('R2_PUBLIC_URL') or '').rstrip('/')
 
     @classmethod
-    def from_crawler(cls, crawler: Crawler) -> 'ScreenshotPipeline':
+    def from_crawler(cls, crawler: Crawler) -> ScreenshotPipeline:
         return cls(crawler)
 
     def open_spider(self) -> None:
@@ -140,7 +140,7 @@ class PostgreSQLPipeline:
         self.sellers_inserted = 0
 
     @classmethod
-    def from_crawler(cls, crawler: Crawler) -> 'PostgreSQLPipeline':
+    def from_crawler(cls, crawler: Crawler) -> PostgreSQLPipeline:
         return cls(crawler)
 
     def close_spider(self) -> None:
@@ -221,7 +221,7 @@ class ItemTypeStatsPipeline:
         self.stats = stats
 
     @classmethod
-    def from_crawler(cls, crawler: Crawler) -> 'ItemTypeStatsPipeline':
+    def from_crawler(cls, crawler: Crawler) -> ItemTypeStatsPipeline:
         return cls(stats=crawler.stats)
 
     def process_item(self, item: CarItem | SellerItem) -> CarItem | SellerItem:
