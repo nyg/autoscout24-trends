@@ -1,4 +1,4 @@
-const DEFAULT_LOCALE = 'fr-CH'
+const DEFAULT_LOCALE = 'en-US'
 
 const formatDate = (formatter, date) =>
    formatter.format(date).replace(' ', '\u00A0') // non-breaking space

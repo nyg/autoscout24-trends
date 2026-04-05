@@ -32,7 +32,7 @@ export default function SearchRuns({ data, searches }) {
    const searchList = use(searches)
    const [filter, setFilter] = useState(null)
 
-   const fmt = useFormatter()
+   const {asMediumDate, asTime} = useFormatter()
 
    const filteredRuns = useMemo(
       () => filter ? runs.filter(r => r.search_name === filter) : runs,
@@ -99,8 +99,8 @@ export default function SearchRuns({ data, searches }) {
                   {filteredRuns.map(run => (
                      <TableRow key={run.id} className={run.success === false ? 'bg-destructive/5' : ''}>
                         <TableCell className="whitespace-nowrap font-medium">{run.search_name}</TableCell>
-                        <TableCell className="whitespace-nowrap text-right">{fmt.asMediumDate(run.started_at)}</TableCell>
-                        <TableCell className="whitespace-nowrap text-right">{fmt.asTime(run.started_at)}</TableCell>
+                        <TableCell className="whitespace-nowrap text-right">{asMediumDate(run.started_at)}</TableCell>
+                        <TableCell className="whitespace-nowrap text-right">{asTime(run.started_at)}</TableCell>
                         <TableCell className="whitespace-nowrap text-right">{formatDuration(run.started_at, run.finished_at)}</TableCell>
                         <TableCell className="text-center">
                            {run.success === true && <CheckCircle2Icon className="mx-auto size-4 text-green-600" />}

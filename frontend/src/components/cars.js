@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormatter } from '@/lib/formatter-context'
-import { use, useCallback, useState, useSyncExternalStore } from 'react'
+import { use, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
