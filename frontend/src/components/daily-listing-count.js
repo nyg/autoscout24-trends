@@ -1,6 +1,6 @@
 'use client'
 
-import { asDecimal, asMediumDate, asShortMonthYearDate } from '@/lib/format'
+import { useFormatter } from '@/lib/formatter-context'
 import { use, useState } from 'react'
 import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import {
@@ -66,6 +66,7 @@ function DailyListingCountLegend({ hiddenDataKeys, onToggleDataKey }) {
 
 export default function DailyListingCount({ data }) {
    const listings = use(data)
+   const { asDecimal, asMediumDate, asShortMonthYearDate } = useFormatter()
    const [hiddenDataKeys, setHiddenDataKeys] = useState({})
 
    function toggleDataKey(dataKey) {

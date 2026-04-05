@@ -1,7 +1,7 @@
 'use client'
 
-import { createFormatters } from '@/lib/format'
-import { use, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
+import { useFormatter } from '@/lib/formatter-context'
+import { use, useCallback, useState, useSyncExternalStore } from 'react'
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
@@ -362,10 +362,10 @@ function renderCell(col, car, options, config, fmt) {
 
 // --- Main component ---
 
-export default function Cars({ name, data, options = {}, config = {}, locale }) {
+export default function Cars({ name, data, options = {}, config = {} }) {
    const cars = use(data)
 
-   const fmt = useMemo(() => createFormatters(locale), [locale])
+   const fmt = useFormatter()
 
    const activeKeys = useSyncExternalStore(subscribeVisibleColumns, getVisibleColumnsSnapshot, getVisibleColumnsServerSnapshot)
    const [sort, setSort] = useState({ key: 'price', direction: 'asc' })

@@ -70,11 +70,11 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Module-level cache (`placeCache` Map) keyed by `"sellerName|zipCode|city"` avoids redundant API calls.
 - Requires **Maps JavaScript API** and **Places API (New)** enabled in Google Cloud Console.
 
-## Locale formatting (`format.js`)
-- Server components parse the `Accept-Language` HTTP header via `parseAcceptLanguage()` and pass the resolved locale string as a prop to client components.
-- Client components create locale-bound formatters via `createFormatters(locale)`, which returns `{ asDecimal, asShortDate, asMediumDate }`. Since the same locale is used for both SSR and client rendering, there are no hydration mismatches.
-- Module-level convenience exports (`asDecimal`, `asMediumDate`, `asShortDate`, `asShortMonthYearDate`) use `navigator.language` on the client with `'fr-CH'` fallback — used by chart components which are client-only and don't need SSR-safe formatting.
-- Charts (Recharts) render client-only, so they use the module-level formatters directly without hydration issues.
+## Locale formatting (`format.js` + `formatter-context.js`)
+- The root layout reads the `Accept-Language` HTTP header via `parseAcceptLanguage()` and wraps the app in `<FormatterProvider locale={…}>`.
+- `FormatterProvider` (client component) calls `createFormatters(locale)` once and exposes the result via React Context.
+- All client components — tables and charts alike — call `useFormatter()` to get `{ asDecimal, asShortDate, asMediumDate, asShortMonthYearDate, asTime }`. No locale prop-drilling, no module-level formatter singletons.
+- Because the same locale is used for SSR and client rendering, there are no hydration mismatches.
 
 ## Project-specific conventions
 - Frontend formatting is intentionally non-default: 3-space indentation, single quotes, no semicolons (`frontend/eslint.config.mjs`). Match existing style exactly.

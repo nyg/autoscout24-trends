@@ -1,6 +1,6 @@
 'use client'
 
-import { asDecimal } from '@/lib/format'
+import { useFormatter } from '@/lib/formatter-context'
 import { use } from 'react'
 import { CartesianGrid, Scatter, ScatterChart, XAxis, YAxis } from 'recharts'
 import {
@@ -41,6 +41,7 @@ function mileageDomain(listings) {
 
 export default function MileagePriceComparison({ data }) {
    const listings = use(data)
+   const { asDecimal } = useFormatter()
 
    return (
       <Card className="flex-1">
