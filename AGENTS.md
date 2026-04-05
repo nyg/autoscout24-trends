@@ -22,6 +22,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Lightbox image viewer: `frontend/src/components/lightbox.js`
 - Google Places integration: `frontend/src/components/place-details.js`
 - Number/date formatting: `frontend/src/lib/format.js`
+- Formatter React Context: `frontend/src/lib/formatter-context.js`
 
 ## Developer workflows
 - Frontend commands are the standard ones from `frontend/package.json`: `pnpm dev`, `pnpm build`, `pnpm lint`.
@@ -57,14 +58,16 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Column definitions live in the `COLUMNS` array at the top of the file. Add new columns there (key, label, sortType, sortKey, align, defaultVisible).
 - Sorting: click column headers to toggle asc/desc. Sort comparison is type-aware (numeric, text, date). Default sort is price ascending.
 - Column visibility: stored in localStorage (`'car-table-visible-columns'`), synced across tables via a custom `'visible-columns-changed'` event (since `storage` events only fire in other tabs). Uses `useSyncExternalStore` with a server snapshot of default columns to avoid hydration mismatches.
-- Screenshot/photo viewing: clicking the camera icon opens a `Lightbox` component (fullscreen overlay with left/right navigation, keyboard support, Escape to close). The lightbox is rendered via `createPortal` at the document root.
+- Screenshot/photo viewing: clicking the camera icon opens a `Lightbox` component (fullscreen overlay with left/right navigation, keyboard support, Escape to close). The lightbox is rendered via `createPortal` at the document root. Click the image to toggle between fit-by-height and fit-by-width modes; the container scrolls when the image exceeds the viewport. When opened, the lightbox lazy-loads additional listing photos via `fetchMoreUrl`.
 - Seller cell: shows seller name (truncated), location, and three icons — Google Maps link (MapPinIcon), directions from home (NavigationIcon, requires home address in Settings), and place details popover (MapIcon, requires Google Maps API key, disabled for private sellers).
-- Text truncation: title (100 chars), description (100 chars, scrollable tooltip), seller name (30 chars). All use `TruncatedText` component with `Tooltip`.
+- Text truncation: title (70 chars), description (70 chars, scrollable tooltip), seller name (30 chars). All use `TruncatedText` component with `Tooltip`. `TruncatedText` accepts an optional `href` prop to render the text as a link (used for car title).
 
 ## Search runs page (`/search-runs`)
-- Server-side paginated: page and search filter are URL query params (`?page=2&search=Audi`).
-- `fetchSearchRuns(searchName, page, pageSize)` in `data.js` uses `LIMIT`/`OFFSET`; `fetchSearchRunsCount(searchName)` returns the total for pagination controls.
-- Filter dropdown navigates with `router.push()` to update query params (resets to page 1 on filter change).
+- Server-side paginated with URL query params: `page`, `search`, `pageSize`, `from`, `to`.
+- Default page size is 20 (options: 10, 20, 50, 100). Default date range is last 7 days.
+- `fetchSearchRuns(searchName, page, pageSize, fromDate, toDate)` in `data.js` uses `LIMIT`/`OFFSET` with date filtering on `sr.started_at`; `fetchSearchRunsCount(searchName, fromDate, toDate)` returns the total.
+- Controls: refresh button (`router.refresh()`), search filter dropdown, page size dropdown, date range inputs (native `<input type="date">`), pagination.
+- The "Reason" column has been replaced by a "Stats" column showing a popover with the `search_runs.stats` JSONB data (formatted JSON in a `<pre>` block).
 
 ## Settings page (`/settings`)
 - The settings page is a server component that fetches searches from the database and renders two sections:
@@ -80,10 +83,11 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Module-level cache (`placeCache` Map) keyed by `"sellerName|zipCode|city"` avoids redundant API calls.
 - Requires **Maps JavaScript API** and **Places API (New)** enabled in Google Cloud Console.
 
-## Locale formatting (`format.js`)
-- Number and date formatters use `navigator.language` on the client with `'fr-CH'` server fallback.
-- Since SSR and client locales may differ, `cars.js` forces a post-hydration re-render (`useReducer` + `useEffect`) so client locale formatters replace server-rendered text. Formatted cells keep `suppressHydrationWarning` to avoid console errors during the brief SSR→client transition.
-- Charts (Recharts) render client-only, so they use client formatters directly without hydration issues.
+## Locale formatting (`format.js` + `formatter-context.js`)
+- The root layout reads the `Accept-Language` HTTP header via `parseAcceptLanguage()` and wraps the app in `<FormatterProvider locale={…}>`.
+- `FormatterProvider` (client component) calls `createFormatters(locale)` once and exposes the result via React Context.
+- All client components — tables and charts alike — call `useFormatter()` to get `{ asDecimal, asShortDate, asMediumDate, asShortMonthYearDate, asTime }`. No locale prop-drilling, no module-level formatter singletons.
+- Because the same locale is used for SSR and client rendering, there are no hydration mismatches.
 
 ## Project-specific conventions
 - Frontend formatting is intentionally non-default: 3-space indentation, single quotes, no semicolons (`frontend/eslint.config.mjs`). Match existing style exactly.

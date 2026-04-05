@@ -1,9 +1,10 @@
 'use client'
 
+import { CheckIcon, CopyIcon } from 'lucide-react'
+import { useActionState, useState } from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createSearch, deleteSearch, toggleSearchActive, updateSearch } from '@/lib/actions'
-import { useActionState, useState } from 'react'
-import { CheckIcon, CopyIcon } from 'lucide-react'
 
 
 function CopyUrlButton({ url }) {
@@ -91,8 +92,8 @@ function SearchRow({ search }) {
          <td className="p-2 whitespace-nowrap">{search.name}</td>
          <td className="p-2 text-muted-foreground truncate max-w-0" title={search.url}>
             <span className="inline-flex items-center gap-1.5">
-               <CopyUrlButton url={search.url} />
                {search.url}
+               <CopyUrlButton url={search.url} />
             </span>
          </td>
          <td className="p-2 text-center whitespace-nowrap">
@@ -162,7 +163,7 @@ function AddSearchForm() {
    const [state, submitAction, pending] = useActionState(createSearch, null)
 
    return (
-      <form action={submitAction} className="flex flex-col gap-2 pt-4">
+      <form action={submitAction} className="flex flex-col gap-2">
          <p className="text-sm font-medium">Add new search</p>
          <input
             name="name"
@@ -208,7 +209,7 @@ export default function SearchManager({ searches }) {
                         <th className="p-2 whitespace-nowrap">Name</th>
                         <th className="p-2 w-full">URL</th>
                         <th className="p-2 text-center whitespace-nowrap">Active</th>
-                        <th className="p-2 text-right whitespace-nowrap">Actions</th>
+                        <th className="p-2 text-center whitespace-nowrap">Actions</th>
                      </tr>
                   </thead>
                   <tbody>
