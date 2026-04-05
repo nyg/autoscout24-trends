@@ -278,8 +278,8 @@ function CellRenderer({ col, car, options, config, callbacks }) {
       case 'title': {
          const desc = car.subtitle || car.description || '-'
          const titleStr = car.title || ''
-         const isTitleTruncated = titleStr.length > 100
-         const displayTitle = isTitleTruncated ? `${titleStr.substring(0, 100)}…` : titleStr
+         const isTitleTruncated = titleStr.length > 70
+         const displayTitle = isTitleTruncated ? `${titleStr.substring(0, 70)}…` : titleStr
 
          const titleLink = (
             <a className="hover:underline" href={car.url} target="_blank" rel="noopener noreferrer">
@@ -298,7 +298,7 @@ function CellRenderer({ col, car, options, config, callbacks }) {
                <br />
                <TruncatedText
                   text={desc}
-                  maxLength={100}
+                  maxLength={70}
                   className="text-muted-foreground"
                   scrollable
                />

@@ -163,7 +163,7 @@ function AddSearchForm() {
    const [state, submitAction, pending] = useActionState(createSearch, null)
 
    return (
-      <form action={submitAction} className="flex flex-col gap-2 pt-4">
+      <form action={submitAction} className="flex flex-col gap-2">
          <p className="text-sm font-medium">Add new search</p>
          <input
             name="name"
@@ -209,7 +209,7 @@ export default function SearchManager({ searches }) {
                         <th className="p-2 whitespace-nowrap">Name</th>
                         <th className="p-2 w-full">URL</th>
                         <th className="p-2 text-center whitespace-nowrap">Active</th>
-                        <th className="p-2 text-right whitespace-nowrap">Actions</th>
+                        <th className="p-2 text-center whitespace-nowrap">Actions</th>
                      </tr>
                   </thead>
                   <tbody>
