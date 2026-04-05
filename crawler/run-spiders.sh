@@ -6,7 +6,7 @@
 # directly by a cron job so that a plain `git pull` is enough to pick up
 # new package versions on the next scheduled run.
 
-set -euo pipefail
+set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
