@@ -92,8 +92,8 @@ function SearchRow({ search }) {
          <td className="p-2 whitespace-nowrap">{search.name}</td>
          <td className="p-2 text-muted-foreground truncate max-w-0" title={search.url}>
             <span className="inline-flex items-center gap-1.5">
-               <CopyUrlButton url={search.url} />
                {search.url}
+               <CopyUrlButton url={search.url} />
             </span>
          </td>
          <td className="p-2 text-center whitespace-nowrap">

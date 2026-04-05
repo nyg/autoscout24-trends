@@ -150,22 +150,27 @@ function compareCars(a, b, sortKey, sortType, direction) {
 
 // --- Truncated text with tooltip ---
 
-function TruncatedText({ text, maxLength, className, scrollable = false }) {
+function TruncatedText({ text, maxLength, className, scrollable = false, href }) {
    if (!text) {
       return <span className={className}>-</span>
    }
 
    const str = String(text)
    const truncated = str.length > maxLength
+   const display = truncated ? `${str.substring(0, maxLength)}…` : str
+
+   const content = href
+      ? <a className="hover:underline" href={href} target="_blank" rel="noopener noreferrer">{display}</a>
+      : display
 
    if (!truncated) {
-      return <span className={className}>{str}</span>
+      return <span className={className}>{content}</span>
    }
 
    return (
       <Tooltip delay={300}>
          <TooltipTrigger className={className}>
-            {str.substring(0, maxLength)}…
+            {content}
          </TooltipTrigger>
          <TooltipContent side="bottom" className={scrollable ? 'max-h-48 max-w-sm overflow-y-auto whitespace-pre-line' : 'max-w-sm'}>
             {str}
@@ -277,24 +282,10 @@ function CellRenderer({ col, car, options, config, callbacks }) {
    switch (col.key) {
       case 'title': {
          const desc = car.subtitle || car.description || '-'
-         const titleStr = car.title || ''
-         const isTitleTruncated = titleStr.length > 70
-         const displayTitle = isTitleTruncated ? `${titleStr.substring(0, 70)}…` : titleStr
-
-         const titleLink = (
-            <a className="hover:underline" href={car.url} target="_blank" rel="noopener noreferrer">
-               {displayTitle}
-            </a>
-         )
 
          return (
             <TableCell>
-               {isTitleTruncated ? (
-                  <Tooltip delay={300}>
-                     <TooltipTrigger render={titleLink} />
-                     <TooltipContent side="bottom" className="max-w-sm">{titleStr}</TooltipContent>
-                  </Tooltip>
-               ) : titleLink}
+               <TruncatedText text={car.title} maxLength={70} href={car.url} />
                <br />
                <TruncatedText
                   text={desc}

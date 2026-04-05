@@ -1,7 +1,11 @@
 'use client'
 
-import { CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, FilterIcon, XCircleIcon } from 'lucide-react'
-import { use, useMemo } from 'react'
+import {
+   BarChartIcon, CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon,
+   ChevronRightIcon, FilterIcon, RefreshCwIcon, XCircleIcon
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { use, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,11 +13,14 @@ import {
    DropdownMenu, DropdownMenuContent, DropdownMenuGroup,
    DropdownMenuItem, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
 import { useFormatter } from '@/lib/formatter-context'
 
+
+const PAGE_SIZES = [10, 20, 50, 100]
 
 function formatDuration(start, end) {
    if (!start || !end) {
@@ -34,30 +41,82 @@ function buildUrl(params) {
    if (params.page && params.page > 1) {
       sp.set('page', String(params.page))
    }
+   if (params.pageSize && params.pageSize !== 20) {
+      sp.set('pageSize', String(params.pageSize))
+   }
+   if (params.from) {
+      sp.set('from', params.from)
+   }
+   if (params.to) {
+      sp.set('to', params.to)
+   }
    const qs = sp.toString()
    return `/search-runs${qs ? `?${qs}` : ''}`
 }
 
+function StatsPopover({ stats }) {
+   if (!stats || Object.keys(stats).length === 0) {
+      return (
+         <span className="text-muted-foreground/40 inline-flex">
+            <BarChartIcon className="size-4" />
+         </span>
+      )
+   }
 
-export default function SearchRuns({ data, searches, totalCount, page, pageSize, searchFilter }) {
+   return (
+      <Popover>
+         <PopoverTrigger className="text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer">
+            <BarChartIcon className="size-4" />
+         </PopoverTrigger>
+         <PopoverContent align="end" className="w-96 max-h-80 overflow-auto p-3">
+            <pre className="text-xs leading-relaxed whitespace-pre-wrap break-all">
+               {JSON.stringify(stats, null, 2)}
+            </pre>
+         </PopoverContent>
+      </Popover>
+   )
+}
+
+
+export default function SearchRuns({ data, searches, totalCount, page, pageSize, searchFilter, fromDate, toDate }) {
 
    const runs = use(data)
    const searchList = use(searches)
    const total = use(totalCount)
+   const router = useRouter()
 
    const {asMediumDate, asTime} = useFormatter()
 
    const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
+   const [localFrom, setLocalFrom] = useState(fromDate)
+   const [localTo, setLocalTo] = useState(toDate)
+
    const navigate = (params) => {
-      window.location.href = buildUrl(params)
+      window.location.href = buildUrl({
+         search: params.search ?? searchFilter,
+         page: params.page ?? page,
+         pageSize: params.pageSize ?? pageSize,
+         from: params.from ?? localFrom,
+         to: params.to ?? localTo,
+      })
+   }
+
+   const applyDateRange = () => {
+      navigate({ page: 1, from: localFrom, to: localTo })
    }
 
    return (
       <Card>
          <CardHeader>
             <CardTitle>Search Runs ({total})</CardTitle>
-            <CardAction>
+            <CardAction className="flex items-center gap-2 flex-wrap">
+               {/* Refresh */}
+               <Button variant="outline" size="sm" onClick={() => router.refresh()}>
+                  <RefreshCwIcon className="size-3.5" />
+               </Button>
+
+               {/* Search filter */}
                <DropdownMenu>
                   <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
                      <FilterIcon className="size-3.5" />
@@ -84,8 +143,51 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                      </DropdownMenuGroup>
                   </DropdownMenuContent>
                </DropdownMenu>
+
+               {/* Page size */}
+               <DropdownMenu>
+                  <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+                     {pageSize}
+                     <ChevronDownIcon data-icon="inline-end" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                     <DropdownMenuGroup>
+                        {PAGE_SIZES.map(size => (
+                           <DropdownMenuItem
+                              key={size}
+                              onClick={() => navigate({ pageSize: size, page: 1 })}
+                              className={pageSize === size ? 'font-semibold' : ''}
+                           >
+                              {size} per page
+                           </DropdownMenuItem>
+                        ))}
+                     </DropdownMenuGroup>
+                  </DropdownMenuContent>
+               </DropdownMenu>
             </CardAction>
          </CardHeader>
+
+         {/* Date range filter */}
+         <div className="flex items-center gap-2 px-6 pb-4 flex-wrap">
+            <label className="text-xs text-muted-foreground">From</label>
+            <input
+               type="date"
+               value={localFrom}
+               onChange={e => setLocalFrom(e.target.value)}
+               className="rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+            <label className="text-xs text-muted-foreground">To</label>
+            <input
+               type="date"
+               value={localTo}
+               onChange={e => setLocalTo(e.target.value)}
+               className="rounded-md border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+            <Button variant="outline" size="sm" onClick={applyDateRange}>
+               Apply
+            </Button>
+         </div>
+
          <CardContent className="overflow-x-auto px-0 pb-0">
             <Table>
                <TableHeader>
@@ -99,7 +201,7 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                      <TableHead className="text-right">Cars scraped</TableHead>
                      <TableHead className="text-right">Requests</TableHead>
                      <TableHead className="text-right">Failed</TableHead>
-                     <TableHead className="text-right">Reason</TableHead>
+                     <TableHead className="text-center">Stats</TableHead>
                   </TableRow>
                </TableHeader>
                <TableBody>
@@ -130,8 +232,8 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                               : (run.failed_request_count ?? '–')
                            }
                         </TableCell>
-                        <TableCell className="whitespace-nowrap text-right text-xs text-muted-foreground">
-                           {run.finish_reason ?? '–'}
+                        <TableCell className="text-center">
+                           <StatsPopover stats={run.stats} />
                         </TableCell>
                      </TableRow>
                   ))}
@@ -149,7 +251,7 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                         variant="outline"
                         size="sm"
                         disabled={page <= 1}
-                        onClick={() => navigate({ search: searchFilter, page: page - 1 })}
+                        onClick={() => navigate({ page: page - 1 })}
                      >
                         <ChevronLeftIcon className="size-4" />
                         Previous
@@ -158,7 +260,7 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                         variant="outline"
                         size="sm"
                         disabled={page >= totalPages}
-                        onClick={() => navigate({ search: searchFilter, page: page + 1 })}
+                        onClick={() => navigate({ page: page + 1 })}
                      >
                         Next
                         <ChevronRightIcon className="size-4" />

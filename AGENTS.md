@@ -55,14 +55,16 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Column definitions live in the `COLUMNS` array at the top of the file. Add new columns there (key, label, sortType, sortKey, align, defaultVisible).
 - Sorting: click column headers to toggle asc/desc. Sort comparison is type-aware (numeric, text, date). Default sort is price ascending.
 - Column visibility: stored in localStorage (`'car-table-visible-columns'`), synced across tables via a custom `'visible-columns-changed'` event (since `storage` events only fire in other tabs). Uses `useSyncExternalStore` with a server snapshot of default columns to avoid hydration mismatches.
-- Screenshot/photo viewing: clicking the camera icon opens a `Lightbox` component (fullscreen overlay with left/right navigation, keyboard support, Escape to close). The lightbox is rendered via `createPortal` at the document root.
+- Screenshot/photo viewing: clicking the camera icon opens a `Lightbox` component (fullscreen overlay with left/right navigation, keyboard support, Escape to close). The lightbox is rendered via `createPortal` at the document root. Click the image to toggle between fit-by-height and fit-by-width modes; the container scrolls when the image exceeds the viewport.
 - Seller cell: shows seller name (truncated), location, and three icons — Google Maps link (MapPinIcon), directions from home (NavigationIcon, requires home address in Settings), and place details popover (MapIcon, requires Google Maps API key, disabled for private sellers).
-- Text truncation: title (100 chars), description (100 chars, scrollable tooltip), seller name (30 chars). All use `TruncatedText` component with `Tooltip`.
+- Text truncation: title (70 chars), description (70 chars, scrollable tooltip), seller name (30 chars). All use `TruncatedText` component with `Tooltip`. `TruncatedText` accepts an optional `href` prop to render the text as a link (used for car title).
 
 ## Search runs page (`/search-runs`)
-- Server-side paginated: page and search filter are URL query params (`?page=2&search=Audi`).
-- `fetchSearchRuns(searchName, page, pageSize)` in `data.js` uses `LIMIT`/`OFFSET`; `fetchSearchRunsCount(searchName)` returns the total for pagination controls.
-- Filter dropdown navigates with `router.push()` to update query params (resets to page 1 on filter change).
+- Server-side paginated with URL query params: `page`, `search`, `pageSize`, `from`, `to`.
+- Default page size is 20 (options: 10, 20, 50, 100). Default date range is last 7 days.
+- `fetchSearchRuns(searchName, page, pageSize, fromDate, toDate)` in `data.js` uses `LIMIT`/`OFFSET` with date filtering on `sr.started_at`; `fetchSearchRunsCount(searchName, fromDate, toDate)` returns the total.
+- Controls: refresh button (`router.refresh()`), search filter dropdown, page size dropdown, date range inputs (native `<input type="date">`), pagination.
+- The "Reason" column has been replaced by a "Stats" column showing a popover with the `search_runs.stats` JSONB data (formatted JSON in a `<pre>` block).
 
 ## Settings page (`/settings`)
 - The settings page is a server component that fetches searches from the database and renders two sections:

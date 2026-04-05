@@ -79,9 +79,19 @@ export async function fetchPreviousListings(searchName) {
       order by price`
 }
 
-export async function fetchSearchRuns(searchName, page = 1, pageSize = 25) {
-   const filter = searchName
-      ? pgSql`where s.name = ${searchName}`
+export async function fetchSearchRuns(searchName, page = 1, pageSize = 20, fromDate, toDate) {
+   const conditions = []
+   if (searchName) {
+      conditions.push(pgSql`s.name = ${searchName}`)
+   }
+   if (fromDate) {
+      conditions.push(pgSql`sr.started_at >= ${fromDate}`)
+   }
+   if (toDate) {
+      conditions.push(pgSql`sr.started_at < ${toDate}::date + interval '1 day'`)
+   }
+   const where = conditions.length > 0
+      ? pgSql`where ${conditions.reduce((a, b) => pgSql`${a} and ${b}`)}`
       : pgSql``
    const offset = (page - 1) * pageSize
    return pgSql`
@@ -89,23 +99,34 @@ export async function fetchSearchRuns(searchName, page = 1, pageSize = 25) {
              sr.started_at, sr.finished_at,
              sr.finish_reason, sr.success,
              sr.cars_found, sr.cars_scraped,
-             sr.request_count, sr.failed_request_count
+             sr.request_count, sr.failed_request_count,
+             sr.stats
         from search_runs sr
        inner join searches s on sr.search_id = s.id
-       ${filter}
+       ${where}
        order by sr.started_at desc
        limit ${pageSize} offset ${offset}`
 }
 
-export async function fetchSearchRunsCount(searchName) {
-   const filter = searchName
-      ? pgSql`where s.name = ${searchName}`
+export async function fetchSearchRunsCount(searchName, fromDate, toDate) {
+   const conditions = []
+   if (searchName) {
+      conditions.push(pgSql`s.name = ${searchName}`)
+   }
+   if (fromDate) {
+      conditions.push(pgSql`sr.started_at >= ${fromDate}`)
+   }
+   if (toDate) {
+      conditions.push(pgSql`sr.started_at < ${toDate}::date + interval '1 day'`)
+   }
+   const where = conditions.length > 0
+      ? pgSql`where ${conditions.reduce((a, b) => pgSql`${a} and ${b}`)}`
       : pgSql``
    const [row] = await pgSql`
       select count(*)::int as total
         from search_runs sr
        inner join searches s on sr.search_id = s.id
-       ${filter}`
+       ${where}`
    return row.total
 }
 
