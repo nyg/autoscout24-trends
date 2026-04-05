@@ -1,26 +1,44 @@
-const locales = typeof navigator === 'undefined' ? 'fr-CH' : navigator.language
-
-const shortDateFormatter = new Intl.DateTimeFormat(locales, { year: 'numeric', month: '2-digit' })
-const mediumDateFormatter = new Intl.DateTimeFormat(locales, { year: 'numeric', month: 'short', day: 'numeric' })
-const shortMonthDateFormatter = new Intl.DateTimeFormat(locales, { year: '2-digit', month: 'short' })
-const decimalFormatter = new Intl.NumberFormat(locales, { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 })
-
+const DEFAULT_LOCALE = 'en-US'
 
 const formatDate = (formatter, date) =>
    formatter.format(date).replace(' ', '\u00A0') // non-breaking space
 
-export function asMediumDate(timestamp) {
-   return formatDate(mediumDateFormatter, timestamp)
+
+/**
+ * Create locale-bound formatters.
+ * On the server the locale comes from Accept-Language; on the client
+ * the same value is reused via context so SSR and hydration match.
+ */
+export function createFormatters(locale) {
+   const sd = new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit' })
+   const md = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' })
+   const smy = new Intl.DateTimeFormat(locale, { year: '2-digit', month: 'short' })
+   const dec = new Intl.NumberFormat(locale, { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 })
+
+   return {
+      asDecimal: (number) => dec.format(number),
+      asShortDate: (timestamp) => formatDate(sd, timestamp),
+      asMediumDate: (timestamp) => formatDate(md, timestamp),
+      asShortMonthYearDate: (timestamp) => formatDate(smy, timestamp),
+      asTime: (timestamp) => {
+         if (!timestamp) {
+            return ''
+         }
+         return new Date(timestamp).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+      },
+   }
 }
 
-export function asShortDate(timestamp) {
-   return formatDate(shortDateFormatter, timestamp)
-}
 
-export function asShortMonthYearDate(timestamp) {
-   return formatDate(shortMonthDateFormatter, timestamp)
-}
-
-export function asDecimal(number) {
-   return decimalFormatter.format(number)
+/**
+ * Parse an Accept-Language header and return the preferred locale.
+ * Falls back to DEFAULT_LOCALE if the header is missing or empty.
+ */
+export function parseAcceptLanguage(header) {
+   if (!header) {
+      return DEFAULT_LOCALE
+   }
+   const first = header.split(',')[0]
+   const locale = first.split(';')[0].trim()
+   return locale || DEFAULT_LOCALE
 }

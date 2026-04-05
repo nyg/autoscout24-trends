@@ -9,6 +9,7 @@ Next.js application that visualizes car listing data scraped by the crawler.
 - [Usage](#usage)
 - [Updating shadcn/ui Components](#updating-shadcnui-components)
 - [Project Structure](#project-structure)
+- [Locale Formatting](#locale-formatting)
 
 ## Features
 
@@ -92,7 +93,42 @@ frontend/
 │   │   └── mileage-price-comparison.js # Mileage vs price chart
 │   └── lib/
 │       ├── data.js                     # Database queries
-│       └── format.js                   # Formatting utilities
+│       ├── format.js                   # Formatter factory & locale parser
+│       └── formatter-context.js        # React Context provider & hook
 ├── postcss.config.mjs                  # PostCSS / Tailwind plugin
 └── package.json                        # Dependencies and scripts
 ```
+
+## Locale Formatting
+
+All number and date formatting uses the browser's `Accept-Language` HTTP header to select the locale, with `en-US` as fallback. A single set of formatters is created once and shared via **React Context** — a React mechanism that lets a parent component provide data to all its descendants without passing props through every level.
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant RootLayout as Root Layout<br/>(server component)
+    participant Format as format.js
+    participant Provider as FormatterProvider<br/>(client component)
+    participant Component as Component<br/>(cars, charts, etc.)
+
+    Browser->>RootLayout: HTTP request with Accept-Language header
+    RootLayout->>Format: parseAcceptLanguage(header)
+    Format-->>RootLayout: locale string (e.g. "en-US")
+    RootLayout->>Provider: <FormatterProvider locale="en-US">
+    Provider->>Format: createFormatters("en-US")
+    Format-->>Provider: { asDecimal, asShortDate, asMediumDate,<br/>asShortMonthYearDate, asTime }
+    Provider->>Provider: Store in FormatterContext (React Context)
+    Component->>Provider: useFormatter()
+    Provider-->>Component: formatter object
+    Component->>Component: fmt.asDecimal(42000) → "42,000"
+```
+
+### How it works
+
+1. **`Accept-Language` header** — Every HTTP request the browser sends includes this header automatically, based on the user's OS/browser language settings (e.g. `en-US,en;q=0.9,fr;q=0.8`). This is the same locale information as `navigator.language`, but available server-side.
+
+2. **`parseAcceptLanguage()`** (`format.js`) — Extracts the preferred locale from the header. Falls back to `en-US` if the header is missing.
+
+3. **`FormatterProvider`** (`formatter-context.js`) — A client component that wraps the app. It receives the locale string from the root layout, creates `Intl`-based formatters via `createFormatters(locale)`, and stores them in a `FormatterContext` (a React Context object). Because the locale is serialized from the server into the React tree, both SSR and client hydration use the exact same value — no mismatches.
+
+4. **`useFormatter()`** — Any component calls this hook to get the formatter object `{ asDecimal, asShortDate, asMediumDate, asShortMonthYearDate, asTime }`. No locale prop drilling needed.

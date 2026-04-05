@@ -1,7 +1,8 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useActionState, useEffect, useState } from 'react'
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { updateConfig } from '@/lib/actions'
 
 const CONFIG_KEYS = {

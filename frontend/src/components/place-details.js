@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
 import { ClockIcon, ExternalLinkIcon, GlobeIcon, PhoneIcon, StarIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 const placeCache = new Map()
 let optionsSet = false

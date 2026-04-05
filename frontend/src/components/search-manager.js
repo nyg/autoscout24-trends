@@ -1,9 +1,10 @@
 'use client'
 
+import { CheckIcon, CopyIcon } from 'lucide-react'
+import { useActionState, useState } from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createSearch, deleteSearch, toggleSearchActive, updateSearch } from '@/lib/actions'
-import { useActionState, useState } from 'react'
-import { CheckIcon, CopyIcon } from 'lucide-react'
 
 
 function CopyUrlButton({ url }) {

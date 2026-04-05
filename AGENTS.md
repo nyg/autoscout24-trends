@@ -21,6 +21,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Cars table (sorting, column visibility, seller cell): `frontend/src/components/cars.js`
 - Google Places integration: `frontend/src/components/place-details.js`
 - Number/date formatting: `frontend/src/lib/format.js`
+- Formatter React Context: `frontend/src/lib/formatter-context.js`
 
 ## Developer workflows
 - Frontend commands are the standard ones from `frontend/package.json`: `pnpm dev`, `pnpm build`, `pnpm lint`.
@@ -77,10 +78,11 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Module-level cache (`placeCache` Map) keyed by `"sellerName|zipCode|city"` avoids redundant API calls.
 - Requires **Maps JavaScript API** and **Places API (New)** enabled in Google Cloud Console.
 
-## Locale formatting (`format.js`)
-- Number and date formatters use `navigator.language` on the client with `'fr-CH'` server fallback.
-- Since SSR and client locales may differ, `cars.js` forces a post-hydration re-render (`useReducer` + `useEffect`) so client locale formatters replace server-rendered text. Formatted cells keep `suppressHydrationWarning` to avoid console errors during the brief SSR→client transition.
-- Charts (Recharts) render client-only, so they use client formatters directly without hydration issues.
+## Locale formatting (`format.js` + `formatter-context.js`)
+- The root layout reads the `Accept-Language` HTTP header via `parseAcceptLanguage()` and wraps the app in `<FormatterProvider locale={…}>`.
+- `FormatterProvider` (client component) calls `createFormatters(locale)` once and exposes the result via React Context.
+- All client components — tables and charts alike — call `useFormatter()` to get `{ asDecimal, asShortDate, asMediumDate, asShortMonthYearDate, asTime }`. No locale prop-drilling, no module-level formatter singletons.
+- Because the same locale is used for SSR and client rendering, there are no hydration mismatches.
 
 ## Project-specific conventions
 - Frontend formatting is intentionally non-default: 3-space indentation, single quotes, no semicolons (`frontend/eslint.config.mjs`). Match existing style exactly.
