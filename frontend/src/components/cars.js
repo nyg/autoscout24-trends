@@ -271,7 +271,7 @@ function MapPreviewButton({ car, apiKey }) {
 // --- Cell renderers ---
 
 function CellRenderer({ col, car, options, config }) {
-   const fmt = useFormatter()
+   const {asDecimal, asShortDate, asMediumDate} = useFormatter()
 
    switch (col.key) {
       case 'title': {
@@ -305,22 +305,22 @@ function CellRenderer({ col, car, options, config }) {
          )
       }
       case 'price':
-         return <TableCell className="text-right tabular-nums">{fmt.asDecimal(car.price)}</TableCell>
+         return <TableCell className="text-right tabular-nums">{asDecimal(car.price)}</TableCell>
       case 'color':
          return <TableCell className="text-right">{car.color}</TableCell>
       case 'year':
-         return <TableCell className="text-right tabular-nums">{fmt.asShortDate(car.first_registration_date)}</TableCell>
+         return <TableCell className="text-right tabular-nums">{asShortDate(car.first_registration_date)}</TableCell>
       case 'mileage':
-         return <TableCell className="text-right tabular-nums">{fmt.asDecimal(car.mileage)}</TableCell>
+         return <TableCell className="text-right tabular-nums">{asDecimal(car.mileage)}</TableCell>
       case 'km_year':
-         return <TableCell className="text-right tabular-nums">{fmt.asDecimal(car.km_year)}</TableCell>
+         return <TableCell className="text-right tabular-nums">{asDecimal(car.km_year)}</TableCell>
       case 'seller':
          return <TableCell className="text-right"><SellerCell car={car} mapsApiKey={config['google-maps-api-key']} homeAddress={config['home-address']} /></TableCell>
       case 'listed_since':
          return (
             <TableCell className="text-right tabular-nums">
-               {fmt.asMediumDate(car.created_date)}
-               {options.listingEnded ? <><br />{fmt.asMediumDate(car.date_in)}</> : null}
+               {asMediumDate(car.created_date)}
+               {options.listingEnded ? <><br />{asMediumDate(car.date_in)}</> : null}
             </TableCell>
          )
       case 'has_additional_set_of_tires':
@@ -329,14 +329,14 @@ function CellRenderer({ col, car, options, config }) {
       case 'leasing':
          return <TableCell className="text-right">{car[col.sortKey] === true ? 'Yes' : car[col.sortKey] === false ? 'No' : '-'}</TableCell>
       case 'last_inspection_date':
-         return <TableCell className="text-right tabular-nums">{car.last_inspection_date ? fmt.asShortDate(car.last_inspection_date) : '-'}</TableCell>
+         return <TableCell className="text-right tabular-nums">{car.last_inspection_date ? asShortDate(car.last_inspection_date) : '-'}</TableCell>
       case 'avg_consumption':
          return <TableCell className="text-right tabular-nums">{car.avg_consumption != null ? Number(car.avg_consumption).toFixed(1) : '-'}</TableCell>
       case 'kilo_watts':
       case 'cm3':
       case 'co2_emission':
       case 'cylinders':
-         return <TableCell className="text-right tabular-nums">{car[col.sortKey] != null ? fmt.asDecimal(car[col.sortKey]) : '-'}</TableCell>
+         return <TableCell className="text-right tabular-nums">{car[col.sortKey] != null ? asDecimal(car[col.sortKey]) : '-'}</TableCell>
       case 'screenshot':
          return (
             <TableCell className="text-center">
