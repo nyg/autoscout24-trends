@@ -1,23 +1,24 @@
 'use client'
 
-import { useFormatter } from '@/lib/formatter-context'
-import { use, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
-import {
-   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from '@/components/ui/table'
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import {
-   DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent,
-   DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import PlaceDetails from '@/components/place-details'
 import {
    ArrowDownIcon, ArrowUpIcon, CameraIcon,
    MapIcon, MapPinIcon, NavigationIcon, SlidersHorizontalIcon
 } from 'lucide-react'
+import { use, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
+
+import PlaceDetails from '@/components/place-details'
+import { Button } from '@/components/ui/button'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+   DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent,
+   DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useFormatter } from '@/lib/formatter-context'
 
 
 // --- Column definitions ---
@@ -269,7 +270,9 @@ function MapPreviewButton({ car, apiKey }) {
 
 // --- Cell renderers ---
 
-function renderCell(col, car, options, config, fmt) {
+function CellRenderer({ col, car, options, config }) {
+   const fmt = useFormatter()
+
    switch (col.key) {
       case 'title': {
          const desc = car.subtitle || car.description || '-'
@@ -284,7 +287,7 @@ function renderCell(col, car, options, config, fmt) {
          )
 
          return (
-            <TableCell key={col.key}>
+            <TableCell>
                {isTitleTruncated ? (
                   <Tooltip delay={300}>
                      <TooltipTrigger render={titleLink} />
@@ -302,20 +305,20 @@ function renderCell(col, car, options, config, fmt) {
          )
       }
       case 'price':
-         return <TableCell key={col.key} className="text-right tabular-nums">{fmt.asDecimal(car.price)}</TableCell>
+         return <TableCell className="text-right tabular-nums">{fmt.asDecimal(car.price)}</TableCell>
       case 'color':
-         return <TableCell key={col.key} className="text-right">{car.color}</TableCell>
+         return <TableCell className="text-right">{car.color}</TableCell>
       case 'year':
-         return <TableCell key={col.key} className="text-right tabular-nums">{fmt.asShortDate(car.first_registration_date)}</TableCell>
+         return <TableCell className="text-right tabular-nums">{fmt.asShortDate(car.first_registration_date)}</TableCell>
       case 'mileage':
-         return <TableCell key={col.key} className="text-right tabular-nums">{fmt.asDecimal(car.mileage)}</TableCell>
+         return <TableCell className="text-right tabular-nums">{fmt.asDecimal(car.mileage)}</TableCell>
       case 'km_year':
-         return <TableCell key={col.key} className="text-right tabular-nums">{fmt.asDecimal(car.km_year)}</TableCell>
+         return <TableCell className="text-right tabular-nums">{fmt.asDecimal(car.km_year)}</TableCell>
       case 'seller':
-         return <TableCell key={col.key} className="text-right"><SellerCell car={car} mapsApiKey={config['google-maps-api-key']} homeAddress={config['home-address']} /></TableCell>
+         return <TableCell className="text-right"><SellerCell car={car} mapsApiKey={config['google-maps-api-key']} homeAddress={config['home-address']} /></TableCell>
       case 'listed_since':
          return (
-            <TableCell key={col.key} className="text-right tabular-nums">
+            <TableCell className="text-right tabular-nums">
                {fmt.asMediumDate(car.created_date)}
                {options.listingEnded ? <><br />{fmt.asMediumDate(car.date_in)}</> : null}
             </TableCell>
@@ -324,19 +327,19 @@ function renderCell(col, car, options, config, fmt) {
       case 'had_accident':
       case 'warranty':
       case 'leasing':
-         return <TableCell key={col.key} className="text-right">{car[col.sortKey] === true ? 'Yes' : car[col.sortKey] === false ? 'No' : '-'}</TableCell>
+         return <TableCell className="text-right">{car[col.sortKey] === true ? 'Yes' : car[col.sortKey] === false ? 'No' : '-'}</TableCell>
       case 'last_inspection_date':
-         return <TableCell key={col.key} className="text-right tabular-nums">{car.last_inspection_date ? fmt.asShortDate(car.last_inspection_date) : '-'}</TableCell>
+         return <TableCell className="text-right tabular-nums">{car.last_inspection_date ? fmt.asShortDate(car.last_inspection_date) : '-'}</TableCell>
       case 'avg_consumption':
-         return <TableCell key={col.key} className="text-right tabular-nums">{car.avg_consumption != null ? Number(car.avg_consumption).toFixed(1) : '-'}</TableCell>
+         return <TableCell className="text-right tabular-nums">{car.avg_consumption != null ? Number(car.avg_consumption).toFixed(1) : '-'}</TableCell>
       case 'kilo_watts':
       case 'cm3':
       case 'co2_emission':
       case 'cylinders':
-         return <TableCell key={col.key} className="text-right tabular-nums">{car[col.sortKey] != null ? fmt.asDecimal(car[col.sortKey]) : '-'}</TableCell>
+         return <TableCell className="text-right tabular-nums">{car[col.sortKey] != null ? fmt.asDecimal(car[col.sortKey]) : '-'}</TableCell>
       case 'screenshot':
          return (
-            <TableCell key={col.key} className="text-center">
+            <TableCell className="text-center">
                {car.screenshot_url ? (
                   <a
                      href={car.screenshot_url}
@@ -355,7 +358,7 @@ function renderCell(col, car, options, config, fmt) {
             </TableCell>
          )
       default:
-         return <TableCell key={col.key} className="text-right">{car[col.sortKey] ?? '-'}</TableCell>
+         return <TableCell className="text-right">{car[col.sortKey] ?? '-'}</TableCell>
    }
 }
 
@@ -364,8 +367,6 @@ function renderCell(col, car, options, config, fmt) {
 
 export default function Cars({ name, data, options = {}, config = {} }) {
    const cars = use(data)
-
-   const fmt = useFormatter()
 
    const activeKeys = useSyncExternalStore(subscribeVisibleColumns, getVisibleColumnsSnapshot, getVisibleColumnsServerSnapshot)
    const [sort, setSort] = useState({ key: 'price', direction: 'asc' })
@@ -450,7 +451,7 @@ export default function Cars({ name, data, options = {}, config = {} }) {
                <TableBody>
                   {sortedCars.map(car => (
                      <TableRow key={car.id}>
-                        {visibleColumns.map(col => renderCell(col, car, options, config, fmt))}
+                        {visibleColumns.map(col => <CellRenderer key={col.key} col={col} car={car} options={options} config={config} />)}
                      </TableRow>
                   ))}
                </TableBody>

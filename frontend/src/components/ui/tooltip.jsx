@@ -1,7 +1,7 @@
 'use client'
 
-import * as React from 'react'
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip'
+import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -67,8 +67,8 @@ function TooltipArrow({
 
 export {
    Tooltip,
+   TooltipArrow,
+   TooltipContent,
    TooltipProvider,
    TooltipTrigger,
-   TooltipContent,
-   TooltipArrow,
 }

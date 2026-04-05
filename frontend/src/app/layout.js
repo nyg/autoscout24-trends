@@ -1,9 +1,11 @@
 import './globals.css'
-import { FormatterProvider } from '@/lib/formatter-context'
+
 import { Geist } from 'next/font/google'
 import { headers } from 'next/headers'
+
 import NavBar from '@/components/navbar'
 import { parseAcceptLanguage } from '@/lib/format'
+import { FormatterProvider } from '@/lib/formatter-context'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' })
 

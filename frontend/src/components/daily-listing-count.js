@@ -1,16 +1,17 @@
 'use client'
 
-import { useFormatter } from '@/lib/formatter-context'
 import { use, useState } from 'react'
 import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
+
+import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
    ChartContainer,
    ChartLegend,
    ChartTooltip,
    ChartTooltipContent
 } from '@/components/ui/chart'
-import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useFormatter } from '@/lib/formatter-context'
 
 const chartConfig = {
    price_avg: { label: 'Average Price', color: 'var(--chart-1)' },

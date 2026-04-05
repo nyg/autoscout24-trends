@@ -1,17 +1,18 @@
 'use client'
 
+import { CheckCircle2Icon, ChevronDownIcon, FilterIcon, XCircleIcon } from 'lucide-react'
 import { use, useMemo, useState } from 'react'
-import { useFormatter } from '@/lib/formatter-context'
+
+import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from '@/components/ui/table'
 import {
    DropdownMenu, DropdownMenuContent, DropdownMenuGroup,
    DropdownMenuItem, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
-import { CheckCircle2Icon, ChevronDownIcon, FilterIcon, XCircleIcon } from 'lucide-react'
+import {
+   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table'
+import { useFormatter } from '@/lib/formatter-context'
 
 
 function formatDuration(start, end) {

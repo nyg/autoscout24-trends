@@ -92,7 +92,38 @@ frontend/
 │   │   └── mileage-price-comparison.js # Mileage vs price chart
 │   └── lib/
 │       ├── data.js                     # Database queries
-│       └── format.js                   # Formatting utilities
+│       ├── format.js                   # Formatter factory & locale parser
+│       └── formatter-context.js        # React Context provider & hook
 ├── postcss.config.mjs                  # PostCSS / Tailwind plugin
 └── package.json                        # Dependencies and scripts
 ```
+
+## Locale Formatting
+
+All number and date formatting uses the browser's `Accept-Language` header to select the locale, with `fr-CH` as fallback. A single set of formatters is created once and shared via React Context.
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant RootLayout as Root Layout<br/>(server component)
+    participant Format as format.js
+    participant Provider as FormatterProvider<br/>(client component)
+    participant Component as Component<br/>(cars, charts, etc.)
+
+    Browser->>RootLayout: HTTP request with Accept-Language header
+    RootLayout->>Format: parseAcceptLanguage(header)
+    Format-->>RootLayout: locale string (e.g. "en-US")
+    RootLayout->>Provider: <FormatterProvider locale="en-US">
+    Provider->>Format: createFormatters("en-US")
+    Format-->>Provider: { asDecimal, asShortDate, asMediumDate,<br/>asShortMonthYearDate, asTime }
+    Provider->>Provider: Store in React Context
+    Component->>Provider: useFormatter()
+    Provider-->>Component: formatter object
+    Component->>Component: fmt.asDecimal(42000) → "42,000"
+```
+
+Key points:
+
+- **Root layout** (server component) reads the header once, passes the locale string to `FormatterProvider`.
+- **FormatterProvider** (client component) creates the `Intl` formatters via `createFormatters()` and provides them through React Context.
+- **Components** call `useFormatter()` to get the formatter — no locale prop drilling, no duplicate formatter instances.

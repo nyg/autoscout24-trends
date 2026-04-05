@@ -1,10 +1,10 @@
 'use client'
 
-import * as React from 'react'
 import { Menu as MenuPrimitive } from '@base-ui/react/menu'
+import { CheckIcon, ChevronRightIcon } from 'lucide-react'
+import * as React from 'react'
 
 import { cn } from '@/lib/utils'
-import { CheckIcon, ChevronRightIcon } from 'lucide-react'
 
 function DropdownMenu({
    ...props
@@ -235,18 +235,18 @@ function DropdownMenuShortcut({
 
 export {
    DropdownMenu,
-   DropdownMenuPortal,
-   DropdownMenuTrigger,
+   DropdownMenuCheckboxItem,
    DropdownMenuContent,
    DropdownMenuGroup,
-   DropdownMenuLabel,
    DropdownMenuItem,
-   DropdownMenuCheckboxItem,
+   DropdownMenuLabel,
+   DropdownMenuPortal,
    DropdownMenuRadioGroup,
    DropdownMenuRadioItem,
    DropdownMenuSeparator,
    DropdownMenuShortcut,
    DropdownMenuSub,
-   DropdownMenuSubTrigger,
    DropdownMenuSubContent,
+   DropdownMenuSubTrigger,
+   DropdownMenuTrigger,
 }

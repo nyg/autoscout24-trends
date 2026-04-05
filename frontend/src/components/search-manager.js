@@ -1,8 +1,9 @@
 'use client'
 
+import { useActionState, useState } from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createSearch, deleteSearch, toggleSearchActive, updateSearch } from '@/lib/actions'
-import { useActionState, useState } from 'react'
 
 function SearchRow({ search }) {
    const [editing, setEditing] = useState(false)

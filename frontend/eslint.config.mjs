@@ -1,9 +1,11 @@
 import { defineConfig, globalIgnores } from 'eslint/config'
 import nextVitals from 'eslint-config-next/core-web-vitals'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
 
 const eslintConfig = defineConfig([
    ...nextVitals,
    {
+      plugins: { 'simple-import-sort': simpleImportSort },
       rules: {
          indent: ['error', 3, { SwitchCase: 1 }],
          semi: ['error', 'never'],
@@ -12,7 +14,8 @@ const eslintConfig = defineConfig([
          curly: ['error', 'all'],
          'brace-style': ['error', '1tbs'],
          'no-trailing-spaces': 'error',
-         'sort-imports': ['error', { ignoreCase: true, allowSeparatedGroups: true }],
+         'simple-import-sort/imports': 'error',
+         'simple-import-sort/exports': 'error',
       }
    },
    globalIgnores([

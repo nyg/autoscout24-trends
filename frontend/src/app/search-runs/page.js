@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+
 import SearchRuns from '@/components/search-runs'
 import { fetchSearchNames, fetchSearchRuns } from '@/lib/data'
 

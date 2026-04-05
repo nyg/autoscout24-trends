@@ -1,6 +1,6 @@
 import ClientSettings from '@/components/client-settings'
-import { fetchConfig, fetchSearches } from '@/lib/data'
 import SearchManager from '@/components/search-manager'
+import { fetchConfig, fetchSearches } from '@/lib/data'
 
 export default async function SettingsPage() {
    const searches = await fetchSearches()
