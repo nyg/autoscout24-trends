@@ -1,14 +1,15 @@
 'use client'
 
-import { asDecimal } from '@/lib/format'
 import { use } from 'react'
 import { CartesianGrid, Scatter, ScatterChart, XAxis, YAxis } from 'recharts'
+
+import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
    ChartContainer,
    ChartTooltip, ChartTooltipContent
 } from '@/components/ui/chart'
-import { HiddenEdgeYAxisTick } from '@/components/chart-utils'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useFormatter } from '@/lib/formatter-context'
 
 const chartConfig = {
    listings: { label: 'Price / Mileage', color: 'var(--chart-4)' },
@@ -41,6 +42,7 @@ function mileageDomain(listings) {
 
 export default function MileagePriceComparison({ data }) {
    const listings = use(data)
+   const { asDecimal } = useFormatter()
 
    return (
       <Card className="flex-1">

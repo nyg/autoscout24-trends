@@ -1,7 +1,8 @@
-import { fetchSearchNames } from '@/lib/data'
-import Link from 'next/link'
 import { ActivityIcon, SettingsIcon } from 'lucide-react'
+import Link from 'next/link'
+
 import SearchDropdown from '@/components/search-dropdown'
+import { fetchSearchNames } from '@/lib/data'
 
 function GithubIcon(props) {
    return (

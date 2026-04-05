@@ -2,8 +2,7 @@ import dataclasses
 import hashlib
 import io
 import os
-import re
-from datetime import datetime
+import uuid
 from typing import Any
 
 import psycopg
@@ -85,9 +84,7 @@ class ScreenshotPipeline:
                         self.crawler.spider.logger.info(
                             f'Screenshot for {item.vehicle_id}: dedup hit (hash={md5_hash[:8]})')
                     else:
-                        search_name = re.sub(r'\W+', '_', self.crawler.spider.search_name).lower().strip('_')
-                        timestamp = datetime.now().strftime('%Y-%m-%dT%H-%M-%SZ')
-                        r2_key = f'screenshots/{search_name}/{item.vehicle_id}/{timestamp}.webp'
+                        r2_key = f'screenshots/{uuid.uuid4()}.webp'
                         r2_url = f'{self.public_url}/{r2_key}'
 
                         self.s3_client.put_object(

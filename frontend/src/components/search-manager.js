@@ -1,8 +1,37 @@
 'use client'
 
+import { CheckIcon, CopyIcon } from 'lucide-react'
+import { useActionState, useState } from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createSearch, deleteSearch, toggleSearchActive, updateSearch } from '@/lib/actions'
-import { useActionState, useState } from 'react'
+
+
+function CopyUrlButton({ url }) {
+   const [copied, setCopied] = useState(false)
+
+   const handleCopy = async () => {
+      try {
+         await navigator.clipboard.writeText(url)
+         setCopied(true)
+         setTimeout(() => setCopied(false), 1500)
+      } catch { /* ignore */ }
+   }
+
+   return (
+      <button
+         onClick={handleCopy}
+         className="text-muted-foreground hover:text-foreground transition-colors"
+         title="Copy URL"
+         aria-label="Copy URL to clipboard"
+      >
+         {copied
+            ? <CheckIcon className="size-3.5 text-green-600" />
+            : <CopyIcon className="size-3.5" />
+         }
+      </button>
+   )
+}
 
 function SearchRow({ search }) {
    const [editing, setEditing] = useState(false)
@@ -62,7 +91,10 @@ function SearchRow({ search }) {
          <td className="p-2 text-muted-foreground whitespace-nowrap">{search.id}</td>
          <td className="p-2 whitespace-nowrap">{search.name}</td>
          <td className="p-2 text-muted-foreground truncate max-w-0" title={search.url}>
-            {search.url}
+            <span className="inline-flex items-center gap-1.5">
+               {search.url}
+               <CopyUrlButton url={search.url} />
+            </span>
          </td>
          <td className="p-2 text-center whitespace-nowrap">
             <form action={submitToggle} className="inline">
@@ -131,7 +163,7 @@ function AddSearchForm() {
    const [state, submitAction, pending] = useActionState(createSearch, null)
 
    return (
-      <form action={submitAction} className="flex flex-col gap-2 pt-4">
+      <form action={submitAction} className="flex flex-col gap-2">
          <p className="text-sm font-medium">Add new search</p>
          <input
             name="name"
@@ -177,7 +209,7 @@ export default function SearchManager({ searches }) {
                         <th className="p-2 whitespace-nowrap">Name</th>
                         <th className="p-2 w-full">URL</th>
                         <th className="p-2 text-center whitespace-nowrap">Active</th>
-                        <th className="p-2 text-right whitespace-nowrap">Actions</th>
+                        <th className="p-2 text-center whitespace-nowrap">Actions</th>
                      </tr>
                   </thead>
                   <tbody>

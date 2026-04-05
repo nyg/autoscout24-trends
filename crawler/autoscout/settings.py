@@ -1,4 +1,5 @@
 import logging
+import platform
 
 from dotenv import load_dotenv
 
@@ -22,10 +23,12 @@ TWISTED_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
 
 PGSQL_CONNECT_TIMEOUT = 1
 
+is_linux_aarch64 = platform.system() == 'Linux' and platform.machine() == 'aarch64'
+
 screen_resolution = '1026,720'
 SELENIUMBASE_BROWSER_OPTIONS = {
     'ad_block': True,
-    'use_chromium': True,
+    'use_chromium': not is_linux_aarch64, # not supported by SeleniumBase
     'xvfb_metrics': screen_resolution,
     'browser_args': [
         # '--disable-features=Translate',

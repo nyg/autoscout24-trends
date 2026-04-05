@@ -172,9 +172,9 @@ class SearchSpider(Spider):
 
     def closed(self, reason: str) -> None:
         """Log a summary of failed URLs when the spider finishes, if there are any."""
-        if not self.failed_requests:
-            return
+        if self.failed_requests:
+            self.logger.warning(f'{len(self.failed_requests)} requests have failed:')
+            for entry in self.failed_requests:
+                self.logger.warning(f"  Scraping {entry['url']} failed due to: {entry['reason']}")
 
-        self.logger.warning(f'{len(self.failed_requests)} requests have failed:')
-        for entry in self.failed_requests:
-            self.logger.warning(f"  Scraping {entry['url']} failed due to: {entry['reason']}")
+        self.crawler.stats.set_value('failed_urls', self.failed_requests)

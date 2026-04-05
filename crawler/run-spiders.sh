@@ -11,7 +11,7 @@
 # Python's TimedRotatingFileHandler.  Shell-level output redirection
 # (>> ... 2>&1) is no longer needed for normal operation.
 
-set -euo pipefail
+set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

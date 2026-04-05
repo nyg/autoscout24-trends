@@ -1,7 +1,7 @@
 'use server'
 
-import postgres from 'postgres'
 import { revalidatePath } from 'next/cache'
+import postgres from 'postgres'
 
 const pgSql = postgres(process.env.PGSQL_URL)
 

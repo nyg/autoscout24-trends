@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+
 import Cars from '@/components/cars'
 import DailyListingCount from '@/components/daily-listing-count'
 import MileagePriceComparison from '@/components/mileage-price-comparison'
