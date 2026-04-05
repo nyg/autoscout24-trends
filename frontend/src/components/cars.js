@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { use, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 
+import Lightbox from '@/components/lightbox'
 import PlaceDetails from '@/components/place-details'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -149,22 +150,27 @@ function compareCars(a, b, sortKey, sortType, direction) {
 
 // --- Truncated text with tooltip ---
 
-function TruncatedText({ text, maxLength, className, scrollable = false }) {
+function TruncatedText({ text, maxLength, className, scrollable = false, href }) {
    if (!text) {
       return <span className={className}>-</span>
    }
 
    const str = String(text)
    const truncated = str.length > maxLength
+   const display = truncated ? `${str.substring(0, maxLength)}…` : str
+
+   const content = href
+      ? <a className="hover:underline" href={href} target="_blank" rel="noopener noreferrer">{display}</a>
+      : display
 
    if (!truncated) {
-      return <span className={className}>{str}</span>
+      return <span className={className}>{content}</span>
    }
 
    return (
       <Tooltip delay={300}>
          <TooltipTrigger className={className}>
-            {str.substring(0, maxLength)}…
+            {content}
          </TooltipTrigger>
          <TooltipContent side="bottom" className={scrollable ? 'max-h-48 max-w-sm overflow-y-auto whitespace-pre-line' : 'max-w-sm'}>
             {str}
@@ -270,34 +276,20 @@ function MapPreviewButton({ car, apiKey }) {
 
 // --- Cell renderers ---
 
-function CellRenderer({ col, car, options, config }) {
+function CellRenderer({ col, car, options, config, callbacks }) {
    const {asDecimal, asShortDate, asMediumDate} = useFormatter()
 
    switch (col.key) {
       case 'title': {
          const desc = car.subtitle || car.description || '-'
-         const titleStr = car.title || ''
-         const isTitleTruncated = titleStr.length > 100
-         const displayTitle = isTitleTruncated ? `${titleStr.substring(0, 100)}…` : titleStr
-
-         const titleLink = (
-            <a className="hover:underline" href={car.url} target="_blank" rel="noopener noreferrer">
-               {displayTitle}
-            </a>
-         )
 
          return (
             <TableCell>
-               {isTitleTruncated ? (
-                  <Tooltip delay={300}>
-                     <TooltipTrigger render={titleLink} />
-                     <TooltipContent side="bottom" className="max-w-sm">{titleStr}</TooltipContent>
-                  </Tooltip>
-               ) : titleLink}
+               <TruncatedText text={car.title} maxLength={70} href={car.url} />
                <br />
                <TruncatedText
                   text={desc}
-                  maxLength={100}
+                  maxLength={70}
                   className="text-muted-foreground"
                   scrollable
                />
@@ -341,15 +333,13 @@ function CellRenderer({ col, car, options, config }) {
          return (
             <TableCell className="text-center">
                {car.screenshot_url ? (
-                  <a
-                     href={car.screenshot_url}
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex"
+                  <button
+                     onClick={() => callbacks.onScreenshotClick(car)}
+                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer"
                      title="View screenshot"
                   >
                      <CameraIcon className="size-4" />
-                  </a>
+                  </button>
                ) : (
                   <span className="text-muted-foreground/40 inline-flex">
                      <CameraIcon className="size-4" />
@@ -370,6 +360,14 @@ export default function Cars({ name, data, options = {}, config = {} }) {
 
    const activeKeys = useSyncExternalStore(subscribeVisibleColumns, getVisibleColumnsSnapshot, getVisibleColumnsServerSnapshot)
    const [sort, setSort] = useState({ key: 'price', direction: 'asc' })
+   const [lightbox, setLightbox] = useState(null)
+
+   const onScreenshotClick = useCallback((car) => {
+      const images = [car.screenshot_url].filter(Boolean)
+      if (images.length > 0) {
+         setLightbox({ images, index: 0 })
+      }
+   }, [])
 
    const toggleColumn = useCallback((key) => {
       const current = getVisibleColumnsSnapshot()
@@ -451,12 +449,19 @@ export default function Cars({ name, data, options = {}, config = {} }) {
                <TableBody>
                   {sortedCars.map(car => (
                      <TableRow key={car.id}>
-                        {visibleColumns.map(col => <CellRenderer key={col.key} col={col} car={car} options={options} config={config} />)}
+                        {visibleColumns.map(col => <CellRenderer key={col.key} col={col} car={car} options={options} config={config} callbacks={{ onScreenshotClick }} />)}
                      </TableRow>
                   ))}
                </TableBody>
             </Table>
          </CardContent>
+         {lightbox && (
+            <Lightbox
+               images={lightbox.images}
+               initialIndex={lightbox.index}
+               onClose={() => setLightbox(null)}
+            />
+         )}
       </Card>
    )
 }
