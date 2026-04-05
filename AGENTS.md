@@ -21,6 +21,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Cars table (sorting, column visibility, seller cell): `frontend/src/components/cars.js`
 - Google Places integration: `frontend/src/components/place-details.js`
 - Number/date formatting: `frontend/src/lib/format.js`
+- Formatter React Context: `frontend/src/lib/formatter-context.js`
 
 ## Developer workflows
 - Frontend commands are the standard ones from `frontend/package.json`: `pnpm dev`, `pnpm build`, `pnpm lint`.

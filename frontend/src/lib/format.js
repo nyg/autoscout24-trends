@@ -10,11 +10,10 @@ const formatDate = (formatter, date) =>
  * the same value is reused via context so SSR and hydration match.
  */
 export function createFormatters(locale) {
-   const loc = locale || DEFAULT_LOCALE
-   const sd = new Intl.DateTimeFormat(loc, { year: 'numeric', month: '2-digit' })
-   const md = new Intl.DateTimeFormat(loc, { year: 'numeric', month: 'short', day: 'numeric' })
-   const smy = new Intl.DateTimeFormat(loc, { year: '2-digit', month: 'short' })
-   const dec = new Intl.NumberFormat(loc, { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 })
+   const sd = new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit' })
+   const md = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' })
+   const smy = new Intl.DateTimeFormat(locale, { year: '2-digit', month: 'short' })
+   const dec = new Intl.NumberFormat(locale, { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
    return {
       asDecimal: (number) => dec.format(number),
@@ -25,7 +24,7 @@ export function createFormatters(locale) {
          if (!timestamp) {
             return ''
          }
-         return new Date(timestamp).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })
+         return new Date(timestamp).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
       },
    }
 }
