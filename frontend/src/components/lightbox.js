@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 
