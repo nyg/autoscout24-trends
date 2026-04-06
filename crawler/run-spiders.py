@@ -67,6 +67,7 @@ def _setup_file_logging() -> Path | None:
     log_file = log_dir / 'crawl.log'
     handler = logging.handlers.TimedRotatingFileHandler(
         log_file, when='midnight', backupCount=30, encoding='utf-8')
+    handler.setLevel(logging.INFO)
     handler.setFormatter(logging.Formatter(
         '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'))
