@@ -5,7 +5,7 @@ import {
    ChevronRightIcon, FilterIcon, RefreshCwIcon, XCircleIcon
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { use, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,6 +21,23 @@ import { useFormatter } from '@/lib/formatter-context'
 
 
 const PAGE_SIZES = [10, 20, 50, 100]
+
+const PREFS_KEY = 'search-runs-preferences'
+
+function savePreferences(prefs) {
+   try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
+   } catch { /* ignore */ }
+}
+
+function loadPreferences() {
+   try {
+      const raw = localStorage.getItem(PREFS_KEY)
+      return raw ? JSON.parse(raw) : null
+   } catch {
+      return null
+   }
+}
 
 function formatDuration(start, end) {
    if (!start || !end) {
@@ -78,7 +95,7 @@ function StatsPopover({ stats }) {
 }
 
 
-export default function SearchRuns({ data, searches, totalCount, page, pageSize, searchFilter, fromDate, toDate }) {
+export default function SearchRuns({ data, searches, totalCount, page, pageSize, searchFilter, fromDate, toDate, hasExplicitParams }) {
 
    const runs = use(data)
    const searchList = use(searches)
@@ -92,14 +109,44 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
    const [localFrom, setLocalFrom] = useState(fromDate)
    const [localTo, setLocalTo] = useState(toDate)
 
+   // Restore saved preferences on first visit (bare URL with no explicit params)
+   const didRestore = useRef(false)
+   useEffect(() => {
+      if (didRestore.current || hasExplicitParams) {
+         return
+      }
+      didRestore.current = true
+      const prefs = loadPreferences()
+      if (!prefs) {
+         return
+      }
+      const url = buildUrl({
+         search: prefs.search ?? null,
+         page: 1,
+         pageSize: prefs.pageSize ?? 20,
+         from: prefs.from ?? fromDate,
+         to: prefs.to ?? toDate,
+      })
+      if (url !== window.location.pathname + window.location.search) {
+         window.location.href = url
+      }
+   }, [hasExplicitParams, fromDate, toDate])
+
    const navigate = (params) => {
-      window.location.href = buildUrl({
+      const resolved = {
          search: params.search ?? searchFilter,
          page: params.page ?? page,
          pageSize: params.pageSize ?? pageSize,
          from: params.from ?? localFrom,
          to: params.to ?? localTo,
+      }
+      savePreferences({
+         search: resolved.search,
+         pageSize: resolved.pageSize,
+         from: resolved.from,
+         to: resolved.to,
       })
+      window.location.href = buildUrl(resolved)
    }
 
    const applyDateRange = () => {
