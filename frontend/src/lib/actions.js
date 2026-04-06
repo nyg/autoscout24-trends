@@ -234,3 +234,56 @@ export async function updateConfig(prevState, formData) {
       return { error: 'Failed to save settings.' }
    }
 }
+
+const VALID_RETENTION_DAYS = [30, 90, 180]
+
+export async function deleteOldScreenshots(prevState, formData) {
+   const days = parseInt(formData.get('days'), 10)
+   const confirmed = formData.get('confirmed') === 'true'
+
+   if (!VALID_RETENTION_DAYS.includes(days)) {
+      return { error: 'Invalid retention period.' }
+   }
+
+   try {
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() - days)
+
+      if (!confirmed) {
+         const [info] = await pgSql`
+            select count(*)::int as count,
+                   coalesce(sum(compressed_size), 0)::bigint as total_size
+              from screenshots
+             where created_at < ${cutoff}`
+         return {
+            needsConfirm: true,
+            count: info.count,
+            totalSize: Number(info.total_size),
+            _days: days,
+         }
+      }
+
+      // Collect R2 keys before deletion
+      const rows = await pgSql`
+         select id, r2_key from screenshots where created_at < ${cutoff}`
+      const ids = rows.map(r => r.id)
+      const r2Keys = rows.map(r => r.r2_key).filter(Boolean)
+
+      if (ids.length > 0) {
+         await pgSql.begin(async pgSql => {
+            await pgSql`update cars set screenshot_id = null where screenshot_id in ${pgSql(ids)}`
+            await pgSql`delete from screenshots where id in ${pgSql(ids)}`
+         })
+         await deleteR2Objects(r2Keys)
+      }
+
+      revalidatePath('/settings')
+      return {
+         success: true,
+         deletedCount: ids.length,
+         freedBytes: 0, // already deleted, can't sum
+      }
+   } catch {
+      return { error: 'Failed to delete old screenshots.' }
+   }
+}
