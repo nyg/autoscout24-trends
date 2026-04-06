@@ -19,6 +19,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Search management UI: `frontend/src/components/search-manager.js`
 - Client-side settings (localStorage): `frontend/src/components/client-settings.js`
 - Cars table (sorting, column visibility, seller cell): `frontend/src/components/cars.js`
+- Lightbox image viewer: `frontend/src/components/lightbox.js`
 - Google Places integration: `frontend/src/components/place-details.js`
 - Number/date formatting: `frontend/src/lib/format.js`
 - Formatter React Context: `frontend/src/lib/formatter-context.js`
@@ -36,6 +37,8 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - `PostgreSQLPipeline` buffers sellers and cars separately, inserts sellers with `ON CONFLICT DO NOTHING`, then inserts cars with a shared `search_run_id` created by `SearchRunExtension`.
 - `SearchRunExtension` (EXTENSIONS priority 500) creates a `search_runs` row on `spider_opened` and updates it with final stats on `spider_closed`. It publishes `search_run_id` to Scrapy stats so `PostgreSQLPipeline` can read it.
 - `ScreenshotPipeline` (priority 250) compresses screenshots from raw PNG to WebP lossy, deduplicates via MD5 hash, uploads to Cloudflare R2 with UUID-based keys (`screenshots/{uuid}.webp`), and stores metadata in the `screenshots` table. It sets `car['screenshot_id']` for `PostgreSQLPipeline` to insert. Requires R2 env vars (`R2_ENDPOINT_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`); gracefully skips if not configured.
+- `PhotoPipeline` (priority 260) downloads all seller-uploaded listing photos from `listing-images.autoscout24.ch/listing/{key}`, compresses to WebP, deduplicates via MD5 hash, uploads to R2 with UUID-based keys (`photos/{uuid}.webp`), and stores metadata in the `photos` table. It sets `item.photo_ids` for `PostgreSQLPipeline` to insert into the `car_photos` junction table. Downloads images in parallel (4 threads). Requires the same R2 env vars as `ScreenshotPipeline`; gracefully skips if not configured.
+- `PostgreSQLPipeline` (priority 300) inserts cars and then creates `car_photos` junction rows linking each car to its photos with position ordering.
 - Failed URLs (with reason) are stored in Scrapy stats via `self.crawler.stats.set_value('failed_urls', self.failed_requests)` in the spider's `closed()` method. This list is automatically persisted in the `search_runs.stats` JSONB column by `SearchRunExtension`.
 - `run-spiders.py` configures daily-rotating file logging in `$XDG_STATE_HOME/autoscout24-trends/` (default `~/.local/state/autoscout24-trends/`). Log files are named `crawl.log` with 30-day retention. Console logging is kept as-is. The cron job no longer needs shell-level output redirection.
 - If you add/remove car fields, update all of these together: `crawler/autoscout/items.py`, `crawler/autoscout/pipelines.py`, `crawler/SCHEMA.sql`, and any frontend queries/components that read the field.
@@ -56,7 +59,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Column definitions live in the `COLUMNS` array at the top of the file. Add new columns there (key, label, sortType, sortKey, align, defaultVisible).
 - Sorting: click column headers to toggle asc/desc. Sort comparison is type-aware (numeric, text, date). Default sort is price ascending.
 - Column visibility: stored in localStorage (`'car-table-visible-columns'`), synced across tables via a custom `'visible-columns-changed'` event (since `storage` events only fire in other tabs). Uses `useSyncExternalStore` with a server snapshot of default columns to avoid hydration mismatches.
-- Screenshot/photo viewing: clicking the camera icon opens a `Lightbox` component (fullscreen overlay with left/right navigation, keyboard support, Escape to close). The lightbox is rendered via `createPortal` at the document root. Click the image to toggle between fit-by-height and fit-by-width modes; the container scrolls when the image exceeds the viewport.
+- Screenshot/photo viewing: clicking the camera icon opens a `Lightbox` component (fullscreen overlay with left/right navigation, keyboard support, Escape to close). The lightbox is rendered via `createPortal` at the document root. Click the image to toggle between fit-by-height and fit-by-width modes; the container scrolls when the image exceeds the viewport. When opened, the lightbox lazy-loads additional listing photos via `fetchMoreUrl`.
 - Seller cell: shows seller name (truncated), location, and three icons — Google Maps link (MapPinIcon), directions from home (NavigationIcon, requires home address in Settings), and place details popover (MapIcon, requires Google Maps API key, disabled for private sellers).
 - Text truncation: title (70 chars), description (70 chars, scrollable tooltip), seller name (30 chars). All use `TruncatedText` component with `Tooltip`. `TruncatedText` accepts an optional `href` prop to render the text as a link (used for car title).
 
@@ -100,3 +103,4 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - localStorage keys used by the frontend: `'car-table-visible-columns'`, `'google-maps-api-key'`, `'home-address'`. Avoid collisions.
 - Seller types are only `'professional'` and `'private'`. Maps place details are only shown for professional sellers. Address building differs by type: private → "address, zip_code city", professional → "name, address, zip_code city".
 - Screenshots are stored in Cloudflare R2 (not in the DB). The `screenshots` table holds only metadata and the R2 public URL. Car queries LEFT JOIN `screenshots` via `cars.screenshot_id` to get `screenshot_url`. The `/api/screenshot/[carId]` route redirects to the R2 URL. Backfill existing bytea data with `crawler/backfill_screenshots.py`.
+- Listing photos are stored in R2 via the `photos` table (metadata) and `car_photos` junction table (car_id, photo_id, position). The `/api/photos/[carId]` route returns a JSON array of photo URLs. Car listing queries include a `photo_count` subquery. The lightbox component lazy-loads photos via `fetchMoreUrl` when opened.
