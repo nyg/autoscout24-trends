@@ -101,15 +101,13 @@ def send_batch_summary_email(batch_started_at: datetime, search_ids: list[int]) 
             successful=successful,
             total_cars_found=total_found,
             total_cars_scraped=total_scraped,
-            total_duration=_format_duration(first_start, last_finish),
-        )
+            total_duration=_format_duration(first_start, last_finish))
 
         all_ok = successful == len(runs)
         subject = (
             f'AutoScout24 batch: {total_scraped} cars from {len(runs)} searches'
             if all_ok
-            else f'AutoScout24 batch: {successful}/{len(runs)} searches OK, {total_scraped} cars'
-        )
+            else f'AutoScout24 batch: {successful}/{len(runs)} searches OK, {total_scraped} cars')
 
         resend.api_key = api_key
         resend.Emails.send({

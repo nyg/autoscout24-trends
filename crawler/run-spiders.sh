@@ -5,6 +5,11 @@
 # pyproject.toml, then delegates to run-spiders.py.  Designed to be called
 # directly by a cron job so that a plain `git pull` is enough to pick up
 # new package versions on the next scheduled run.
+#
+# Logs are written to $XDG_STATE_HOME/autoscout24-trends/ (default
+# ~/.local/state/autoscout24-trends/) with daily rotation managed by
+# Python's TimedRotatingFileHandler.  Shell-level output redirection
+# (>> ... 2>&1) is no longer needed for normal operation.
 
 set -eu
 

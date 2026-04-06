@@ -77,8 +77,7 @@ class SearchRunExtension:
                         request_count,
                         failed_request_count,
                         Jsonb({k: str(v) for k, v in stats.items()}),
-                        self.search_run_id,
-                    ))
+                        self.search_run_id))
             self.crawler.spider.logger.info(f'Updated search run {self.search_run_id}')
         except Exception as e:
             self.crawler.spider.logger.error(f'Failed to update search run: {e}', exc_info=True)
