@@ -27,8 +27,7 @@ def get_shared_connection(crawler: Crawler) -> psycopg.Connection:
     if connection is None:
         raise RuntimeError(
             'Shared DB connection not available. '
-            'Ensure SearchRunExtension is enabled and has run spider_opened.'
-        )
+            'Ensure SearchRunExtension is enabled and has run spider_opened.')
     return connection
 
 
@@ -40,8 +39,7 @@ class ScreenshotPipeline:
         self.s3_client: Any = None
         self.r2_configured = all(os.environ.get(k) for k in (
             'R2_ENDPOINT_URL', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY',
-            'R2_BUCKET_NAME', 'R2_PUBLIC_URL'
-        ))
+            'R2_BUCKET_NAME', 'R2_PUBLIC_URL'))
         self.bucket_name = os.environ.get('R2_BUCKET_NAME')
         self.public_url = (os.environ.get('R2_PUBLIC_URL') or '').rstrip('/')
 
@@ -93,8 +91,7 @@ class ScreenshotPipeline:
                             Bucket=self.bucket_name,
                             Key=r2_key,
                             Body=webp_data,
-                            ContentType='image/webp',
-                        )
+                            ContentType='image/webp')
 
                         cursor.execute('''
                             INSERT INTO screenshots (md5_hash, r2_key, r2_url, format, width, height, original_size, compressed_size)
@@ -118,8 +115,7 @@ class ScreenshotPipeline:
                 endpoint_url=os.environ['R2_ENDPOINT_URL'],
                 aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'],
                 aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'],
-                region_name='auto',
-            )
+                region_name='auto')
 
     @staticmethod
     def _compress(png_data: bytes) -> tuple[bytes, int, int, int]:

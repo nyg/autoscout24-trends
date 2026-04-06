@@ -30,8 +30,7 @@ class SellerItem:
             name=json_response['name'] or 'Unknown seller',
             address=json_response['address'],
             zip_code=json_response['zipCode'],
-            city=json_response['city'],
-        )
+            city=json_response['city'])
 
 
 @dataclass
@@ -115,5 +114,4 @@ class CarItem:
             last_inspection_date=parse_iso_datetime(listing['lastInspectionDate']),
             seller_id=str(json_response['seller']['id']),
             screenshot=screenshot,
-            image_keys=[img['key'] for img in listing.get('images', []) if 'key' in img],
-        )
+            image_keys=[img['key'] for img in listing.get('images', []) if 'key' in img])
