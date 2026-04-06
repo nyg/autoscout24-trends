@@ -120,11 +120,15 @@ function SearchRow({ search }) {
                      <input type="hidden" name="id" value={search.id} />
                      <input type="hidden" name="confirmed" value="true" />
                      <span className="text-xs text-destructive">
-                        Also delete {deleteState.carCount} car{deleteState.carCount !== 1 ? 's' : ''}?
+                        Delete {deleteState.runCount} run{deleteState.runCount !== 1 ? 's' : ''},
+                        {' '}{deleteState.carCount} car{deleteState.carCount !== 1 ? 's' : ''}
+                        {deleteState.screenshotCount > 0 && `, ${deleteState.screenshotCount} screenshot${deleteState.screenshotCount !== 1 ? 's' : ''}`}
+                        ?
                      </span>
                      <button
                         type="submit"
                         disabled={deletePending}
+                        autoFocus
                         className="rounded-md border border-destructive/30 px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
                      >
                         {deletePending ? '…' : 'Confirm'}

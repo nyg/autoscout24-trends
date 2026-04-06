@@ -2,10 +2,10 @@
 
 import {
    BarChartIcon, CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon,
-   ChevronRightIcon, FilterIcon, RefreshCwIcon, XCircleIcon
+   ChevronRightIcon, FilterIcon, RefreshCwIcon, Trash2Icon, XCircleIcon
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { use, useState } from 'react'
+import { use, useActionState, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
+import { deleteSearchRun } from '@/lib/actions'
 import { useFormatter } from '@/lib/formatter-context'
 
 
@@ -74,6 +75,49 @@ function StatsPopover({ stats }) {
             </pre>
          </PopoverContent>
       </Popover>
+   )
+}
+
+function DeleteRunCell({ runId }) {
+   const [state, submitAction, pending] = useActionState(deleteSearchRun, null)
+
+   if (state?.needsConfirm) {
+      return (
+         <form action={submitAction} className="inline-flex items-center gap-1">
+            <input type="hidden" name="id" value={runId} />
+            <input type="hidden" name="confirmed" value="true" />
+            <span className="text-xs text-destructive whitespace-nowrap">
+               {state.carCount} car{state.carCount !== 1 ? 's' : ''}
+               {state.screenshotCount > 0 && `, ${state.screenshotCount} screenshot${state.screenshotCount !== 1 ? 's' : ''}`}
+               ?
+            </span>
+            <button
+               type="submit"
+               disabled={pending}
+               autoFocus
+               className="rounded-md border border-destructive/30 px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+            >
+               {pending ? '…' : 'Confirm'}
+            </button>
+         </form>
+      )
+   }
+
+   return (
+      <form action={submitAction} className="inline">
+         <input type="hidden" name="id" value={runId} />
+         {state?.error && (
+            <span className="text-xs text-destructive mr-1">{state.error}</span>
+         )}
+         <button
+            type="submit"
+            disabled={pending}
+            className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+            title="Delete search run"
+         >
+            <Trash2Icon className="size-4" />
+         </button>
+      </form>
    )
 }
 
@@ -202,12 +246,13 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                      <TableHead className="text-right">Requests</TableHead>
                      <TableHead className="text-right">Failed</TableHead>
                      <TableHead className="text-center">Stats</TableHead>
+                     <TableHead className="w-0"></TableHead>
                   </TableRow>
                </TableHeader>
                <TableBody>
                   {runs.length === 0 && (
                      <TableRow>
-                        <TableCell colSpan={10} className="text-center text-muted-foreground">
+                        <TableCell colSpan={11} className="text-center text-muted-foreground">
                            No search runs found.
                         </TableCell>
                      </TableRow>
@@ -234,6 +279,9 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                         </TableCell>
                         <TableCell className="text-center">
                            <StatsPopover stats={run.stats} />
+                        </TableCell>
+                        <TableCell className="text-center">
+                           <DeleteRunCell runId={run.id} />
                         </TableCell>
                      </TableRow>
                   ))}
