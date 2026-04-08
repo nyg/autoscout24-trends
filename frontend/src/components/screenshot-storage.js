@@ -38,7 +38,7 @@ function formatMB(bytes) {
 export default function ScreenshotStorage({ data, summary }) {
    const dailyData = use(data)
    const { total_count, total_size } = use(summary)
-   const { asMediumDate, asShortMonthYearDate } = useFormatter()
+   const { asMediumDate, asShortDayMonthDate } = useFormatter()
 
    const chartData = dailyData.map(d => ({
       ...d,
@@ -65,7 +65,7 @@ export default function ScreenshotStorage({ data, summary }) {
                         scale="time"
                         type="number"
                         domain={['dataMin', 'dataMax']}
-                        tickFormatter={asShortMonthYearDate}
+                        tickFormatter={asShortDayMonthDate}
                         tickMargin={8}
                         tickLine={false}
                         axisLine={false}
