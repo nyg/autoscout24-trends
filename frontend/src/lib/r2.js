@@ -33,14 +33,22 @@ export async function deleteR2Objects(keys) {
       return
    }
    const bucket = process.env.R2_BUCKET_NAME
+   if (!bucket) {
+      console.warn('R2 not configured — skipping R2 object deletion')
+      return
+   }
    // S3 DeleteObjects supports up to 1000 keys per request
    for (let i = 0; i < keys.length; i += 1000) {
       const batch = keys.slice(i, i + 1000)
       try {
-         await client.send(new DeleteObjectsCommand({
+         const response = await client.send(new DeleteObjectsCommand({
             Bucket: bucket,
             Delete: { Objects: batch.map(Key => ({ Key })) },
          }))
+         if (response.Errors?.length > 0) {
+            console.error(`Partial R2 deletion failure (batch ${i / 1000 + 1}):`,
+               response.Errors.map(e => ({ key: e.Key, code: e.Code, message: e.Message })))
+         }
       } catch (err) {
          console.error(`Failed to delete R2 objects (batch ${i / 1000 + 1}):`, err.message)
       }
