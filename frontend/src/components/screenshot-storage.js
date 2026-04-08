@@ -79,10 +79,8 @@ export default function ScreenshotStorage({ data, summary }) {
                      <ChartTooltip
                         content={
                            <ChartTooltipContent
-                              labelFormatter={asMediumDate}
-                              valueFormatter={(value, name) =>
-                                 name === 'total_size' ? formatBytes(value) : value
-                              }
+                              labelFormatter={(_, payload) => asMediumDate(payload[0]?.payload?.date)}
+                              valueFormatter={formatBytes}
                            />
                         }
                      />
