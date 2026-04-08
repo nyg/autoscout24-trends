@@ -3,7 +3,18 @@ import postgres from 'postgres'
 const pgSql = postgres(process.env.PGSQL_URL)
 
 export async function fetchSearches() {
-   return pgSql`select * from searches order by name`
+   return pgSql`
+      select s.*,
+             (select count(*)::int from search_runs where search_id = s.id) as run_count,
+             (select count(*)::int from cars where search_id = s.id) as car_count,
+             (select count(distinct c.screenshot_id) filter (where c.screenshot_id is not null)::int
+                from cars c where c.search_id = s.id) as screenshot_count,
+             (select coalesce(sum(sc.compressed_size), 0)::bigint
+                from screenshots sc
+               inner join cars c on c.screenshot_id = sc.id
+               where c.search_id = s.id) as screenshot_size
+        from searches s
+       order by name`
 }
 
 export async function fetchSearchNames() {
@@ -152,4 +163,20 @@ export async function fetchCarScreenshotUrl(carId) {
    return row?.r2_url ?? null
 }
 
+export async function fetchScreenshotStorageByDay() {
+   return pgSql`
+      select date_trunc('day', sc.created_at) as date,
+             count(*)::int as count,
+             sum(sc.compressed_size)::bigint as total_size
+        from screenshots sc
+       group by date
+       order by date`
+}
 
+export async function fetchScreenshotStorageSummary() {
+   const [row] = await pgSql`
+      select count(*)::int as total_count,
+             coalesce(sum(compressed_size), 0)::bigint as total_size
+        from screenshots`
+   return row
+}

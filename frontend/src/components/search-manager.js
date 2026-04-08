@@ -11,6 +11,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createSearch, deleteSearch, toggleSearchActive, updateSearch } from '@/lib/actions'
 
 
+function formatBytes(bytes) {
+   if (bytes === 0) {
+      return '0 B'
+   }
+   const units = ['B', 'KB', 'MB', 'GB']
+   const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+   const value = bytes / Math.pow(1024, i)
+   return `${value < 10 ? value.toFixed(1) : Math.round(value)} ${units[i]}`
+}
+
+
 function CopyUrlButton({ url }) {
    const [copied, setCopied] = useState(false)
 
@@ -84,7 +95,7 @@ function SearchRow({ search }) {
    if (editing) {
       return (
          <tr className="border-b">
-            <td colSpan={5} className="p-2">
+            <td colSpan={8} className="p-2">
                <form action={submitUpdate} className="flex flex-col gap-2">
                   <input type="hidden" name="id" value={search.id} />
                   <input type="hidden" name="is_active" value={String(search.is_active)} />
@@ -131,6 +142,14 @@ function SearchRow({ search }) {
                {search.url}
                <CopyUrlButton url={search.url} />
             </span>
+         </td>
+         <td className="p-2 text-right text-muted-foreground whitespace-nowrap">{search.run_count}</td>
+         <td className="p-2 text-right text-muted-foreground whitespace-nowrap">{search.car_count}</td>
+         <td className="p-2 text-right text-muted-foreground whitespace-nowrap">
+            {search.screenshot_count}
+            {search.screenshot_size > 0 && (
+               <span className="text-xs ml-1">({formatBytes(search.screenshot_size)})</span>
+            )}
          </td>
          <td className="p-2 text-center whitespace-nowrap">
             <form action={submitToggle} className="inline">
@@ -241,6 +260,9 @@ export default function SearchManager({ searches }) {
                         <th className="p-2 whitespace-nowrap">ID</th>
                         <th className="p-2 whitespace-nowrap">Name</th>
                         <th className="p-2 w-full">URL</th>
+                        <th className="p-2 text-right whitespace-nowrap">Runs</th>
+                        <th className="p-2 text-right whitespace-nowrap">Cars</th>
+                        <th className="p-2 text-right whitespace-nowrap">Screenshots</th>
                         <th className="p-2 text-center whitespace-nowrap">Active</th>
                         <th className="p-2 text-center whitespace-nowrap">Actions</th>
                      </tr>

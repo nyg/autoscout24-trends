@@ -148,6 +148,7 @@ function DeleteRunCell({ runId }) {
             </AlertDialogContent>
          </AlertDialog>
       </>
+
    )
 }
 
@@ -281,7 +282,7 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                <TableBody>
                   {runs.length === 0 && (
                      <TableRow>
-                        <TableCell colSpan={10} className="text-center text-muted-foreground">
+                        <TableCell colSpan={11} className="text-center text-muted-foreground">
                            No search runs found.
                         </TableCell>
                      </TableRow>
