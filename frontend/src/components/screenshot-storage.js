@@ -64,7 +64,7 @@ export default function ScreenshotStorage({ data, summary }) {
                         dataKey="date"
                         scale="time"
                         type="number"
-                        domain={['dataMin', 'dataMax']}
+                        domain={[min => min - 43200000, max => max + 43200000]}
                         tickFormatter={asShortDayMonthDate}
                         tickMargin={8}
                         tickLine={false}
