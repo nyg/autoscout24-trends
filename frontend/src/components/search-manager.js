@@ -1,8 +1,12 @@
 'use client'
 
 import { CheckIcon, CopyIcon } from 'lucide-react'
-import { useActionState, useState } from 'react'
+import { useActionState, useState, useTransition } from 'react'
 
+import {
+   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createSearch, deleteSearch, toggleSearchActive, updateSearch } from '@/lib/actions'
 
@@ -42,8 +46,40 @@ function SearchRow({ search }) {
       }
       return result
    }, null)
-   const [deleteState, submitDelete, deletePending] = useActionState(deleteSearch, null)
    const [, submitToggle] = useActionState(toggleSearchActive, null)
+
+   const [dialogOpen, setDialogOpen] = useState(false)
+   const [deleteInfo, setDeleteInfo] = useState(null)
+   const [deletePending, startDeleteTransition] = useTransition()
+   const [deleteError, setDeleteError] = useState(null)
+
+   const handleDelete = () => {
+      setDeleteError(null)
+      const formData = new FormData()
+      formData.set('id', String(search.id))
+      startDeleteTransition(async () => {
+         const result = await deleteSearch(null, formData)
+         if (result?.needsConfirm) {
+            setDeleteInfo(result)
+            setDialogOpen(true)
+         } else if (result?.error) {
+            setDeleteError(result.error)
+         }
+      })
+   }
+
+   const handleConfirmDelete = () => {
+      const formData = new FormData()
+      formData.set('id', String(search.id))
+      formData.set('confirmed', 'true')
+      startDeleteTransition(async () => {
+         const result = await deleteSearch(null, formData)
+         if (result?.error) {
+            setDeleteError(result.error)
+         }
+         setDialogOpen(false)
+      })
+   }
 
    if (editing) {
       return (
@@ -115,48 +151,41 @@ function SearchRow({ search }) {
          </td>
          <td className="p-2 text-right whitespace-nowrap">
             <div className="flex gap-1 justify-end items-center">
-               {deleteState?.needsConfirm ? (
-                  <form action={submitDelete} className="inline-flex items-center gap-1" role="alert">
-                     <input type="hidden" name="id" value={search.id} />
-                     <input type="hidden" name="confirmed" value="true" />
-                     <span className="text-xs text-destructive">
-                        Delete {deleteState.runCount} run{deleteState.runCount !== 1 ? 's' : ''},
-                        {' '}{deleteState.carCount} car{deleteState.carCount !== 1 ? 's' : ''}
-                        {deleteState.screenshotCount > 0 && `, ${deleteState.screenshotCount} screenshot${deleteState.screenshotCount !== 1 ? 's' : ''}`}
-                        ?
-                     </span>
-                     <button
-                        type="submit"
-                        disabled={deletePending}
-                        autoFocus
-                        className="rounded-md border border-destructive/30 px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-                     >
-                        {deletePending ? '…' : 'Confirm'}
-                     </button>
-                  </form>
-               ) : (
-                  <>
-                     <button
-                        onClick={() => setEditing(true)}
-                        className="rounded-md border px-2 py-0.5 text-xs transition-colors hover:bg-muted"
-                     >
-                        Edit
-                     </button>
-                     <form action={submitDelete} className="inline">
-                        <input type="hidden" name="id" value={search.id} />
-                        <button
-                           type="submit"
-                           disabled={deletePending}
-                           className="rounded-md border border-destructive/30 px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-                        >
-                           {deletePending ? '…' : 'Delete'}
-                        </button>
-                     </form>
-                     {deleteState?.error && (
-                        <span className="text-xs text-destructive">{deleteState.error}</span>
-                     )}
-                  </>
+               <button
+                  onClick={() => setEditing(true)}
+                  className="rounded-md border px-2 py-0.5 text-xs transition-colors hover:bg-muted"
+               >
+                  Edit
+               </button>
+               <button
+                  onClick={handleDelete}
+                  disabled={deletePending}
+                  className="rounded-md border border-destructive/30 px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+               >
+                  {deletePending && !dialogOpen ? '…' : 'Delete'}
+               </button>
+               {deleteError && (
+                  <span className="text-xs text-destructive">{deleteError}</span>
                )}
+               <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <AlertDialogContent size="sm">
+                     <AlertDialogHeader>
+                        <AlertDialogTitle>Delete &ldquo;{search.name}&rdquo;?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                           This will permanently delete {deleteInfo?.runCount} run{deleteInfo?.runCount !== 1 ? 's' : ''},
+                           {' '}{deleteInfo?.carCount} car{deleteInfo?.carCount !== 1 ? 's' : ''}
+                           {deleteInfo?.screenshotCount > 0 && `, ${deleteInfo?.screenshotCount} screenshot${deleteInfo?.screenshotCount !== 1 ? 's' : ''}`}.
+                           This action cannot be undone.
+                        </AlertDialogDescription>
+                     </AlertDialogHeader>
+                     <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deletePending}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction variant="destructive" disabled={deletePending} onClick={handleConfirmDelete}>
+                           {deletePending ? 'Deleting…' : 'Delete'}
+                        </AlertDialogAction>
+                     </AlertDialogFooter>
+                  </AlertDialogContent>
+               </AlertDialog>
             </div>
          </td>
       </tr>

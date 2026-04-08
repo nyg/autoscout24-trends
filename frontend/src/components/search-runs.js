@@ -5,8 +5,12 @@ import {
    ChevronRightIcon, FilterIcon, RefreshCwIcon, Trash2Icon, XCircleIcon
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { use, useActionState, useState } from 'react'
+import { use, useState, useTransition } from 'react'
 
+import {
+   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -79,45 +83,70 @@ function StatsPopover({ stats }) {
 }
 
 function DeleteRunCell({ runId }) {
-   const [state, submitAction, pending] = useActionState(deleteSearchRun, null)
+   const [dialogOpen, setDialogOpen] = useState(false)
+   const [info, setInfo] = useState(null)
+   const [isPending, startTransition] = useTransition()
+   const [error, setError] = useState(null)
 
-   if (state?.needsConfirm) {
-      return (
-         <form action={submitAction} className="inline-flex items-center gap-1">
-            <input type="hidden" name="id" value={runId} />
-            <input type="hidden" name="confirmed" value="true" />
-            <span className="text-xs text-destructive whitespace-nowrap">
-               {state.carCount} car{state.carCount !== 1 ? 's' : ''}
-               {state.screenshotCount > 0 && `, ${state.screenshotCount} screenshot${state.screenshotCount !== 1 ? 's' : ''}`}
-               ?
-            </span>
-            <button
-               type="submit"
-               disabled={pending}
-               autoFocus
-               className="rounded-md border border-destructive/30 px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-            >
-               {pending ? '…' : 'Confirm'}
-            </button>
-         </form>
-      )
+   const handleDelete = () => {
+      setError(null)
+      const formData = new FormData()
+      formData.set('id', String(runId))
+      startTransition(async () => {
+         const result = await deleteSearchRun(null, formData)
+         if (result?.needsConfirm) {
+            setInfo(result)
+            setDialogOpen(true)
+         } else if (result?.error) {
+            setError(result.error)
+         }
+      })
+   }
+
+   const handleConfirm = () => {
+      const formData = new FormData()
+      formData.set('id', String(runId))
+      formData.set('confirmed', 'true')
+      startTransition(async () => {
+         const result = await deleteSearchRun(null, formData)
+         if (result?.error) {
+            setError(result.error)
+         }
+         setDialogOpen(false)
+      })
    }
 
    return (
-      <form action={submitAction} className="inline">
-         <input type="hidden" name="id" value={runId} />
-         {state?.error && (
-            <span className="text-xs text-destructive mr-1">{state.error}</span>
-         )}
+      <>
+         {error && <span className="text-xs text-destructive mr-1">{error}</span>}
          <button
-            type="submit"
-            disabled={pending}
+            type="button"
+            onClick={handleDelete}
+            disabled={isPending}
             className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
             title="Delete search run"
          >
             <Trash2Icon className="size-4" />
          </button>
-      </form>
+         <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <AlertDialogContent size="sm">
+               <AlertDialogHeader>
+                  <AlertDialogTitle>Delete search run?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                     This will permanently delete {info?.carCount} car{info?.carCount !== 1 ? 's' : ''}
+                     {info?.screenshotCount > 0 && ` and ${info?.screenshotCount} screenshot${info?.screenshotCount !== 1 ? 's' : ''}`}.
+                     This action cannot be undone.
+                  </AlertDialogDescription>
+               </AlertDialogHeader>
+               <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction variant="destructive" disabled={isPending} onClick={handleConfirm}>
+                     {isPending ? 'Deleting…' : 'Delete'}
+                  </AlertDialogAction>
+               </AlertDialogFooter>
+            </AlertDialogContent>
+         </AlertDialog>
+      </>
    )
 }
 
@@ -238,7 +267,6 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                   <TableRow>
                      <TableHead>Search</TableHead>
                      <TableHead className="text-right">Date</TableHead>
-                     <TableHead className="text-right">Time</TableHead>
                      <TableHead className="text-right">Duration</TableHead>
                      <TableHead className="text-center">Status</TableHead>
                      <TableHead className="text-right">Cars found</TableHead>
@@ -252,7 +280,7 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                <TableBody>
                   {runs.length === 0 && (
                      <TableRow>
-                        <TableCell colSpan={11} className="text-center text-muted-foreground">
+                        <TableCell colSpan={10} className="text-center text-muted-foreground">
                            No search runs found.
                         </TableCell>
                      </TableRow>
@@ -260,8 +288,7 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                   {runs.map(run => (
                      <TableRow key={run.id} className={run.success === false ? 'bg-destructive/5' : ''}>
                         <TableCell className="whitespace-nowrap font-medium">{run.search_name}</TableCell>
-                        <TableCell className="whitespace-nowrap text-right">{asMediumDate(run.started_at)}</TableCell>
-                        <TableCell className="whitespace-nowrap text-right">{asTime(run.started_at)}</TableCell>
+                        <TableCell className="whitespace-nowrap text-right">{asMediumDate(run.started_at)} {asTime(run.started_at)}</TableCell>
                         <TableCell className="whitespace-nowrap text-right">{formatDuration(run.started_at, run.finished_at)}</TableCell>
                         <TableCell className="text-center">
                            {run.success === true && <CheckCircle2Icon className="mx-auto size-4 text-green-600" />}
