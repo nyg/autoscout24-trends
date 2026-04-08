@@ -13,6 +13,7 @@ export function createFormatters(locale) {
    const sd = new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit' })
    const md = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' })
    const smy = new Intl.DateTimeFormat(locale, { year: '2-digit', month: 'short' })
+   const sdm = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' })
    const dec = new Intl.NumberFormat(locale, { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
    return {
@@ -20,6 +21,7 @@ export function createFormatters(locale) {
       asShortDate: (timestamp) => formatDate(sd, timestamp),
       asMediumDate: (timestamp) => formatDate(md, timestamp),
       asShortMonthYearDate: (timestamp) => formatDate(smy, timestamp),
+      asShortDayMonthDate: (timestamp) => formatDate(sdm, timestamp),
       asTime: (timestamp) => {
          if (!timestamp) {
             return ''
