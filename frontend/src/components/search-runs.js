@@ -125,6 +125,7 @@ function DeleteRunCell({ runId }) {
             disabled={isPending}
             className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
             title="Delete search run"
+            aria-label="Delete search run"
          >
             <Trash2Icon className="size-4" />
          </button>

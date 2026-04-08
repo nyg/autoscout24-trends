@@ -152,20 +152,4 @@ export async function fetchCarScreenshotUrl(carId) {
    return row?.r2_url ?? null
 }
 
-export async function fetchSearchRunDeleteInfo(searchRunId) {
-   const [row] = await pgSql`
-      select count(c.id)::int as car_count,
-             count(distinct c.screenshot_id) filter (where c.screenshot_id is not null)::int as screenshot_count
-        from cars c
-       where c.search_run_id = ${searchRunId}`
-   return row
-}
 
-export async function fetchSearchDeleteInfo(searchId) {
-   const [row] = await pgSql`
-      select (select count(*)::int from search_runs where search_id = ${searchId}) as run_count,
-             (select count(*)::int from cars where search_id = ${searchId}) as car_count,
-             (select count(distinct c.screenshot_id) filter (where c.screenshot_id is not null)::int
-                from cars c where c.search_id = ${searchId}) as screenshot_count`
-   return row
-}

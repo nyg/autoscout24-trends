@@ -7,29 +7,6 @@ import { deleteR2Objects } from '@/lib/r2'
 
 const pgSql = postgres(process.env.PGSQL_URL)
 
-async function collectOrphanedScreenshots(pgSql, screenshotIds, excludeCarIds) {
-   if (screenshotIds.length === 0) {
-      return []
-   }
-   const referenced = await pgSql`
-      select distinct screenshot_id
-        from cars
-       where screenshot_id in ${pgSql(screenshotIds)}
-         ${excludeCarIds.length > 0 ? pgSql`and id not in ${pgSql(excludeCarIds)}` : pgSql``}`
-   const referencedSet = new Set(referenced.map(r => r.screenshot_id))
-   return screenshotIds.filter(id => !referencedSet.has(id))
-}
-
-async function deleteOrphanedScreenshots(pgSql, orphanIds) {
-   if (orphanIds.length === 0) {
-      return
-   }
-   const rows = await pgSql`
-      select r2_key from screenshots where id in ${pgSql(orphanIds)}`
-   await pgSql`delete from screenshots where id in ${pgSql(orphanIds)}`
-   const keys = rows.map(r => r.r2_key).filter(Boolean)
-   await deleteR2Objects(keys)
-}
 
 export async function createSearch(prevState, formData) {
    const name = formData.get('name')?.toString().trim()
@@ -101,31 +78,27 @@ export async function deleteSearch(prevState, formData) {
          }
       }
 
-      const screenshotIds = (await pgSql`
-         select distinct screenshot_id from cars
-          where search_id = ${id} and screenshot_id is not null`
-      ).map(r => r.screenshot_id)
-
-      const carIds = (await pgSql`
-         select id from cars where search_id = ${id}`
-      ).map(r => r.id)
-
-      const orphanIds = await collectOrphanedScreenshots(pgSql, screenshotIds, carIds)
-
-      // Collect R2 keys before deleting from DB
       let r2Keys = []
-      if (orphanIds.length > 0) {
-         r2Keys = (await pgSql`
-            select r2_key from screenshots where id in ${pgSql(orphanIds)}`
-         ).map(r => r.r2_key).filter(Boolean)
-      }
 
       await pgSql.begin(async pgSql => {
-         await pgSql`update cars set screenshot_id = null where search_id = ${id} and screenshot_id is not null`
+         const screenshotIds = (await pgSql`
+            select distinct screenshot_id from cars
+             where search_id = ${id} and screenshot_id is not null`
+         ).map(r => r.screenshot_id)
+
          await pgSql`delete from cars where search_id = ${id}`
-         if (orphanIds.length > 0) {
-            await pgSql`delete from screenshots where id in ${pgSql(orphanIds)}`
+
+         if (screenshotIds.length > 0) {
+            const deleted = await pgSql`
+               delete from screenshots
+                where id in ${pgSql(screenshotIds)}
+                  and not exists (
+                     select 1 from cars where cars.screenshot_id = screenshots.id
+                  )
+               returning r2_key`
+            r2Keys = deleted.map(r => r.r2_key).filter(Boolean)
          }
+
          await pgSql`delete from search_runs where search_id = ${id}`
          await pgSql`delete from searches where id = ${id}`
       })
@@ -173,30 +146,27 @@ export async function deleteSearchRun(prevState, formData) {
          }
       }
 
-      const screenshotIds = (await pgSql`
-         select distinct screenshot_id from cars
-          where search_run_id = ${id} and screenshot_id is not null`
-      ).map(r => r.screenshot_id)
-
-      const carIds = (await pgSql`
-         select id from cars where search_run_id = ${id}`
-      ).map(r => r.id)
-
-      const orphanIds = await collectOrphanedScreenshots(pgSql, screenshotIds, carIds)
-
       let r2Keys = []
-      if (orphanIds.length > 0) {
-         r2Keys = (await pgSql`
-            select r2_key from screenshots where id in ${pgSql(orphanIds)}`
-         ).map(r => r.r2_key).filter(Boolean)
-      }
 
       await pgSql.begin(async pgSql => {
-         await pgSql`update cars set screenshot_id = null where search_run_id = ${id} and screenshot_id is not null`
+         const screenshotIds = (await pgSql`
+            select distinct screenshot_id from cars
+             where search_run_id = ${id} and screenshot_id is not null`
+         ).map(r => r.screenshot_id)
+
          await pgSql`delete from cars where search_run_id = ${id}`
-         if (orphanIds.length > 0) {
-            await pgSql`delete from screenshots where id in ${pgSql(orphanIds)}`
+
+         if (screenshotIds.length > 0) {
+            const deleted = await pgSql`
+               delete from screenshots
+                where id in ${pgSql(screenshotIds)}
+                  and not exists (
+                     select 1 from cars where cars.screenshot_id = screenshots.id
+                  )
+               returning r2_key`
+            r2Keys = deleted.map(r => r.r2_key).filter(Boolean)
          }
+
          await pgSql`delete from search_runs where id = ${id}`
       })
 
