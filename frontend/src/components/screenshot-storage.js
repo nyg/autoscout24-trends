@@ -58,7 +58,7 @@ export default function ScreenshotStorage({ data, summary }) {
 
             {chartData.length > 0 && (
                <ChartContainer config={chartConfig} className="min-h-50 w-full">
-                  <BarChart data={chartData} margin={{ top: 10, right: 0, bottom: 0, left: 0 }}>
+                  <BarChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: 10 }}>
                      <CartesianGrid vertical={false} />
                      <XAxis
                         dataKey="date"
@@ -89,6 +89,7 @@ export default function ScreenshotStorage({ data, summary }) {
                         fill="var(--color-total_size)"
                         fillOpacity={0.6}
                         radius={[4, 4, 0, 0]}
+                        maxBarSize={50}
                      />
                   </BarChart>
                </ChartContainer>
