@@ -151,3 +151,5 @@ export async function fetchCarScreenshotUrl(carId) {
        where c.id = ${carId}`
    return row?.r2_url ?? null
 }
+
+

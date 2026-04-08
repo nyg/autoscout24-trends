@@ -3,7 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import postgres from 'postgres'
 
+import { deleteR2Objects } from '@/lib/r2'
+
 const pgSql = postgres(process.env.PGSQL_URL)
+
 
 export async function createSearch(prevState, formData) {
    const name = formData.get('name')?.toString().trim()
@@ -60,17 +63,47 @@ export async function deleteSearch(prevState, formData) {
    const confirmed = formData.get('confirmed') === 'true'
 
    try {
-      const [row] = await pgSql`
-         select count(*)::int as count from cars where search_id = ${id}`
+      const [info] = await pgSql`
+         select (select count(*)::int from search_runs where search_id = ${id}) as run_count,
+                (select count(*)::int from cars where search_id = ${id}) as car_count,
+                (select count(distinct c.screenshot_id) filter (where c.screenshot_id is not null)::int
+                   from cars c where c.search_id = ${id}) as screenshot_count`
 
-      if (row.count > 0 && !confirmed) {
-         return { needsConfirm: true, carCount: row.count }
+      if ((info.car_count > 0 || info.run_count > 0) && !confirmed) {
+         return {
+            needsConfirm: true,
+            runCount: info.run_count,
+            carCount: info.car_count,
+            screenshotCount: info.screenshot_count,
+         }
       }
 
+      let r2Keys = []
+
       await pgSql.begin(async pgSql => {
+         const screenshotIds = (await pgSql`
+            select distinct screenshot_id from cars
+             where search_id = ${id} and screenshot_id is not null`
+         ).map(r => r.screenshot_id)
+
          await pgSql`delete from cars where search_id = ${id}`
+
+         if (screenshotIds.length > 0) {
+            const deleted = await pgSql`
+               delete from screenshots
+                where id in ${pgSql(screenshotIds)}
+                  and not exists (
+                     select 1 from cars where cars.screenshot_id = screenshots.id
+                  )
+               returning r2_key`
+            r2Keys = deleted.map(r => r.r2_key).filter(Boolean)
+         }
+
+         await pgSql`delete from search_runs where search_id = ${id}`
          await pgSql`delete from searches where id = ${id}`
       })
+
+      await deleteR2Objects(r2Keys)
       revalidatePath('/', 'layout')
       return { success: true }
    } catch {
@@ -92,6 +125,56 @@ export async function toggleSearchActive(prevState, formData) {
       return { success: true }
    } catch {
       return { error: 'Failed to update search.' }
+   }
+}
+
+export async function deleteSearchRun(prevState, formData) {
+   const id = parseInt(formData.get('id'), 10)
+   const confirmed = formData.get('confirmed') === 'true'
+
+   try {
+      if (!confirmed) {
+         const [info] = await pgSql`
+            select count(c.id)::int as car_count,
+                   count(distinct c.screenshot_id) filter (where c.screenshot_id is not null)::int as screenshot_count
+              from cars c
+             where c.search_run_id = ${id}`
+         return {
+            needsConfirm: true,
+            carCount: info.car_count,
+            screenshotCount: info.screenshot_count,
+         }
+      }
+
+      let r2Keys = []
+
+      await pgSql.begin(async pgSql => {
+         const screenshotIds = (await pgSql`
+            select distinct screenshot_id from cars
+             where search_run_id = ${id} and screenshot_id is not null`
+         ).map(r => r.screenshot_id)
+
+         await pgSql`delete from cars where search_run_id = ${id}`
+
+         if (screenshotIds.length > 0) {
+            const deleted = await pgSql`
+               delete from screenshots
+                where id in ${pgSql(screenshotIds)}
+                  and not exists (
+                     select 1 from cars where cars.screenshot_id = screenshots.id
+                  )
+               returning r2_key`
+            r2Keys = deleted.map(r => r.r2_key).filter(Boolean)
+         }
+
+         await pgSql`delete from search_runs where id = ${id}`
+      })
+
+      await deleteR2Objects(r2Keys)
+      revalidatePath('/search-runs')
+      return { success: true }
+   } catch {
+      return { error: 'Failed to delete search run.' }
    }
 }
 
