@@ -26,8 +26,7 @@ class SearchPageRequest(SeleniumBaseRequest):
 
     def __init__(self, spider: SearchSpider | None = None, **kwargs) -> None:
         if spider:
-            meta = kwargs.pop('meta', {})
-            kwargs.update(callback=spider.parse, errback=spider.handle_error, meta=meta, wait_for_element='h1.chakra-text')
+            kwargs.update(callback=spider.parse, errback=spider.handle_error, wait_for_element='h1.chakra-text')
         super().__init__(**kwargs)
 
 

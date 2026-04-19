@@ -15,6 +15,7 @@
 
 - Bypasses CloudFlare protection using [SeleniumBase CDP mode](https://github.com/nyg/scrapy-seleniumbase-cdp)
 - Extracts vehicle details (price, mileage, specs) and seller information
+- Failed requests are automatically retried up to 3 times (`RETRY_TIMES`) by Scrapy's built-in `RetryMiddleware`
 - Stores data in PostgreSQL with batch tracking for historical analysis
 - Search configurations stored in database, manageable from the frontend Settings page
 - Sends a batch summary email after all spiders finish (requires [Resend](https://resend.com) API key)
