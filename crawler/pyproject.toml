@@ -11,9 +11,9 @@ dependencies = [
     "psycopg[binary]==3.3.3",
     "python-dotenv==1.2.2",
     "resend==2.29.0",
-    "scrapy==2.15.1",
+    "scrapy==2.15.2",
     "scrapy-seleniumbase-cdp==2.0.3",
-    "seleniumbase==4.48.2",
+    "seleniumbase==4.48.3",
 ]
 
 [build-system]
