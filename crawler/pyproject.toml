@@ -12,7 +12,7 @@ dependencies = [
     "python-dotenv==1.2.2",
     "resend==2.29.0",
     "scrapy==2.15.2",
-    "scrapy-seleniumbase-cdp==2.0.3",
+    "scrapy-seleniumbase-cdp==2.0.4",
     "seleniumbase==4.48.3",
 ]
 
