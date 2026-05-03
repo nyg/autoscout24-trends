@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # Run all autoscout24-trends spiders.
 #
 # Installs/updates the project via uv (https://github.com/astral-sh/uv) from
