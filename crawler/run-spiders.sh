@@ -14,6 +14,10 @@
 
 set -eu
 
+# Cron runs with a minimal PATH; prepend the directory where uv is installed
+# by both the standalone installer and pip --user installs.
+export PATH="$HOME/.local/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "Installing/updating dependencies"
