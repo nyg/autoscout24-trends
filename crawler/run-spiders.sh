@@ -14,9 +14,11 @@
 
 set -eu
 
-# Cron runs with a minimal PATH; prepend the directory where uv is installed
-# by both the standalone installer and pip --user installs.
+# Cron runs with a minimal PATH. Prepend ~/.local/bin (uv standalone/pip --user)
+# and load nvm so node/npm are available (required by pminit/pythonmonkey).
 export PATH="$HOME/.local/bin:$PATH"
+export NVM_DIR="${NVM_DIR:-$HOME/.local/share/nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
