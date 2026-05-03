@@ -26,7 +26,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 ## Developer workflows
 - Frontend commands are the standard ones from `frontend/package.json`: `pnpm dev`, `pnpm build`, `pnpm lint`.
 - The crawler is usually run from `crawler/` with `scrapy crawl search -a search_id=<id>`.
-- `crawler/run-spiders.sh` is the operational path for batch runs: it creates `.venv` if missing, activates it, runs `pip install -r requirements.txt`, then crawls every active search from the `searches` database table.
+- `crawler/run-spiders.sh` is the operational path for batch runs: it runs `uv sync` (creating `.venv` if missing) then crawls every active search from the `searches` database table. Requires `uv` installed on the host.
 - Crawler settings load env vars automatically via `load_dotenv()` in `crawler/autoscout/settings.py`, so `.env` is expected in `crawler/`.
 
 ## Crawler architecture and patterns

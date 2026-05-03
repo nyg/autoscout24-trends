@@ -28,12 +28,10 @@ Install system dependencies:
 sudo apt install chromium xvfb
 ```
 
-Set up a Python virtual environment and install packages:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and sync dependencies:
 
 ```bash
-python -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
+uv sync
 ```
 
 Create a PostgreSQL database and initialize the schema:
@@ -73,8 +71,7 @@ INSERT INTO searches (name, url) VALUES ('Audi RS6 Avant', 'https://www.autoscou
 Run a single search by ID:
 
 ```bash
-source .venv/bin/activate
-scrapy crawl search -a search_id=1
+uv run scrapy crawl search -a search_id=1
 ```
 
 Run all active searches (creates `.venv` if needed, updates dependencies, then starts all spiders):
@@ -138,5 +135,6 @@ crawler/
 ├── SCHEMA.sql           # PostgreSQL schema
 ├── run-spiders.sh       # Shell wrapper: updates deps, runs run-spiders.py
 ├── run-spiders.py       # Runs all spiders in-process via CrawlerRunner
-└── requirements.txt     # Python dependencies
+├── pyproject.toml       # Python dependencies
+└── uv.lock              # Locked dependency versions
 ```
