@@ -22,3 +22,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["autoscout*"]
+
+[tool.uv]
+# njsparser==2.16 declares rich<15 but works fine with rich 15; seleniumbase
+# requires rich>=15. Override so uv resolves to rich 15.x.
+override-dependencies = ["rich>=15.0.0,<16"]
