@@ -2,7 +2,7 @@
 name = "autoscout24-crawler"
 version = "1.0.0"
 description = "AutoScout24 car listings crawler"
-requires-python = ">=3.14"
+requires-python = "==3.14.4"
 dependencies = [
     "boto3==1.42.97",
     "jinja2==3.1.6",

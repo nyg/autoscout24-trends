@@ -1,6 +1,6 @@
 version = 1
 revision = 3
-requires-python = ">=3.14"
+requires-python = "==3.14.4"
 
 [manifest]
 overrides = [{ name = "rich", specifier = ">=15.0.0,<16" }]
@@ -713,7 +713,7 @@ dependencies = [
     { name = "lxml" },
     { name = "orjson" },
     { name = "pydantic" },
-    { name = "pythonmonkey", marker = "python_full_version < '4'" },
+    { name = "pythonmonkey" },
     { name = "requests" },
     { name = "rich" },
     { name = "typer" },
