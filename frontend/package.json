@@ -31,11 +31,6 @@
     "tailwindcss": "4.2.4"
   },
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "msw",
-      "sharp",
-      "unrs-resolver"
-    ],
     "overrides": {
       "baseline-browser-mapping": "latest"
     }
