@@ -26,7 +26,7 @@ class SearchPageRequest(SeleniumBaseRequest):
 
     def __init__(self, spider: SearchSpider | None = None, **kwargs) -> None:
         if spider:
-            kwargs.update(callback=spider.parse, errback=spider.handle_error, wait_for_element='h1.chakra-text')
+            kwargs.update(callback=spider.parse, errback=spider.handle_error, wait_for_element='h1')
         super().__init__(**kwargs)
 
 
@@ -37,7 +37,7 @@ class CarPageRequest(SeleniumBaseRequest):
         if spider:
             kwargs.update(callback=spider.parse_car,
                           errback=spider.handle_error,
-                          wait_for_element='h1.chakra-text',
+                          wait_for_element='h1',
                           script=ACCEPT_COOKIES_AND_EXPAND_FIELDS,
                           screenshot=True)
         super().__init__(**kwargs)
