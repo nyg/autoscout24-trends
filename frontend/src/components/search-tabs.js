@@ -3,6 +3,7 @@ import Link from 'next/link'
 const TABS = [
    { key: 'active', label: 'Active listings' },
    { key: 'previous', label: 'Previous listings' },
+   { key: 'history', label: 'Price history' },
 ]
 
 export default function SearchTabs({ searchName, currentTab }) {
