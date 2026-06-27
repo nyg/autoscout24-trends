@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckIcon, CopyIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon, CopyIcon } from 'lucide-react'
 import { useActionState, useState, useTransition } from 'react'
 
 import {
@@ -145,7 +145,14 @@ function SearchRow({ search }) {
          <td className="p-2 whitespace-nowrap">{search.name}</td>
          <td className="p-2 text-muted-foreground truncate max-w-0" title={search.url}>
             <span className="inline-flex items-center gap-1.5">
-               {search.url}
+               <a
+                  href={search.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate hover:text-foreground hover:underline transition-colors"
+               >
+                  {search.url}
+               </a>
                <CopyUrlButton url={search.url} />
             </span>
          </td>
@@ -290,7 +297,58 @@ function AddSearchForm() {
    )
 }
 
+const SORT_COLUMNS = [
+   { key: 'id', field: 'id', numeric: true },
+   { key: 'name', field: 'name', numeric: false },
+   { key: 'run_count', field: 'run_count', numeric: true },
+   { key: 'car_count', field: 'car_count', numeric: true },
+   { key: 'screenshot_count', field: 'screenshot_count', numeric: true },
+   { key: 'photo_count', field: 'photo_count', numeric: true },
+]
+
+function sortSearches(searches, key, dir) {
+   if (!key) {
+      return searches
+   }
+   const col = SORT_COLUMNS.find(c => c.key === key)
+   if (!col) {
+      return searches
+   }
+   return [...searches].sort((a, b) => {
+      const av = a[col.field] ?? (col.numeric ? 0 : '')
+      const bv = b[col.field] ?? (col.numeric ? 0 : '')
+      const cmp = col.numeric ? av - bv : av.localeCompare(bv)
+      return dir === 'asc' ? cmp : -cmp
+   })
+}
+
+function SortableTh({ colKey, align = 'left', sort, onSort, children }) {
+   return (
+      <th
+         className={`p-2 whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors ${align === 'right' ? 'text-right' : ''}`}
+         onClick={() => onSort(colKey)}
+      >
+         {children}
+         {sort.key === colKey && (
+            sort.dir === 'asc'
+               ? <ArrowUpIcon className="inline size-3 ml-0.5" />
+               : <ArrowDownIcon className="inline size-3 ml-0.5" />
+         )}
+      </th>
+   )
+}
+
 export default function SearchManager({ searches }) {
+   const [sort, setSort] = useState({ key: 'id', dir: 'asc' })
+
+   const handleSort = (key) => {
+      setSort(prev => ({
+         key,
+         dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc',
+      }))
+   }
+
+   const sorted = sortSearches(searches, sort.key, sort.dir)
    return (
       <Card>
          <CardHeader>
@@ -304,13 +362,13 @@ export default function SearchManager({ searches }) {
                <table className="w-full text-left">
                   <thead>
                      <tr className="border-b text-xs font-medium text-muted-foreground">
-                        <th className="p-2 whitespace-nowrap">ID</th>
-                        <th className="p-2 whitespace-nowrap">Name</th>
+                        <SortableTh colKey="id" sort={sort} onSort={handleSort}>ID</SortableTh>
+                        <SortableTh colKey="name" sort={sort} onSort={handleSort}>Name</SortableTh>
                         <th className="p-2 w-full">URL</th>
-                        <th className="p-2 text-right whitespace-nowrap">Runs</th>
-                        <th className="p-2 text-right whitespace-nowrap">Cars</th>
-                        <th className="p-2 text-right whitespace-nowrap">Screenshots</th>
-                        <th className="p-2 text-right whitespace-nowrap">Photos</th>
+                        <SortableTh colKey="run_count" align="right" sort={sort} onSort={handleSort}>Runs</SortableTh>
+                        <SortableTh colKey="car_count" align="right" sort={sort} onSort={handleSort}>Cars</SortableTh>
+                        <SortableTh colKey="screenshot_count" align="right" sort={sort} onSort={handleSort}>Screenshots</SortableTh>
+                        <SortableTh colKey="photo_count" align="right" sort={sort} onSort={handleSort}>Photos</SortableTh>
                         <th className="p-2 text-center whitespace-nowrap">Active</th>
                         <th className="p-2 text-center whitespace-nowrap">Screenshot</th>
                         <th className="p-2 text-center whitespace-nowrap">Photos</th>
@@ -318,7 +376,7 @@ export default function SearchManager({ searches }) {
                      </tr>
                   </thead>
                   <tbody>
-                     {searches.map(search => (
+                     {sorted.map(search => (
                         <SearchRow key={search.id} search={search} />
                      ))}
                   </tbody>
