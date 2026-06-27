@@ -13,14 +13,19 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Batch summary email: `crawler/autoscout/email.py`
 - Search run tracking: `crawler/autoscout/extensions.py`
 - Frontend DB queries: `frontend/src/lib/data.js`
-- Frontend Server Actions (search CRUD): `frontend/src/lib/actions.js`
+- Frontend Server Actions (search CRUD, run/screenshot deletion): `frontend/src/lib/actions.js`
+- Frontend R2 client (object deletion): `frontend/src/lib/r2.js`
 - Main UI route: `frontend/src/app/search/[searchName]/page.js`
 - Settings page: `frontend/src/app/settings/page.js`
 - Search management UI: `frontend/src/components/search-manager.js`
 - Client-side settings (localStorage): `frontend/src/components/client-settings.js`
+- Search tab navigation (active / previous): `frontend/src/components/search-tabs.js`
+- Search selector dropdown (navbar): `frontend/src/components/search-dropdown.js`
 - Cars table (sorting, column visibility, seller cell): `frontend/src/components/cars.js`
 - Lightbox image viewer: `frontend/src/components/lightbox.js`
 - Google Places integration: `frontend/src/components/place-details.js`
+- Screenshot storage chart + cleanup UI: `frontend/src/components/screenshot-storage.js`
+- Search runs client component: `frontend/src/components/search-runs.js`
 - Number/date formatting: `frontend/src/lib/format.js`
 - Formatter React Context: `frontend/src/lib/formatter-context.js`
 
@@ -48,8 +53,9 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 
 ## Frontend architecture and patterns
 - The frontend uses App Router server components for data fetching and passes unresolved promises into client components, which call `use(data)` (`cars.js`, `daily-listing-count.js`, `mileage-price-comparison.js`). Preserve that pattern when adding new visualizations.
-- `frontend/src/lib/data.js` owns all SQL reads. `frontend/src/lib/actions.js` owns all SQL writes (Server Actions for search CRUD). Prefer extending queries in these files instead of embedding SQL in pages/components.
-- Route params are URL-encoded search names. `navbar.js` links with `encodeURIComponent(search.name)` and `search/[searchName]/page.js` decodes them before querying.
+- `frontend/src/lib/data.js` owns all SQL reads. `frontend/src/lib/actions.js` owns all SQL writes (Server Actions for search CRUD, run/screenshot deletion). Prefer extending queries in these files instead of embedding SQL in pages/components.
+- Route params are URL-encoded search names. `navbar.js` uses `SearchDropdown` (which calls `fetchSearchNames()`) and `search/[searchName]/page.js` decodes the param before querying.
+- The search page uses a `?tab=active|previous` URL param to switch between active and previous listings; `SearchTabs` renders the tab nav and the page conditionally fetches data for the active tab only.
 - "Active listings" means rows from the latest `search_run_id` for a given search; "Previous listings" means the most recent older row per `vehicle_id` that is absent from the latest run.
 - All car queries join through the `searches` table via `cars.search_id` and filter by `searches.name`.
 - The daily chart aggregates by `date_in`, not by listing creation time.
@@ -68,13 +74,17 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Server-side paginated with URL query params: `page`, `search`, `pageSize`, `from`, `to`.
 - Default page size is 20 (options: 10, 20, 50, 100). Default date range is last 7 days.
 - `fetchSearchRuns(searchName, page, pageSize, fromDate, toDate)` in `data.js` uses `LIMIT`/`OFFSET` with date filtering on `sr.started_at`; `fetchSearchRunsCount(searchName, fromDate, toDate)` returns the total.
-- Controls: refresh button (`router.refresh()`), search filter dropdown, page size dropdown, date range inputs (native `<input type="date">`), pagination.
-- The "Reason" column has been replaced by a "Stats" column showing a popover with the `search_runs.stats` JSONB data (formatted JSON in a `<pre>` block).
+- The `SearchRuns` client component (`search-runs.js`) manages all controls and navigation: refresh button, search filter dropdown, page size dropdown, date range inputs (native `<input type="date">`), pagination, and a delete-run button with confirmation dialog.
+- Navigation uses `window.location.href` so the URL changes are reflected in the server component.
+- Preferences (search filter, page size, date range) are persisted to localStorage (`'search-runs-preferences'`) and restored on the next bare visit (no explicit URL params).
+- The "Stats" column shows a popover with the `search_runs.stats` JSONB data (formatted JSON in a `<pre>` block).
+- Deleting a search run (`deleteSearchRun` action) also deletes its cars, orphaned screenshots from the DB and R2, and the `search_runs` row itself inside a transaction.
 
 ## Settings page (`/settings`)
-- The settings page is a server component that fetches searches from the database and renders two sections:
-  - **SearchManager** (`search-manager.js`): CRUD for search configurations (name, URL, active toggle, copy URL button). Uses Server Actions from `actions.js`.
+- The settings page is a server component that fetches searches from the database and renders three sections:
+  - **SearchManager** (`search-manager.js`): CRUD for search configurations (name, URL, active toggle, per-search `screenshots_enabled` / `photos_enabled` toggles, copy URL button). Uses Server Actions from `actions.js`.
   - **ClientSettings** (`client-settings.js`): Google Maps API key, home address, and email recipient. Settings are stored in the database `config` table via the `updateConfig` server action.
+  - **ScreenshotStorage** (`screenshot-storage.js`): Bar chart of daily screenshot storage usage and a cleanup form to delete screenshots older than a configurable retention period (30/90/180 days). Uses `deleteOldScreenshots` server action.
 - Maps API key is consumed by `place-details.js` via `useSyncExternalStore` in `cars.js`.
 - Home address is consumed by the directions link in `SellerCell` via `useSyncExternalStore`.
 - Does not dispatch custom events itself; components that depend on these values read them from localStorage (e.g. via `useSyncExternalStore`) for same-tab sync.
@@ -88,7 +98,8 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 ## Locale formatting (`format.js` + `formatter-context.js`)
 - The root layout reads the `Accept-Language` HTTP header via `parseAcceptLanguage()` and wraps the app in `<FormatterProvider locale={…}>`.
 - `FormatterProvider` (client component) calls `createFormatters(locale)` once and exposes the result via React Context.
-- All client components — tables and charts alike — call `useFormatter()` to get `{ asDecimal, asShortDate, asMediumDate, asShortMonthYearDate, asTime }`. No locale prop-drilling, no module-level formatter singletons.
+- All client components — tables and charts alike — call `useFormatter()` to get `{ asDecimal, asShortDate, asMediumDate, asShortMonthYearDate, asShortDayMonthDate, asTime }`. No locale prop-drilling, no module-level formatter singletons.
+- `asShortDayMonthDate` formats a timestamp as short month + day (no year), e.g. "Jun 27" — used in date-axis charts.
 - Because the same locale is used for SSR and client rendering, there are no hydration mismatches.
 
 ## Project-specific conventions
@@ -101,7 +112,10 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Search names are user-facing labels stored in DB; do not replace them with slugified values in queries or routes.
 - When changing seller/car relationships, remember the frontend assumes seller data is joinable by `seller_id`.
 - Do not "clean up" `crawler/output/` unless the task is explicitly about runtime data/configuration.
-- localStorage keys used by the frontend: `'car-table-visible-columns'`, `'google-maps-api-key'`, `'home-address'`. Avoid collisions.
+- localStorage keys used by the frontend: `'car-table-visible-columns'`, `'google-maps-api-key'`, `'home-address'`, `'search-runs-preferences'`. Avoid collisions.
 - Seller types are only `'professional'` and `'private'`. Maps place details are only shown for professional sellers. Address building differs by type: private → "address, zip_code city", professional → "name, address, zip_code city".
 - Screenshots are stored in Cloudflare R2 (not in the DB). The `screenshots` table holds only metadata and the R2 public URL. Car queries LEFT JOIN `screenshots` via `cars.screenshot_id` to get `screenshot_url`. The `/api/screenshot/[carId]` route redirects to the R2 URL. Backfill existing bytea data with `crawler/backfill_screenshots.py`.
 - Listing photos are stored in R2 via the `photos` table (metadata) and `car_photos` junction table (car_id, photo_id, position). The `/api/photos/[carId]` route returns a JSON array of photo URLs. Car listing queries include a `photo_count` subquery. The lightbox component lazy-loads photos via `fetchMoreUrl` when opened.
+- The `/api/car-screenshots/[vehicleId]` route accepts a `searchId` query param and returns a chronological list of screenshot URLs for a given vehicle — used by the lightbox to display screenshot history.
+- R2 cleanup is the caller's responsibility: whenever a DB transaction deletes `screenshots` or `photos` rows, collect the `r2_key` values first, then call `deleteR2Objects(r2Keys)` from `frontend/src/lib/r2.js` **after** the transaction commits. See `deleteSearch`, `deleteSearchRun`, and `deleteOldScreenshots` in `actions.js` for the pattern.
+- The `searches` table has per-search `screenshots_enabled` and `photos_enabled` boolean columns (default `true`). The crawler spider reads these at startup and the `ScreenshotPipeline`/`PhotoPipeline` skip processing when the flag is `false`. When adding new per-search feature flags, update `SCHEMA.sql`, the spider constructor, the relevant pipeline, and the `updateSearch`/`toggleSearch*` actions together.
