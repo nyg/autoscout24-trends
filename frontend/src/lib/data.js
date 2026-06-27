@@ -1,6 +1,6 @@
 import postgres from 'postgres'
 
-const pgSql = postgres(process.env.PGSQL_URL)
+const pgSql = postgres(process.env.PGSQL_URL, { prepare: false })
 
 export async function fetchSearches() {
    return pgSql`

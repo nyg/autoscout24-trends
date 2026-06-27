@@ -5,7 +5,7 @@ import postgres from 'postgres'
 
 import { deleteR2Objects } from '@/lib/r2'
 
-const pgSql = postgres(process.env.PGSQL_URL)
+const pgSql = postgres(process.env.PGSQL_URL, { prepare: false })
 
 
 export async function createSearch(prevState, formData) {
