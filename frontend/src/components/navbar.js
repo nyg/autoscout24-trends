@@ -1,5 +1,6 @@
 import { ActivityIcon, SettingsIcon } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 import SearchDropdown from '@/components/search-dropdown'
 import { fetchSearchNames } from '@/lib/data'
@@ -23,7 +24,9 @@ export default async function NavBar() {
                AutoScout24 Trends
             </Link>
             <nav className="flex items-center gap-4">
-               <SearchDropdown searches={searches} />
+               <Suspense fallback={null}>
+                  <SearchDropdown searches={searches} />
+               </Suspense>
                <Link
                   href="/search-runs"
                   aria-label="Search Runs"

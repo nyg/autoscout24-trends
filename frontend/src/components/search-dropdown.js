@@ -2,7 +2,7 @@
 
 import { ChevronDownIcon } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -16,10 +16,18 @@ import {
 export default function SearchDropdown({ searches }) {
 
    const pathname = usePathname()
+   const searchParams = useSearchParams()
+   const tab = searchParams.get('tab')
+
    const searchPrefix = '/search/'
    const activeSearch = pathname.startsWith(searchPrefix)
       ? decodeURIComponent(pathname.slice(searchPrefix.length))
       : null
+
+   function hrefFor(name) {
+      const base = `/search/${encodeURIComponent(name)}`
+      return tab ? `${base}?tab=${tab}` : base
+   }
 
    return (
       <DropdownMenu>
@@ -32,7 +40,7 @@ export default function SearchDropdown({ searches }) {
                {searches.map(search => (
                   <DropdownMenuItem
                      key={search.name}
-                     render={<Link href={`/search/${encodeURIComponent(search.name)}`} />}
+                     render={<Link href={hrefFor(search.name)} />}
                      className={activeSearch === search.name ? 'font-semibold text-foreground' : ''}
                   >
                      {search.name}
