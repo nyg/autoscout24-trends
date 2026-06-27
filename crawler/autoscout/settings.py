@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 logging.getLogger('njsparser').setLevel(logging.ERROR)
+logging.getLogger('scrapy_seleniumbase_cdp').setLevel(logging.DEBUG)
 
 BOT_NAME = 'autoscout'
 
@@ -15,11 +16,12 @@ ADDONS = {}
 ROBOTSTXT_OBEY = False
 CONCURRENT_REQUESTS = 1
 DOWNLOAD_DELAY = 5
-RETRY_TIMES = 1
+RETRY_TIMES = 3
 COOKIES_ENABLED = True
 TELNETCONSOLE_ENABLED = False
 LOG_LEVEL = 'INFO'
 TWISTED_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
+RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429, 403] # adding 403
 
 PGSQL_CONNECT_TIMEOUT = 1
 

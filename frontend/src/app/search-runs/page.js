@@ -22,6 +22,7 @@ function defaultTo() {
 export default async function SearchRunsPage({ searchParams }) {
 
    const params = await searchParams
+   const hasExplicitParams = Object.keys(params).length > 0
    const page = Math.max(1, parseInt(params.page, 10) || 1)
    const searchName = params.search || null
    const pageSize = VALID_PAGE_SIZES.includes(Number(params.pageSize))
@@ -45,6 +46,7 @@ export default async function SearchRunsPage({ searchParams }) {
             searchFilter={searchName}
             fromDate={fromDate}
             toDate={toDate}
+            hasExplicitParams={hasExplicitParams}
          />
       </Suspense>
    )

@@ -117,7 +117,7 @@ export default function DailyListingCount({ data }) {
                      axisLine={false}
                   />
                   <YAxis yAxisId="zount" domain={carCountDomain(listings)} hide />
-                  <ChartTooltip content={<ChartTooltipContent labelFormatter={asMediumDate} valueFormatter={asDecimal} />} />
+                  <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => asMediumDate(payload[0]?.payload?.date)} valueFormatter={asDecimal} />} />
                   <ChartLegend content={<DailyListingCountLegend hiddenDataKeys={hiddenDataKeys} onToggleDataKey={toggleDataKey} />} />
                   <Line type="monotone" yAxisId="price" dataKey="price_avg" stroke="var(--color-price_avg)" strokeWidth={2} dot={false} hide={Boolean(hiddenDataKeys.price_avg)} />
                   <Line type="monotone" yAxisId="mileage" dataKey="mileage_avg" stroke="var(--color-mileage_avg)" strokeWidth={2} dot={false} hide={Boolean(hiddenDataKeys.mileage_avg)} />

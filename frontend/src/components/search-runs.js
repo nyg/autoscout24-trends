@@ -2,11 +2,15 @@
 
 import {
    BarChartIcon, CheckCircle2Icon, ChevronDownIcon, ChevronLeftIcon,
-   ChevronRightIcon, FilterIcon, RefreshCwIcon, XCircleIcon
+   ChevronRightIcon, FilterIcon, RefreshCwIcon, Trash2Icon, XCircleIcon
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { use, useState } from 'react'
+import { use, useEffect, useRef, useState, useTransition } from 'react'
 
+import {
+   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -17,10 +21,28 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
+import { deleteSearchRun } from '@/lib/actions'
 import { useFormatter } from '@/lib/formatter-context'
 
 
 const PAGE_SIZES = [10, 20, 50, 100]
+
+const PREFS_KEY = 'search-runs-preferences'
+
+function savePreferences(prefs) {
+   try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
+   } catch { /* ignore */ }
+}
+
+function loadPreferences() {
+   try {
+      const raw = localStorage.getItem(PREFS_KEY)
+      return raw ? JSON.parse(raw) : null
+   } catch {
+      return null
+   }
+}
 
 function formatDuration(start, end) {
    if (!start || !end) {
@@ -77,8 +99,78 @@ function StatsPopover({ stats }) {
    )
 }
 
+function DeleteRunCell({ runId }) {
+   const [dialogOpen, setDialogOpen] = useState(false)
+   const [info, setInfo] = useState(null)
+   const [isPending, startTransition] = useTransition()
+   const [error, setError] = useState(null)
 
-export default function SearchRuns({ data, searches, totalCount, page, pageSize, searchFilter, fromDate, toDate }) {
+   const handleDelete = () => {
+      setError(null)
+      const formData = new FormData()
+      formData.set('id', String(runId))
+      startTransition(async () => {
+         const result = await deleteSearchRun(null, formData)
+         if (result?.needsConfirm) {
+            setInfo(result)
+            setDialogOpen(true)
+         } else if (result?.error) {
+            setError(result.error)
+         }
+      })
+   }
+
+   const handleConfirm = () => {
+      const formData = new FormData()
+      formData.set('id', String(runId))
+      formData.set('confirmed', 'true')
+      startTransition(async () => {
+         const result = await deleteSearchRun(null, formData)
+         if (result?.error) {
+            setError(result.error)
+         }
+         setDialogOpen(false)
+      })
+   }
+
+   return (
+      <>
+         {error && <span className="text-xs text-destructive mr-1">{error}</span>}
+         <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isPending}
+            className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+            title="Delete search run"
+            aria-label="Delete search run"
+         >
+            <Trash2Icon className="size-4" />
+         </button>
+         <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <AlertDialogContent size="sm">
+               <AlertDialogHeader>
+                  <AlertDialogTitle>Delete search run?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                     This will permanently delete {info?.carCount} car{info?.carCount !== 1 ? 's' : ''}
+                     {info?.screenshotCount > 0 && ` and ${info?.screenshotCount} screenshot${info?.screenshotCount !== 1 ? 's' : ''}`}.
+                     This action cannot be undone.
+                  </AlertDialogDescription>
+               </AlertDialogHeader>
+               <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction variant="destructive" disabled={isPending} onClick={handleConfirm}>
+                     {isPending ? 'Deleting…' : 'Delete'}
+                  </AlertDialogAction>
+               </AlertDialogFooter>
+            </AlertDialogContent>
+         </AlertDialog>
+      </>
+
+   )
+}
+
+
+export default function SearchRuns({ data, searches, totalCount, page, pageSize, searchFilter, fromDate, toDate, hasExplicitParams }) {
 
    const runs = use(data)
    const searchList = use(searches)
@@ -92,14 +184,44 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
    const [localFrom, setLocalFrom] = useState(fromDate)
    const [localTo, setLocalTo] = useState(toDate)
 
+   // Restore saved preferences on first visit (bare URL with no explicit params)
+   const didRestore = useRef(false)
+   useEffect(() => {
+      if (didRestore.current || hasExplicitParams) {
+         return
+      }
+      didRestore.current = true
+      const prefs = loadPreferences()
+      if (!prefs) {
+         return
+      }
+      const url = buildUrl({
+         search: prefs.search ?? null,
+         page: 1,
+         pageSize: prefs.pageSize ?? 20,
+         from: prefs.from ?? fromDate,
+         to: prefs.to ?? toDate,
+      })
+      if (url !== window.location.pathname + window.location.search) {
+         window.location.href = url
+      }
+   }, [hasExplicitParams, fromDate, toDate])
+
    const navigate = (params) => {
-      window.location.href = buildUrl({
+      const resolved = {
          search: params.search ?? searchFilter,
          page: params.page ?? page,
          pageSize: params.pageSize ?? pageSize,
          from: params.from ?? localFrom,
          to: params.to ?? localTo,
+      }
+      savePreferences({
+         search: resolved.search,
+         pageSize: resolved.pageSize,
+         from: resolved.from,
+         to: resolved.to,
       })
+      window.location.href = buildUrl(resolved)
    }
 
    const applyDateRange = () => {
@@ -194,7 +316,6 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                   <TableRow>
                      <TableHead>Search</TableHead>
                      <TableHead className="text-right">Date</TableHead>
-                     <TableHead className="text-right">Time</TableHead>
                      <TableHead className="text-right">Duration</TableHead>
                      <TableHead className="text-center">Status</TableHead>
                      <TableHead className="text-right">Cars found</TableHead>
@@ -202,12 +323,13 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                      <TableHead className="text-right">Requests</TableHead>
                      <TableHead className="text-right">Failed</TableHead>
                      <TableHead className="text-center">Stats</TableHead>
+                     <TableHead className="w-0"></TableHead>
                   </TableRow>
                </TableHeader>
                <TableBody>
                   {runs.length === 0 && (
                      <TableRow>
-                        <TableCell colSpan={10} className="text-center text-muted-foreground">
+                        <TableCell colSpan={11} className="text-center text-muted-foreground">
                            No search runs found.
                         </TableCell>
                      </TableRow>
@@ -215,8 +337,7 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                   {runs.map(run => (
                      <TableRow key={run.id} className={run.success === false ? 'bg-destructive/5' : ''}>
                         <TableCell className="whitespace-nowrap font-medium">{run.search_name}</TableCell>
-                        <TableCell className="whitespace-nowrap text-right">{asMediumDate(run.started_at)}</TableCell>
-                        <TableCell className="whitespace-nowrap text-right">{asTime(run.started_at)}</TableCell>
+                        <TableCell className="whitespace-nowrap text-right">{asMediumDate(run.started_at)} {asTime(run.started_at)}</TableCell>
                         <TableCell className="whitespace-nowrap text-right">{formatDuration(run.started_at, run.finished_at)}</TableCell>
                         <TableCell className="text-center">
                            {run.success === true && <CheckCircle2Icon className="mx-auto size-4 text-green-600" />}
@@ -234,6 +355,9 @@ export default function SearchRuns({ data, searches, totalCount, page, pageSize,
                         </TableCell>
                         <TableCell className="text-center">
                            <StatsPopover stats={run.stats} />
+                        </TableCell>
+                        <TableCell className="text-center">
+                           <DeleteRunCell runId={run.id} />
                         </TableCell>
                      </TableRow>
                   ))}

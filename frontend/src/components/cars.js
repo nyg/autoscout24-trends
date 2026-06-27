@@ -2,7 +2,7 @@
 
 import {
    ArrowDownIcon, ArrowUpIcon, CameraIcon,
-   MapIcon, MapPinIcon, NavigationIcon, SlidersHorizontalIcon
+   Loader2Icon, MapIcon, MapPinIcon, NavigationIcon, SlidersHorizontalIcon
 } from 'lucide-react'
 import { use, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 
@@ -331,20 +331,26 @@ function CellRenderer({ col, car, options, config, callbacks }) {
          return <TableCell className="text-right tabular-nums">{car[col.sortKey] != null ? asDecimal(car[col.sortKey]) : '-'}</TableCell>
       case 'screenshot': {
          const hasMedia = car.screenshot_url || car.photo_count > 0
+         const isLoading = callbacks.loadingCarId === car.id
          return (
             <TableCell className="text-center">
                {hasMedia ? (
                   <button
                      onClick={() => callbacks.onScreenshotClick(car)}
-                     className="relative text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer"
+                     disabled={isLoading}
+                     className="relative text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer disabled:cursor-wait"
                      title={car.photo_count > 0 ? `${car.photo_count} photos` : 'View screenshot'}
                   >
-                     <CameraIcon className="size-4" />
-                     {car.photo_count > 0 && (
-                        <span className="absolute -top-1.5 -right-2 flex size-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-medium text-primary-foreground">
-                           {car.photo_count}
-                        </span>
-                     )}
+                     {isLoading
+                        ? <Loader2Icon className="size-4 animate-spin" />
+                        : <>
+                           <CameraIcon className="size-4" />
+                           {car.photo_count > 0 && (
+                              <span className="absolute -top-1.5 -right-2 flex size-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-medium text-primary-foreground">
+                                 {car.photo_count}
+                              </span>
+                           )}
+                        </>}
                   </button>
                ) : (
                   <span className="text-muted-foreground/40 inline-flex">
@@ -368,16 +374,34 @@ export default function Cars({ name, data, options = {}, config = {} }) {
    const activeKeys = useSyncExternalStore(subscribeVisibleColumns, getVisibleColumnsSnapshot, getVisibleColumnsServerSnapshot)
    const [sort, setSort] = useState({ key: 'price', direction: 'asc' })
    const [lightbox, setLightbox] = useState(null)
+   const [loadingCarId, setLoadingCarId] = useState(null)
 
-   const onScreenshotClick = useCallback((car) => {
-      const images = [car.screenshot_url].filter(Boolean)
-      const hasMedia = images.length > 0 || car.photo_count > 0
-      if (hasMedia) {
+   const onScreenshotClick = useCallback(async (car) => {
+      if (!car.screenshot_url && car.photo_count === 0) {
+         return
+      }
+      setLoadingCarId(car.id)
+      try {
+         const screenshots = car.screenshot_url
+            ? await fetch(`/api/car-screenshots/${encodeURIComponent(car.vehicle_id)}?searchId=${car.search_id}`)
+               .then(res => res.ok ? res.json() : [])
+            : []
+         const images = screenshots.length > 0
+            ? screenshots.map(s => ({ url: s.url, label: new Date(s.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }))
+            : car.screenshot_url ? [{ url: car.screenshot_url, label: null }] : []
          setLightbox({
             images,
+            index: Math.max(0, images.length - 1),
+            fetchMoreUrl: car.photo_count > 0 ? `/api/photos/${car.id}` : null,
+         })
+      } catch {
+         setLightbox({
+            images: car.screenshot_url ? [{ url: car.screenshot_url, label: null }] : [],
             index: 0,
             fetchMoreUrl: car.photo_count > 0 ? `/api/photos/${car.id}` : null,
          })
+      } finally {
+         setLoadingCarId(null)
       }
    }, [])
 
@@ -461,7 +485,7 @@ export default function Cars({ name, data, options = {}, config = {} }) {
                <TableBody>
                   {sortedCars.map(car => (
                      <TableRow key={car.id}>
-                        {visibleColumns.map(col => <CellRenderer key={col.key} col={col} car={car} options={options} config={config} callbacks={{ onScreenshotClick }} />)}
+                        {visibleColumns.map(col => <CellRenderer key={col.key} col={col} car={car} options={options} config={config} callbacks={{ onScreenshotClick, loadingCarId }} />)}
                      </TableRow>
                   ))}
                </TableBody>

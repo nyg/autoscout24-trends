@@ -9,7 +9,10 @@ export default function Lightbox({ images: initialImages, initialIndex = 0, onCl
    const [images, setImages] = useState(initialImages)
    const [index, setIndex] = useState(initialIndex)
    const [loading, setLoading] = useState(!!fetchMoreUrl)
-   const [fitMode, setFitMode] = useState('height')
+   const [fitMode, setFitMode] = useState('width')
+
+   const currentUrl = images[index]?.url ?? images[index]
+   const currentLabel = images[index]?.label ?? null
 
    // Lazy-load additional photos (e.g., listing photos) when lightbox opens
    useEffect(() => {
@@ -90,11 +93,13 @@ export default function Lightbox({ images: initialImages, initialIndex = 0, onCl
             {fitMode === 'height' ? 'Fit height' : 'Fit width'}
          </div>
 
-         {/* Counter */}
-         <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2 flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white">
-            {images.length > 1 && <span>{index + 1} / {images.length}</span>}
-            {loading && <Loader2Icon className="size-4 animate-spin" />}
-         </div>
+         {/* Counter / date label */}
+         {(images.length > 1 || currentLabel || loading) && (
+            <div className="absolute top-4 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-sm text-white whitespace-nowrap flex items-center gap-2">
+               {images.length > 1 ? `${index + 1} / ${images.length}` : ''}{images.length > 1 && currentLabel ? ' · ' : ''}{currentLabel ?? ''}
+               {loading && <Loader2Icon className="size-4 animate-spin" />}
+            </div>
+         )}
 
          {/* Previous button */}
          {images.length > 1 && (
@@ -116,7 +121,7 @@ export default function Lightbox({ images: initialImages, initialIndex = 0, onCl
          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-               src={images[index]}
+               src={currentUrl}
                alt={`Image ${index + 1} of ${images.length}`}
                className={`${imgClass} cursor-pointer object-contain`}
                onClick={toggleFit}

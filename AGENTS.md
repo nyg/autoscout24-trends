@@ -27,7 +27,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 ## Developer workflows
 - Frontend commands are the standard ones from `frontend/package.json`: `pnpm dev`, `pnpm build`, `pnpm lint`.
 - The crawler is usually run from `crawler/` with `scrapy crawl search -a search_id=<id>`.
-- `crawler/run-spiders.sh` is the operational path for batch runs: it creates `.venv` if missing, activates it, runs `pip install -r requirements.txt`, then crawls every active search from the `searches` database table.
+- `crawler/run-spiders.sh` is the operational path for batch runs: it runs `uv sync` (creating `.venv` if missing) then crawls every active search from the `searches` database table. Requires `uv` installed on the host.
 - Crawler settings load env vars automatically via `load_dotenv()` in `crawler/autoscout/settings.py`, so `.env` is expected in `crawler/`.
 
 ## Crawler architecture and patterns
@@ -36,6 +36,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - The spider yields `SellerItem` before `CarItem`; the pipeline processes them in that order.
 - `PostgreSQLPipeline` buffers sellers and cars separately, inserts sellers with `ON CONFLICT DO NOTHING`, then inserts cars with a shared `search_run_id` created by `SearchRunExtension`.
 - `SearchRunExtension` (EXTENSIONS priority 500) creates a `search_runs` row on `spider_opened` and updates it with final stats on `spider_closed`. It publishes `search_run_id` to Scrapy stats so `PostgreSQLPipeline` can read it.
+- Failed requests are retried up to `RETRY_TIMES` (3) by Scrapy's built-in `RetryMiddleware`. The middleware intercepts retryable HTTP status codes and connection errors before they reach the spider. Only permanently failed requests (all retries exhausted) reach the spider's `handle_error` errback and are recorded in `self.failed_requests`.
 - `ScreenshotPipeline` (priority 250) compresses screenshots from raw PNG to WebP lossy, deduplicates via MD5 hash, uploads to Cloudflare R2 with UUID-based keys (`screenshots/{uuid}.webp`), and stores metadata in the `screenshots` table. It sets `car['screenshot_id']` for `PostgreSQLPipeline` to insert. Requires R2 env vars (`R2_ENDPOINT_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`); gracefully skips if not configured.
 - `PhotoPipeline` (priority 260) downloads all seller-uploaded listing photos from `listing-images.autoscout24.ch/listing/{key}`, compresses to WebP, deduplicates via MD5 hash, uploads to R2 with UUID-based keys (`photos/{uuid}.webp`), and stores metadata in the `photos` table. It sets `item.photo_ids` for `PostgreSQLPipeline` to insert into the `car_photos` junction table. Downloads images in parallel (4 threads). Requires the same R2 env vars as `ScreenshotPipeline`; gracefully skips if not configured.
 - `PostgreSQLPipeline` (priority 300) inserts cars and then creates `car_photos` junction rows linking each car to its photos with position ordering.

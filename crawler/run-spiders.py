@@ -102,12 +102,12 @@ def main() -> None:
 
     with psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=1) as conn:
         with conn.cursor() as cur:
-            searches: list[tuple[int, str, str]] = cur.execute(
-                'SELECT id, name, url FROM searches WHERE is_active = true ORDER BY name'
+            searches: list[tuple[int, str, str, bool]] = cur.execute(
+                'SELECT id, name, url, screenshots_enabled FROM searches WHERE is_active = true ORDER BY name'
             ).fetchall()
 
     if id_filter is not None:
-        searches = [(sid, name, url) for sid, name, url in searches if sid in id_filter]
+        searches = [(sid, name, url, ss) for sid, name, url, ss in searches if sid in id_filter]
 
     if not searches:
         log.warning('No active searches found in database')
@@ -121,9 +121,10 @@ def main() -> None:
     @defer.inlineCallbacks
     def crawl_all():
         try:
-            for search_id, search_name, url in searches:
+            for search_id, search_name, url, screenshots_enabled in searches:
                 log.info('Running spider for search: %s (id=%d)', search_name, search_id)
-                yield runner.crawl(SearchSpider, search_id=search_id, search_name=search_name, url=url)
+                yield runner.crawl(SearchSpider, search_id=search_id, search_name=search_name, url=url,
+                                   screenshots_enabled=screenshots_enabled)
         except Exception:
             log.exception('Spider run failed')
         finally:

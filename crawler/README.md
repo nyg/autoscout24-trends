@@ -15,6 +15,7 @@
 
 - Bypasses CloudFlare protection using [SeleniumBase CDP mode](https://github.com/nyg/scrapy-seleniumbase-cdp)
 - Extracts vehicle details (price, mileage, specs) and seller information
+- Failed requests are automatically retried up to 3 times (`RETRY_TIMES`) by Scrapy's built-in `RetryMiddleware`
 - Stores data in PostgreSQL with batch tracking for historical analysis
 - Search configurations stored in database, manageable from the frontend Settings page
 - Sends a batch summary email after all spiders finish (requires [Resend](https://resend.com) API key)
@@ -27,12 +28,10 @@ Install system dependencies:
 sudo apt install chromium xvfb
 ```
 
-Set up a Python virtual environment and install packages:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and sync dependencies:
 
 ```bash
-python -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
+uv sync
 ```
 
 Create a PostgreSQL database and initialize the schema:
@@ -72,8 +71,7 @@ INSERT INTO searches (name, url) VALUES ('Audi RS6 Avant', 'https://www.autoscou
 Run a single search by ID:
 
 ```bash
-source .venv/bin/activate
-scrapy crawl search -a search_id=1
+uv run scrapy crawl search -a search_id=1
 ```
 
 Run all active searches (creates `.venv` if needed, updates dependencies, then starts all spiders):
@@ -137,5 +135,6 @@ crawler/
 ├── SCHEMA.sql           # PostgreSQL schema
 ├── run-spiders.sh       # Shell wrapper: updates deps, runs run-spiders.py
 ├── run-spiders.py       # Runs all spiders in-process via CrawlerRunner
-└── requirements.txt     # Python dependencies
+├── pyproject.toml       # Python dependencies
+└── uv.lock              # Locked dependency versions
 ```
