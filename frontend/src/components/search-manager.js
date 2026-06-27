@@ -339,7 +339,7 @@ function SortableTh({ colKey, align = 'left', sort, onSort, children }) {
 }
 
 export default function SearchManager({ searches }) {
-   const [sort, setSort] = useState({ key: 'id', dir: 'asc' })
+   const [sort, setSort] = useState({ key: 'name', dir: 'asc' })
 
    const handleSort = (key) => {
       setSort(prev => ({
