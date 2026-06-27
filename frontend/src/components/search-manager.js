@@ -38,7 +38,7 @@ function CopyUrlButton({ url }) {
    return (
       <button
          onClick={handleCopy}
-         className="text-muted-foreground hover:text-foreground transition-colors"
+         className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
          title="Copy URL"
          aria-label="Copy URL to clipboard"
       >
@@ -143,8 +143,8 @@ function SearchRow({ search }) {
       <tr className="border-b text-sm font-medium">
          <td className="p-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{search.id}</td>
          <td className="p-2 whitespace-nowrap">{search.name}</td>
-         <td className="p-2 text-muted-foreground truncate max-w-0" title={search.url}>
-            <span className="inline-flex items-center gap-1.5">
+         <td className="p-2 text-muted-foreground max-w-0 w-full" title={search.url}>
+            <span className="flex items-center gap-1.5 min-w-0">
                <a
                   href={search.url}
                   target="_blank"
