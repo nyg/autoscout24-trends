@@ -285,7 +285,7 @@ export default function SearchManager({ searches }) {
                         <th className="p-2 text-right whitespace-nowrap">Cars</th>
                         <th className="p-2 text-right whitespace-nowrap">Screenshots</th>
                         <th className="p-2 text-center whitespace-nowrap">Active</th>
-                        <th className="p-2 text-center whitespace-nowrap">Screenshots</th>
+                        <th className="p-2 text-center whitespace-nowrap">Capture</th>
                         <th className="p-2 text-center whitespace-nowrap">Actions</th>
                      </tr>
                   </thead>
