@@ -9,6 +9,9 @@ export default function Lightbox({ images, initialIndex = 0, onClose }) {
    const [index, setIndex] = useState(initialIndex)
    const [fitMode, setFitMode] = useState('height')
 
+   const currentUrl = images[index]?.url ?? images[index]
+   const currentLabel = images[index]?.label ?? null
+
    const goPrev = useCallback(() => {
       setIndex(i => (i > 0 ? i - 1 : images.length - 1))
    }, [images.length])
@@ -75,7 +78,12 @@ export default function Lightbox({ images, initialIndex = 0, onClose }) {
          {/* Counter */}
          {images.length > 1 && (
             <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white">
-               {index + 1} / {images.length}
+               {index + 1} / {images.length}{currentLabel ? ` · ${currentLabel}` : ''}
+            </div>
+         )}
+         {images.length === 1 && currentLabel && (
+            <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white">
+               {currentLabel}
             </div>
          )}
 
@@ -99,7 +107,7 @@ export default function Lightbox({ images, initialIndex = 0, onClose }) {
          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-               src={images[index]}
+               src={currentUrl}
                alt={`Image ${index + 1} of ${images.length}`}
                className={`${imgClass} cursor-pointer object-contain`}
                onClick={toggleFit}

@@ -163,6 +163,17 @@ export async function fetchCarScreenshotUrl(carId) {
    return row?.r2_url ?? null
 }
 
+export async function fetchVehicleScreenshots(vehicleId, searchId) {
+   return pgSql`
+      select sc.r2_url as url, sc.created_at as date
+        from cars c
+        join screenshots sc on c.screenshot_id = sc.id
+       where c.vehicle_id = ${vehicleId}
+         and c.search_id = ${searchId}
+         and c.screenshot_id is not null
+       order by sc.created_at desc`
+}
+
 export async function fetchScreenshotStorageByDay() {
    return pgSql`
       select date_trunc('day', sc.created_at) as date,
