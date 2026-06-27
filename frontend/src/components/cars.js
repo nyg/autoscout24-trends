@@ -2,7 +2,7 @@
 
 import {
    ArrowDownIcon, ArrowUpIcon, CameraIcon,
-   MapIcon, MapPinIcon, NavigationIcon, SlidersHorizontalIcon
+   Loader2Icon, MapIcon, MapPinIcon, NavigationIcon, SlidersHorizontalIcon
 } from 'lucide-react'
 import { use, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 
@@ -329,16 +329,20 @@ function CellRenderer({ col, car, options, config, callbacks }) {
       case 'co2_emission':
       case 'cylinders':
          return <TableCell className="text-right tabular-nums">{car[col.sortKey] != null ? asDecimal(car[col.sortKey]) : '-'}</TableCell>
-      case 'screenshot':
+      case 'screenshot': {
+         const isLoading = callbacks.loadingCarId === car.id
          return (
             <TableCell className="text-center">
                {car.screenshot_url ? (
                   <button
                      onClick={() => callbacks.onScreenshotClick(car)}
-                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer"
+                     disabled={isLoading}
+                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer disabled:cursor-wait"
                      title="View screenshot"
                   >
-                     <CameraIcon className="size-4" />
+                     {isLoading
+                        ? <Loader2Icon className="size-4 animate-spin" />
+                        : <CameraIcon className="size-4" />}
                   </button>
                ) : (
                   <span className="text-muted-foreground/40 inline-flex">
@@ -347,6 +351,7 @@ function CellRenderer({ col, car, options, config, callbacks }) {
                )}
             </TableCell>
          )
+      }
       default:
          return <TableCell className="text-right">{car[col.sortKey] ?? '-'}</TableCell>
    }
@@ -361,11 +366,24 @@ export default function Cars({ name, data, options = {}, config = {} }) {
    const activeKeys = useSyncExternalStore(subscribeVisibleColumns, getVisibleColumnsSnapshot, getVisibleColumnsServerSnapshot)
    const [sort, setSort] = useState({ key: 'price', direction: 'asc' })
    const [lightbox, setLightbox] = useState(null)
+   const [loadingCarId, setLoadingCarId] = useState(null)
 
-   const onScreenshotClick = useCallback((car) => {
-      const images = [car.screenshot_url].filter(Boolean)
-      if (images.length > 0) {
-         setLightbox({ images, index: 0 })
+   const onScreenshotClick = useCallback(async (car) => {
+      if (!car.screenshot_url) {
+         return
+      }
+      setLoadingCarId(car.id)
+      try {
+         const res = await fetch(`/api/car-screenshots/${encodeURIComponent(car.vehicle_id)}?searchId=${car.search_id}`)
+         const data = res.ok ? await res.json() : []
+         const images = data.length > 0
+            ? data.map(s => ({ url: s.url, label: new Date(s.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }))
+            : [{ url: car.screenshot_url, label: null }]
+         setLightbox({ images, index: images.length - 1 })
+      } catch {
+         setLightbox({ images: [{ url: car.screenshot_url, label: null }], index: 0 })
+      } finally {
+         setLoadingCarId(null)
       }
    }, [])
 
@@ -449,7 +467,7 @@ export default function Cars({ name, data, options = {}, config = {} }) {
                <TableBody>
                   {sortedCars.map(car => (
                      <TableRow key={car.id}>
-                        {visibleColumns.map(col => <CellRenderer key={col.key} col={col} car={car} options={options} config={config} callbacks={{ onScreenshotClick }} />)}
+                        {visibleColumns.map(col => <CellRenderer key={col.key} col={col} car={car} options={options} config={config} callbacks={{ onScreenshotClick, loadingCarId }} />)}
                      </TableRow>
                   ))}
                </TableBody>
