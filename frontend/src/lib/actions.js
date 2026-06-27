@@ -35,6 +35,7 @@ export async function updateSearch(prevState, formData) {
    const name = formData.get('name')?.toString().trim()
    const url = formData.get('url')?.toString().trim()
    const isActive = formData.get('is_active') === 'true'
+   const screenshotsEnabled = formData.get('screenshots_enabled') === 'true'
 
    if (!name || !url) {
       return { error: 'Name and URL are required.' }
@@ -46,6 +47,7 @@ export async function updateSearch(prevState, formData) {
             set name = ${name},
                 url = ${url},
                 is_active = ${isActive},
+                screenshots_enabled = ${screenshotsEnabled},
                 updated_at = current_timestamp
           where id = ${id}`
       revalidatePath('/', 'layout')
@@ -120,6 +122,23 @@ export async function toggleSearchActive(prevState, formData) {
       await pgSql`
          update searches
             set is_active = ${isActive},
+                updated_at = current_timestamp
+          where id = ${id}`
+      revalidatePath('/', 'layout')
+      return { success: true }
+   } catch {
+      return { error: 'Failed to update search.' }
+   }
+}
+
+export async function toggleSearchScreenshots(prevState, formData) {
+   const id = parseInt(formData.get('id'), 10)
+   const screenshotsEnabled = formData.get('screenshots_enabled') === 'true'
+
+   try {
+      await pgSql`
+         update searches
+            set screenshots_enabled = ${screenshotsEnabled},
                 updated_at = current_timestamp
           where id = ${id}`
       revalidatePath('/', 'layout')

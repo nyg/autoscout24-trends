@@ -39,7 +39,7 @@ class CarPageRequest(SeleniumBaseRequest):
                           errback=spider.handle_error,
                           wait_for_element='h1',
                           script=ACCEPT_COOKIES_AND_EXPAND_FIELDS,
-                          screenshot=True)
+                          screenshot=spider.screenshots_enabled)
         super().__init__(**kwargs)
 
 
@@ -47,11 +47,13 @@ class SearchSpider(Spider):
     name = 'search'
     allowed_domains = ['www.autoscout24.ch', 'autoscout24.ch']
 
-    def __init__(self, search_id: int | str, search_name: str, url: str, *args, **kwargs) -> None:
+    def __init__(self, search_id: int | str, search_name: str, url: str,
+                 screenshots_enabled: bool | str = True, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.search_id = int(search_id)
         self.search_name = search_name
         self.url = urlparse(url)
+        self.screenshots_enabled = screenshots_enabled if isinstance(screenshots_enabled, bool) else screenshots_enabled != 'false'
         self.failed_requests: list[dict[str, str | int]] = []
         self.total_car_count = 0
 
