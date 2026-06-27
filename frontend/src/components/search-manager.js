@@ -8,7 +8,9 @@ import {
    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { createSearch, deleteSearch, toggleSearchActive, updateSearch } from '@/lib/actions'
+import {
+   createSearch, deleteSearch, toggleSearchActive, toggleSearchScreenshots, updateSearch
+} from '@/lib/actions'
 
 
 function formatBytes(bytes) {
@@ -58,6 +60,7 @@ function SearchRow({ search }) {
       return result
    }, null)
    const [, submitToggle] = useActionState(toggleSearchActive, null)
+   const [, submitToggleScreenshots] = useActionState(toggleSearchScreenshots, null)
 
    const [dialogOpen, setDialogOpen] = useState(false)
    const [deleteInfo, setDeleteInfo] = useState(null)
@@ -95,10 +98,11 @@ function SearchRow({ search }) {
    if (editing) {
       return (
          <tr className="border-b">
-            <td colSpan={8} className="p-2">
+            <td colSpan={9} className="p-2">
                <form action={submitUpdate} className="flex flex-col gap-2">
                   <input type="hidden" name="id" value={search.id} />
                   <input type="hidden" name="is_active" value={String(search.is_active)} />
+                  <input type="hidden" name="screenshots_enabled" value={String(search.screenshots_enabled)} />
                   <input
                      name="name"
                      defaultValue={search.name}
@@ -165,6 +169,23 @@ function SearchRow({ search }) {
                   title={search.is_active ? 'Active — click to deactivate' : 'Inactive — click to activate'}
                >
                   {search.is_active ? '✓' : ''}
+               </button>
+            </form>
+         </td>
+         <td className="p-2 text-center whitespace-nowrap">
+            <form action={submitToggleScreenshots} className="inline">
+               <input type="hidden" name="id" value={search.id} />
+               <input type="hidden" name="screenshots_enabled" value={String(!search.screenshots_enabled)} />
+               <button
+                  type="submit"
+                  className={`inline-flex size-4 items-center justify-center rounded-sm border text-xs transition-colors ${
+                     search.screenshots_enabled
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-muted-foreground/30'
+                  }`}
+                  title={search.screenshots_enabled ? 'Screenshots on — click to disable' : 'Screenshots off — click to enable'}
+               >
+                  {search.screenshots_enabled ? '✓' : ''}
                </button>
             </form>
          </td>
@@ -264,6 +285,7 @@ export default function SearchManager({ searches }) {
                         <th className="p-2 text-right whitespace-nowrap">Cars</th>
                         <th className="p-2 text-right whitespace-nowrap">Screenshots</th>
                         <th className="p-2 text-center whitespace-nowrap">Active</th>
+                        <th className="p-2 text-center whitespace-nowrap">Capture</th>
                         <th className="p-2 text-center whitespace-nowrap">Actions</th>
                      </tr>
                   </thead>

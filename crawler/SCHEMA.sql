@@ -3,6 +3,7 @@ CREATE TABLE public.searches (
     name text NOT NULL,
     url text NOT NULL,
     is_active boolean NOT NULL DEFAULT true,
+    screenshots_enabled boolean NOT NULL DEFAULT true,
     created_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
