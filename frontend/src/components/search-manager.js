@@ -141,7 +141,7 @@ function SearchRow({ search }) {
 
    return (
       <tr className="border-b text-sm font-medium">
-         <td className="p-2 text-muted-foreground whitespace-nowrap">{search.id}</td>
+         <td className="p-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{search.id}</td>
          <td className="p-2 whitespace-nowrap">{search.name}</td>
          <td className="p-2 text-muted-foreground truncate max-w-0" title={search.url}>
             <span className="inline-flex items-center gap-1.5">
@@ -362,7 +362,7 @@ export default function SearchManager({ searches }) {
                <table className="w-full text-left">
                   <thead>
                      <tr className="border-b text-xs font-medium text-muted-foreground">
-                        <SortableTh colKey="id" sort={sort} onSort={handleSort}>ID</SortableTh>
+                        <SortableTh colKey="id" align="right" sort={sort} onSort={handleSort}>ID</SortableTh>
                         <SortableTh colKey="name" sort={sort} onSort={handleSort}>Name</SortableTh>
                         <th className="p-2 w-full">URL</th>
                         <SortableTh colKey="run_count" align="right" sort={sort} onSort={handleSort}>Runs</SortableTh>
