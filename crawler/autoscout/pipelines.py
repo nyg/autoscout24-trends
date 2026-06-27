@@ -165,6 +165,8 @@ class PhotoPipeline:
     def process_item(self, item: CarItem | SellerItem) -> CarItem | SellerItem:
         if not isinstance(item, CarItem) or not item.image_keys or not self.r2_configured:
             return item
+        if not self.crawler.spider.photos_enabled:
+            return item
 
         item.photo_ids = self._process_photos(item)
         return item

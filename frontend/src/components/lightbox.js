@@ -23,7 +23,8 @@ export default function Lightbox({ images: initialImages, initialIndex = 0, onCl
          .then(res => res.ok ? res.json() : [])
          .then(urls => {
             if (urls.length > 0) {
-               setImages(prev => [...prev, ...urls])
+               const labeled = urls.map((url, i) => ({ url, label: `Photo ${i + 1}` }))
+               setImages(prev => [...prev, ...labeled])
             }
          })
          .catch(() => {})

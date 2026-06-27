@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-   createSearch, deleteSearch, toggleSearchActive, toggleSearchScreenshots, updateSearch
+   createSearch, deleteSearch, toggleSearchActive, toggleSearchPhotos, toggleSearchScreenshots, updateSearch
 } from '@/lib/actions'
 
 
@@ -61,6 +61,7 @@ function SearchRow({ search }) {
    }, null)
    const [, submitToggle] = useActionState(toggleSearchActive, null)
    const [, submitToggleScreenshots] = useActionState(toggleSearchScreenshots, null)
+   const [, submitTogglePhotos] = useActionState(toggleSearchPhotos, null)
 
    const [dialogOpen, setDialogOpen] = useState(false)
    const [deleteInfo, setDeleteInfo] = useState(null)
@@ -98,11 +99,12 @@ function SearchRow({ search }) {
    if (editing) {
       return (
          <tr className="border-b">
-            <td colSpan={9} className="p-2">
+            <td colSpan={11} className="p-2">
                <form action={submitUpdate} className="flex flex-col gap-2">
                   <input type="hidden" name="id" value={search.id} />
                   <input type="hidden" name="is_active" value={String(search.is_active)} />
                   <input type="hidden" name="screenshots_enabled" value={String(search.screenshots_enabled)} />
+                  <input type="hidden" name="photos_enabled" value={String(search.photos_enabled)} />
                   <input
                      name="name"
                      defaultValue={search.name}
@@ -155,6 +157,12 @@ function SearchRow({ search }) {
                <span className="text-xs ml-1">({formatBytes(search.screenshot_size)})</span>
             )}
          </td>
+         <td className="p-2 text-right text-muted-foreground whitespace-nowrap">
+            {search.photo_count}
+            {search.photo_size > 0 && (
+               <span className="text-xs ml-1">({formatBytes(search.photo_size)})</span>
+            )}
+         </td>
          <td className="p-2 text-center whitespace-nowrap">
             <form action={submitToggle} className="inline">
                <input type="hidden" name="id" value={search.id} />
@@ -183,9 +191,26 @@ function SearchRow({ search }) {
                         ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-muted-foreground/30'
                   }`}
-                  title={search.screenshots_enabled ? 'Screenshots on — click to disable' : 'Screenshots off — click to enable'}
+                  title={search.screenshots_enabled ? 'Page screenshots on — click to disable' : 'Page screenshots off — click to enable'}
                >
                   {search.screenshots_enabled ? '✓' : ''}
+               </button>
+            </form>
+         </td>
+         <td className="p-2 text-center whitespace-nowrap">
+            <form action={submitTogglePhotos} className="inline">
+               <input type="hidden" name="id" value={search.id} />
+               <input type="hidden" name="photos_enabled" value={String(!search.photos_enabled)} />
+               <button
+                  type="submit"
+                  className={`inline-flex size-4 items-center justify-center rounded-sm border text-xs transition-colors ${
+                     search.photos_enabled
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-muted-foreground/30'
+                  }`}
+                  title={search.photos_enabled ? 'Listing photos on — click to disable' : 'Listing photos off — click to enable'}
+               >
+                  {search.photos_enabled ? '✓' : ''}
                </button>
             </form>
          </td>
@@ -214,7 +239,8 @@ function SearchRow({ search }) {
                         <AlertDialogDescription>
                            This will permanently delete {deleteInfo?.runCount} run{deleteInfo?.runCount !== 1 ? 's' : ''},
                            {' '}{deleteInfo?.carCount} car{deleteInfo?.carCount !== 1 ? 's' : ''}
-                           {deleteInfo?.screenshotCount > 0 && `, ${deleteInfo?.screenshotCount} screenshot${deleteInfo?.screenshotCount !== 1 ? 's' : ''}`}.
+                           {deleteInfo?.screenshotCount > 0 && `, ${deleteInfo?.screenshotCount} screenshot${deleteInfo?.screenshotCount !== 1 ? 's' : ''}`}
+                           {deleteInfo?.photoCount > 0 && `, ${deleteInfo?.photoCount} photo${deleteInfo?.photoCount !== 1 ? 's' : ''}`}.
                            This action cannot be undone.
                         </AlertDialogDescription>
                      </AlertDialogHeader>
@@ -284,8 +310,10 @@ export default function SearchManager({ searches }) {
                         <th className="p-2 text-right whitespace-nowrap">Runs</th>
                         <th className="p-2 text-right whitespace-nowrap">Cars</th>
                         <th className="p-2 text-right whitespace-nowrap">Screenshots</th>
+                        <th className="p-2 text-right whitespace-nowrap">Photos</th>
                         <th className="p-2 text-center whitespace-nowrap">Active</th>
-                        <th className="p-2 text-center whitespace-nowrap">Capture</th>
+                        <th className="p-2 text-center whitespace-nowrap">Screenshot</th>
+                        <th className="p-2 text-center whitespace-nowrap">Photos</th>
                         <th className="p-2 text-center whitespace-nowrap">Actions</th>
                      </tr>
                   </thead>

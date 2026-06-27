@@ -12,7 +12,19 @@ export async function fetchSearches() {
              (select coalesce(sum(sc.compressed_size), 0)::bigint
                 from screenshots sc
                inner join cars c on c.screenshot_id = sc.id
-               where c.search_id = s.id) as screenshot_size
+               where c.search_id = s.id) as screenshot_size,
+             (select count(distinct cp.photo_id)::int
+                from car_photos cp
+               inner join cars c on cp.car_id = c.id
+               where c.search_id = s.id) as photo_count,
+             (select coalesce(sum(p.compressed_size), 0)::bigint
+                from photos p
+               where p.id in (
+                  select distinct cp.photo_id
+                    from car_photos cp
+                   inner join cars c on cp.car_id = c.id
+                   where c.search_id = s.id
+               )) as photo_size
         from searches s
        order by name`
 }
