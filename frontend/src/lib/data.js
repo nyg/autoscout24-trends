@@ -171,7 +171,7 @@ export async function fetchVehicleScreenshots(vehicleId, searchId) {
        where c.vehicle_id = ${vehicleId}
          and c.search_id = ${searchId}
          and c.screenshot_id is not null
-       order by sc.created_at desc`
+       order by sc.created_at asc`
 }
 
 export async function fetchScreenshotStorageByDay() {

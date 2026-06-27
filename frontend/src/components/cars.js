@@ -379,7 +379,7 @@ export default function Cars({ name, data, options = {}, config = {} }) {
          const images = data.length > 0
             ? data.map(s => ({ url: s.url, label: new Date(s.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }))
             : [{ url: car.screenshot_url, label: null }]
-         setLightbox({ images, index: 0 })
+         setLightbox({ images, index: images.length - 1 })
       } catch {
          setLightbox({ images: [{ url: car.screenshot_url, label: null }], index: 0 })
       } finally {
