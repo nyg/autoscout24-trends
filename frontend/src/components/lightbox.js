@@ -1,16 +1,35 @@
 'use client'
 
-import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, Loader2Icon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 
-export default function Lightbox({ images, initialIndex = 0, onClose }) {
+export default function Lightbox({ images: initialImages, initialIndex = 0, onClose, fetchMoreUrl }) {
+   const [images, setImages] = useState(initialImages)
    const [index, setIndex] = useState(initialIndex)
+   const [loading, setLoading] = useState(!!fetchMoreUrl)
    const [fitMode, setFitMode] = useState('width')
 
    const currentUrl = images[index]?.url ?? images[index]
    const currentLabel = images[index]?.label ?? null
+
+   // Lazy-load additional photos (e.g., listing photos) when lightbox opens
+   useEffect(() => {
+      if (!fetchMoreUrl) {
+         return
+      }
+      fetch(fetchMoreUrl)
+         .then(res => res.ok ? res.json() : [])
+         .then(urls => {
+            if (urls.length > 0) {
+               const labeled = urls.map((url, i) => ({ url, label: `Photo ${i + 1}` }))
+               setImages(prev => [...prev, ...labeled])
+            }
+         })
+         .catch(() => {})
+         .finally(() => setLoading(false))
+   }, [fetchMoreUrl])
 
    const goPrev = useCallback(() => {
       setIndex(i => (i > 0 ? i - 1 : images.length - 1))
@@ -75,10 +94,11 @@ export default function Lightbox({ images, initialIndex = 0, onClose }) {
             {fitMode === 'height' ? 'Fit height' : 'Fit width'}
          </div>
 
-         {/* Counter / date label - always visible */}
-         {(images.length > 1 || currentLabel) && (
-            <div className="absolute top-4 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-sm text-white whitespace-nowrap">
+         {/* Counter / date label */}
+         {(images.length > 1 || currentLabel || loading) && (
+            <div className="absolute top-4 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-sm text-white whitespace-nowrap flex items-center gap-2">
                {images.length > 1 ? `${index + 1} / ${images.length}` : ''}{images.length > 1 && currentLabel ? ' · ' : ''}{currentLabel ?? ''}
+               {loading && <Loader2Icon className="size-4 animate-spin" />}
             </div>
          )}
 

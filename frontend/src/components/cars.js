@@ -330,19 +330,27 @@ function CellRenderer({ col, car, options, config, callbacks }) {
       case 'cylinders':
          return <TableCell className="text-right tabular-nums">{car[col.sortKey] != null ? asDecimal(car[col.sortKey]) : '-'}</TableCell>
       case 'screenshot': {
+         const hasMedia = car.screenshot_url || car.photo_count > 0
          const isLoading = callbacks.loadingCarId === car.id
          return (
             <TableCell className="text-center">
-               {car.screenshot_url ? (
+               {hasMedia ? (
                   <button
                      onClick={() => callbacks.onScreenshotClick(car)}
                      disabled={isLoading}
-                     className="text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer disabled:cursor-wait"
-                     title="View screenshot"
+                     className="relative text-muted-foreground hover:text-foreground transition-colors inline-flex cursor-pointer disabled:cursor-wait"
+                     title={car.photo_count > 0 ? `${car.photo_count} photos` : 'View screenshot'}
                   >
                      {isLoading
                         ? <Loader2Icon className="size-4 animate-spin" />
-                        : <CameraIcon className="size-4" />}
+                        : <>
+                           <CameraIcon className="size-4" />
+                           {car.photo_count > 0 && (
+                              <span className="absolute -top-1.5 -right-2 flex size-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-medium text-primary-foreground">
+                                 {car.photo_count}
+                              </span>
+                           )}
+                        </>}
                   </button>
                ) : (
                   <span className="text-muted-foreground/40 inline-flex">
@@ -369,19 +377,29 @@ export default function Cars({ name, data, options = {}, config = {} }) {
    const [loadingCarId, setLoadingCarId] = useState(null)
 
    const onScreenshotClick = useCallback(async (car) => {
-      if (!car.screenshot_url) {
+      if (!car.screenshot_url && car.photo_count === 0) {
          return
       }
       setLoadingCarId(car.id)
       try {
-         const res = await fetch(`/api/car-screenshots/${encodeURIComponent(car.vehicle_id)}?searchId=${car.search_id}`)
-         const data = res.ok ? await res.json() : []
-         const images = data.length > 0
-            ? data.map(s => ({ url: s.url, label: new Date(s.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }))
-            : [{ url: car.screenshot_url, label: null }]
-         setLightbox({ images, index: images.length - 1 })
+         const screenshots = car.screenshot_url
+            ? await fetch(`/api/car-screenshots/${encodeURIComponent(car.vehicle_id)}?searchId=${car.search_id}`)
+               .then(res => res.ok ? res.json() : [])
+            : []
+         const images = screenshots.length > 0
+            ? screenshots.map(s => ({ url: s.url, label: new Date(s.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }))
+            : car.screenshot_url ? [{ url: car.screenshot_url, label: null }] : []
+         setLightbox({
+            images,
+            index: Math.max(0, images.length - 1),
+            fetchMoreUrl: car.photo_count > 0 ? `/api/photos/${car.id}` : null,
+         })
       } catch {
-         setLightbox({ images: [{ url: car.screenshot_url, label: null }], index: 0 })
+         setLightbox({
+            images: car.screenshot_url ? [{ url: car.screenshot_url, label: null }] : [],
+            index: 0,
+            fetchMoreUrl: car.photo_count > 0 ? `/api/photos/${car.id}` : null,
+         })
       } finally {
          setLoadingCarId(null)
       }
@@ -478,6 +496,7 @@ export default function Cars({ name, data, options = {}, config = {} }) {
                images={lightbox.images}
                initialIndex={lightbox.index}
                onClose={() => setLightbox(null)}
+               fetchMoreUrl={lightbox.fetchMoreUrl}
             />
          )}
       </Card>

@@ -1,6 +1,6 @@
 import postgres from 'postgres'
 
-const pgSql = postgres(process.env.PGSQL_URL)
+const pgSql = postgres(process.env.PGSQL_URL, { prepare: false })
 
 export async function fetchSearches() {
    return pgSql`
@@ -12,7 +12,19 @@ export async function fetchSearches() {
              (select coalesce(sum(sc.compressed_size), 0)::bigint
                 from screenshots sc
                inner join cars c on c.screenshot_id = sc.id
-               where c.search_id = s.id) as screenshot_size
+               where c.search_id = s.id) as screenshot_size,
+             (select count(distinct cp.photo_id)::int
+                from car_photos cp
+               inner join cars c on cp.car_id = c.id
+               where c.search_id = s.id) as photo_count,
+             (select coalesce(sum(p.compressed_size), 0)::bigint
+                from photos p
+               where p.id in (
+                  select distinct cp.photo_id
+                    from car_photos cp
+                   inner join cars c on cp.car_id = c.id
+                   where c.search_id = s.id
+               )) as photo_size
         from searches s
        order by name`
 }
@@ -40,7 +52,8 @@ export async function fetchActiveListings(searchName) {
              c.last_inspection_date, c.seller_id, c.search_run_id,
              se.type seller_type, se.name seller_name, se.address seller_address, se.zip_code, se.city,
              365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year,
-             sc.r2_url as screenshot_url
+             sc.r2_url as screenshot_url,
+             (select count(*)::int from car_photos cp where cp.car_id = c.id) as photo_count
         from cars c
        inner join sellers se on c.seller_id = se.id
        inner join searches s on c.search_id = s.id
@@ -72,7 +85,8 @@ export async function fetchPreviousListings(searchName) {
                 c.last_inspection_date, c.seller_id, c.search_run_id,
                 se.type seller_type, se.name seller_name, se.address seller_address, se.zip_code, se.city,
                 365.25 * mileage / extract(day from current_timestamp - c.first_registration_date) as km_year,
-                sc.r2_url as screenshot_url
+                sc.r2_url as screenshot_url,
+                (select count(*)::int from car_photos cp where cp.car_id = c.id) as photo_count
            from cars c
           inner join sellers se on c.seller_id = se.id
           inner join searches s on c.search_id = s.id
@@ -161,6 +175,15 @@ export async function fetchCarScreenshotUrl(carId) {
         left join screenshots sc on c.screenshot_id = sc.id
        where c.id = ${carId}`
    return row?.r2_url ?? null
+}
+
+export async function fetchCarPhotos(carId) {
+   return pgSql`
+      select p.r2_url
+        from car_photos cp
+       inner join photos p on cp.photo_id = p.id
+       where cp.car_id = ${carId}
+       order by cp.position`
 }
 
 export async function fetchVehicleScreenshots(vehicleId, searchId) {

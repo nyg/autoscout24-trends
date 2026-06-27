@@ -15,7 +15,7 @@ export default async function SettingsPage() {
    const screenshotSummary = fetchScreenshotStorageSummary()
 
    return (
-      <div className="mx-auto flex max-w-screen-md flex-col gap-4">
+      <div className="mx-auto flex max-w-screen-xl flex-col gap-4 px-4">
          <SearchManager searches={searches} />
          <ClientSettings config={config} />
          <Suspense fallback={<p className="text-sm text-muted-foreground">Loading screenshot data…</p>}>

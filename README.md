@@ -18,5 +18,8 @@ The system enables users to track car listings over time, analyze pricing trends
 
 - **Automated Web Scraping**: Bypasses anti-bot protections using SeleniumBase CDP mode
 - **Database Storage**: Persists car, seller, and search configuration data in PostgreSQL
+- **Photo Archival**: Downloads and stores all seller-uploaded listing photos in Cloudflare R2 (WebP, deduplicated)
+- **Screenshot Capture**: Takes full-page screenshots of car listings, compressed and stored in R2
 - **Data Visualization**: Interactive charts and tables for analyzing trends
+- **Image Lightbox**: Full-screen viewer for screenshots and listing photos with keyboard navigation
 - **Search Management**: Configure and manage searches from the web UI

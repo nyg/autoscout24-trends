@@ -5,7 +5,7 @@ import postgres from 'postgres'
 
 import { deleteR2Objects } from '@/lib/r2'
 
-const pgSql = postgres(process.env.PGSQL_URL)
+const pgSql = postgres(process.env.PGSQL_URL, { prepare: false })
 
 
 export async function createSearch(prevState, formData) {
@@ -36,6 +36,7 @@ export async function updateSearch(prevState, formData) {
    const url = formData.get('url')?.toString().trim()
    const isActive = formData.get('is_active') === 'true'
    const screenshotsEnabled = formData.get('screenshots_enabled') === 'true'
+   const photosEnabled = formData.get('photos_enabled') === 'true'
 
    if (!name || !url) {
       return { error: 'Name and URL are required.' }
@@ -48,6 +49,7 @@ export async function updateSearch(prevState, formData) {
                 url = ${url},
                 is_active = ${isActive},
                 screenshots_enabled = ${screenshotsEnabled},
+                photos_enabled = ${photosEnabled},
                 updated_at = current_timestamp
           where id = ${id}`
       revalidatePath('/', 'layout')
@@ -69,7 +71,11 @@ export async function deleteSearch(prevState, formData) {
          select (select count(*)::int from search_runs where search_id = ${id}) as run_count,
                 (select count(*)::int from cars where search_id = ${id}) as car_count,
                 (select count(distinct c.screenshot_id) filter (where c.screenshot_id is not null)::int
-                   from cars c where c.search_id = ${id}) as screenshot_count`
+                   from cars c where c.search_id = ${id}) as screenshot_count,
+                (select count(distinct cp.photo_id)::int
+                   from car_photos cp
+                  inner join cars c on cp.car_id = c.id
+                  where c.search_id = ${id}) as photo_count`
 
       if ((info.car_count > 0 || info.run_count > 0) && !confirmed) {
          return {
@@ -77,6 +83,7 @@ export async function deleteSearch(prevState, formData) {
             runCount: info.run_count,
             carCount: info.car_count,
             screenshotCount: info.screenshot_count,
+            photoCount: info.photo_count,
          }
       }
 
@@ -88,6 +95,13 @@ export async function deleteSearch(prevState, formData) {
              where search_id = ${id} and screenshot_id is not null`
          ).map(r => r.screenshot_id)
 
+         const photoIds = (await pgSql`
+            select distinct cp.photo_id
+              from car_photos cp
+             inner join cars c on cp.car_id = c.id
+             where c.search_id = ${id}`
+         ).map(r => r.photo_id)
+
          await pgSql`delete from cars where search_id = ${id}`
 
          if (screenshotIds.length > 0) {
@@ -98,9 +112,19 @@ export async function deleteSearch(prevState, formData) {
                      select 1 from cars where cars.screenshot_id = screenshots.id
                   )
                returning r2_key`
-            r2Keys = deleted.map(r => r.r2_key).filter(Boolean)
+            r2Keys.push(...deleted.map(r => r.r2_key).filter(Boolean))
          }
 
+         if (photoIds.length > 0) {
+            const deleted = await pgSql`
+               delete from photos
+                where id in ${pgSql(photoIds)}
+                  and not exists (
+                     select 1 from car_photos where car_photos.photo_id = photos.id
+                  )
+               returning r2_key`
+            r2Keys.push(...deleted.map(r => r.r2_key).filter(Boolean))
+         }
 
          await pgSql`delete from search_runs where search_id = ${id}`
          await pgSql`delete from searches where id = ${id}`
@@ -139,6 +163,23 @@ export async function toggleSearchScreenshots(prevState, formData) {
       await pgSql`
          update searches
             set screenshots_enabled = ${screenshotsEnabled},
+                updated_at = current_timestamp
+          where id = ${id}`
+      revalidatePath('/', 'layout')
+      return { success: true }
+   } catch {
+      return { error: 'Failed to update search.' }
+   }
+}
+
+export async function toggleSearchPhotos(prevState, formData) {
+   const id = parseInt(formData.get('id'), 10)
+   const photosEnabled = formData.get('photos_enabled') === 'true'
+
+   try {
+      await pgSql`
+         update searches
+            set photos_enabled = ${photosEnabled},
                 updated_at = current_timestamp
           where id = ${id}`
       revalidatePath('/', 'layout')
