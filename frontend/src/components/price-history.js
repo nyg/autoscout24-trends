@@ -46,7 +46,6 @@ const COLUMNS = [
    { key: 'mileage',        label: 'Mileage',      align: 'right',  sortKey: 'mileage',                 sortType: 'numeric' },
    { key: 'price',          label: 'Price',        align: 'right',  sortKey: 'price',                   sortType: 'numeric' },
    { key: 'change_abs',     label: 'Change',       align: 'right',  sortKey: 'change_pct',              sortType: 'numeric' },
-   { key: 'change_count',   label: '# Changes',    align: 'right',  sortKey: 'change_count',            sortType: 'numeric' },
    { key: 'history',        label: 'History',      align: 'left',   noSort: true },
    { key: 'listed_since',   label: 'Listed since', align: 'right',  sortKey: 'created_date',            sortType: 'date' },
    { key: 'last_change',    label: 'Last change',  align: 'right',  sortKey: 'last_change_date',        sortType: 'date' },
@@ -134,8 +133,6 @@ function PriceHistoryRow({ row, formatter }) {
                <span className="block text-xs">{changeSign}{row.change_pct.toFixed(1)}%</span>
             )}
          </TableCell>
-         {/* # changes */}
-         <TableCell className="text-right tabular-nums">{row.change_count}</TableCell>
          {/* history */}
          <TableCell>
             <HistoryCell history={row.price_history} formatter={formatter} />
