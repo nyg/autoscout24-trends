@@ -40,17 +40,17 @@ function compareRows(a, b, col, direction) {
 }
 
 const COLUMNS = [
-   { key: 'title',          label: 'Title',        align: 'left',   sortKey: 'title',                  sortType: 'text' },
+   { key: 'title',          label: 'Title',        align: 'left',   sortKey: 'title',                   sortType: 'text' },
+   { key: 'seller',         label: 'Seller',       align: 'right',  sortKey: 'seller_name',             sortType: 'text' },
    { key: 'year',           label: 'Year',         align: 'right',  sortKey: 'first_registration_date', sortType: 'date' },
-   { key: 'mileage',        label: 'Mileage',      align: 'right',  sortKey: 'mileage',                sortType: 'numeric' },
-   { key: 'price',          label: 'Price',        align: 'right',  sortKey: 'price',                  sortType: 'numeric' },
-   { key: 'change_abs',     label: 'Change',       align: 'right',  sortKey: 'change_pct',             sortType: 'numeric' },
-   { key: 'change_count',   label: '# Changes',   align: 'right',  sortKey: 'change_count',           sortType: 'numeric' },
-   { key: 'last_change',    label: 'Last change',  align: 'right',  sortKey: 'last_change_date',       sortType: 'date' },
-   { key: 'listed_since',   label: 'Listed since', align: 'right',  sortKey: 'created_date',           sortType: 'date' },
-   { key: 'seller',         label: 'Seller',       align: 'right',  sortKey: 'seller_name',            sortType: 'text' },
-   { key: 'is_active',      label: 'Active',       align: 'center', sortKey: 'is_active',              sortType: 'numeric' },
+   { key: 'mileage',        label: 'Mileage',      align: 'right',  sortKey: 'mileage',                 sortType: 'numeric' },
+   { key: 'price',          label: 'Price',        align: 'right',  sortKey: 'price',                   sortType: 'numeric' },
+   { key: 'change_abs',     label: 'Change',       align: 'right',  sortKey: 'change_pct',              sortType: 'numeric' },
+   { key: 'change_count',   label: '# Changes',    align: 'right',  sortKey: 'change_count',            sortType: 'numeric' },
    { key: 'history',        label: 'History',      align: 'left',   noSort: true },
+   { key: 'listed_since',   label: 'Listed since', align: 'right',  sortKey: 'created_date',            sortType: 'date' },
+   { key: 'last_change',    label: 'Last change',  align: 'right',  sortKey: 'last_change_date',        sortType: 'date' },
+   { key: 'is_active',      label: 'Active',       align: 'center', sortKey: 'is_active',               sortType: 'numeric' },
 ]
 
 
@@ -58,13 +58,25 @@ const COLUMNS = [
 
 function HistoryCell({ history, formatter }) {
    return (
-      <div className="space-y-0.5 text-xs tabular-nums">
-         {history.map((entry, i) => (
-            <div key={i} className="flex gap-1.5 whitespace-nowrap">
-               <span className="text-muted-foreground">{formatter.asMediumDate(new Date(entry.date))}:</span>
-               <span className="font-medium">{formatter.asDecimal(entry.price)}</span>
-            </div>
-         ))}
+      <div className="space-y-0.5 tabular-nums">
+         {history.map((entry, i) => {
+            const prev = history[i - 1]
+            const delta = prev != null ? entry.price - prev.price : null
+            const deltaPct = prev != null && prev.price ? (delta / prev.price) * 100 : null
+            const deltaSign = delta > 0 ? '+' : ''
+            const deltaColor = delta < 0 ? 'text-green-600 dark:text-green-400' : delta > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
+            return (
+               <div key={i} className="flex gap-1.5 whitespace-nowrap items-baseline">
+                  <span className="text-muted-foreground text-xs">{formatter.asMediumDate(new Date(entry.date))}:</span>
+                  <span className="font-medium">{formatter.asDecimal(entry.price)}</span>
+                  {delta != null && (
+                     <span className={`text-xs ${deltaColor}`}>
+                        {deltaSign}{formatter.asDecimal(delta)}{deltaPct != null ? ` (${deltaSign}${deltaPct.toFixed(1)}%)` : ''}
+                     </span>
+                  )}
+               </div>
+            )
+         })}
       </div>
    )
 }
@@ -84,6 +96,7 @@ function PriceHistoryRow({ row, formatter }) {
 
    return (
       <TableRow>
+         {/* title */}
          <TableCell>
             <a
                href={row.url}
@@ -95,42 +108,52 @@ function PriceHistoryRow({ row, formatter }) {
                {row.title}
             </a>
          </TableCell>
+         {/* seller */}
+         <TableCell className="text-right">
+            <div>{row.seller_name ?? '-'}</div>
+            {(row.zip_code || row.city) && (
+               <div className="text-muted-foreground text-xs">{row.zip_code} {row.city}</div>
+            )}
+         </TableCell>
+         {/* year */}
          <TableCell className="text-right tabular-nums">
             {row.first_registration_date ? formatter.asShortDate(row.first_registration_date) : '-'}
          </TableCell>
+         {/* mileage */}
          <TableCell className="text-right tabular-nums">
             {row.mileage != null ? formatter.asDecimal(row.mileage) : '-'}
          </TableCell>
+         {/* price */}
          <TableCell className="text-right tabular-nums font-medium">
             {formatter.asDecimal(row.price)}
          </TableCell>
+         {/* change */}
          <TableCell className={`text-right tabular-nums ${changeColor}`}>
             <span className="block">{changeSign}{formatter.asDecimal(row.change_abs)}</span>
             {row.change_pct != null && (
                <span className="block text-xs">{changeSign}{row.change_pct.toFixed(1)}%</span>
             )}
          </TableCell>
+         {/* # changes */}
          <TableCell className="text-right tabular-nums">{row.change_count}</TableCell>
+         {/* history */}
+         <TableCell>
+            <HistoryCell history={row.price_history} formatter={formatter} />
+         </TableCell>
+         {/* listed since */}
+         <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
+            {row.created_date ? formatter.asMediumDate(new Date(row.created_date)) : '-'}
+         </TableCell>
+         {/* last change */}
          <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
             {formatter.asMediumDate(new Date(row.last_change_date))}
          </TableCell>
-         <TableCell className="text-right tabular-nums text-sm text-muted-foreground">
-            {row.created_date ? formatter.asMediumDate(new Date(row.created_date)) : '-'}
-         </TableCell>
-         <TableCell className="text-right text-sm">
-            <div>{row.seller_name ?? '-'}</div>
-            {(row.zip_code || row.city) && (
-               <div className="text-muted-foreground text-xs">{row.zip_code} {row.city}</div>
-            )}
-         </TableCell>
+         {/* active */}
          <TableCell className="text-center">
             <span
                className={`inline-block size-2 rounded-full ${row.is_active ? 'bg-green-500' : 'bg-muted-foreground/30'}`}
                title={row.is_active ? 'Active' : 'Not active'}
             />
-         </TableCell>
-         <TableCell>
-            <HistoryCell history={row.price_history} formatter={formatter} />
          </TableCell>
       </TableRow>
    )
