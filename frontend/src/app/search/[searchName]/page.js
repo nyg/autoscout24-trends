@@ -3,10 +3,11 @@ import { Suspense } from 'react'
 import Cars from '@/components/cars'
 import DailyListingCount from '@/components/daily-listing-count'
 import MileagePriceComparison from '@/components/mileage-price-comparison'
+import PriceHistory from '@/components/price-history'
 import SearchTabs from '@/components/search-tabs'
-import { fetchActiveListings, fetchConfig, fetchDailyListingCount, fetchPreviousListings } from '@/lib/data'
+import { fetchActiveListings, fetchConfig, fetchDailyListingCount, fetchPreviousListings, fetchPriceChangedListings } from '@/lib/data'
 
-const VALID_TABS = ['active', 'previous']
+const VALID_TABS = ['active', 'previous', 'history']
 
 export async function generateMetadata({ params }) {
    const { searchName } = await params
@@ -26,6 +27,7 @@ export default async function Home({ params, searchParams }) {
    const activeListings = tab === 'active' ? fetchActiveListings(searchName) : null
    const dailyListingCount = tab === 'active' ? fetchDailyListingCount(searchName) : null
    const previousListings = tab === 'previous' ? fetchPreviousListings(searchName) : null
+   const priceChangedListings = tab === 'history' ? fetchPriceChangedListings(searchName) : null
 
    return (
       <>
@@ -45,6 +47,11 @@ export default async function Home({ params, searchParams }) {
             {tab === 'previous' && (
                <div className="mt-4">
                   <Cars name="Previous listings" data={previousListings} options={{ listingEnded: true }} config={config} />
+               </div>
+            )}
+            {tab === 'history' && (
+               <div className="mt-4">
+                  <PriceHistory data={priceChangedListings} />
                </div>
             )}
          </Suspense>

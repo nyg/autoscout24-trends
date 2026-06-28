@@ -207,6 +207,68 @@ export async function fetchScreenshotStorageByDay() {
        order by date`
 }
 
+export async function fetchPriceChangedListings(searchName) {
+   return pgSql`
+      with latest_run as (
+         select max(c2.search_run_id) as id
+           from cars c2
+          inner join searches s2 on c2.search_id = s2.id
+          where s2.name = ${searchName}
+      ),
+      ordered_prices as (
+         select c.vehicle_id, c.price, c.search_run_id, sr.started_at,
+                lag(c.price) over (partition by c.vehicle_id order by c.search_run_id) as prev_price
+           from cars c
+          inner join searches s on c.search_id = s.id
+          inner join search_runs sr on c.search_run_id = sr.id
+          where s.name = ${searchName}
+            and c.price is not null
+      ),
+      changed_vehicles as (
+         select distinct vehicle_id
+           from ordered_prices
+          where prev_price is not null and price != prev_price
+      ),
+      price_change_entries as (
+         select vehicle_id, price, started_at
+           from ordered_prices
+          where vehicle_id in (select vehicle_id from changed_vehicles)
+            and (prev_price is null or price != prev_price)
+      ),
+      price_history_agg as (
+         select vehicle_id,
+                json_agg(json_build_object('price', price, 'date', started_at) order by started_at asc) as price_history,
+                max(started_at) as last_change_date
+           from price_change_entries
+          group by vehicle_id
+      ),
+      latest_car as (
+         select distinct on (c.vehicle_id)
+                c.id, c.search_id, c.url, c.title, c.price, c.vehicle_id,
+                c.mileage, c.first_registration_date, c.created_date,
+                se.type seller_type, se.name seller_name, se.zip_code, se.city,
+                exists(
+                   select 1 from cars ac
+                    where ac.vehicle_id = c.vehicle_id
+                      and ac.search_run_id = (select id from latest_run)
+                ) as is_active
+           from cars c
+          inner join searches s on c.search_id = s.id
+          inner join sellers se on c.seller_id = se.id
+          where s.name = ${searchName}
+            and c.vehicle_id in (select vehicle_id from changed_vehicles)
+            and c.price is not null
+          order by c.vehicle_id, c.search_run_id desc
+      )
+      select lc.*,
+             ph.price_history,
+             ph.last_change_date,
+             (ph.price_history->0->>'price')::int as first_price
+        from latest_car lc
+        join price_history_agg ph on lc.vehicle_id = ph.vehicle_id
+       order by ph.last_change_date desc`
+}
+
 export async function fetchScreenshotStorageSummary() {
    const [row] = await pgSql`
       select count(*)::int as total_count,
