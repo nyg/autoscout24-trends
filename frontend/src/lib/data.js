@@ -209,7 +209,13 @@ export async function fetchScreenshotStorageByDay() {
 
 export async function fetchPriceChangedListings(searchName) {
    return pgSql`
-      with ordered_prices as (
+      with latest_run as (
+         select max(c2.search_run_id) as id
+           from cars c2
+          inner join searches s2 on c2.search_id = s2.id
+          where s2.name = ${searchName}
+      ),
+      ordered_prices as (
          select c.vehicle_id, c.price, c.search_run_id, sr.started_at,
                 lag(c.price) over (partition by c.vehicle_id order by c.search_run_id) as prev_price
            from cars c
@@ -239,8 +245,13 @@ export async function fetchPriceChangedListings(searchName) {
       latest_car as (
          select distinct on (c.vehicle_id)
                 c.id, c.search_id, c.url, c.title, c.price, c.vehicle_id,
-                c.mileage, c.first_registration_date,
-                se.type seller_type, se.name seller_name, se.zip_code, se.city
+                c.mileage, c.first_registration_date, c.created_date,
+                se.type seller_type, se.name seller_name, se.zip_code, se.city,
+                exists(
+                   select 1 from cars ac
+                    where ac.vehicle_id = c.vehicle_id
+                      and ac.search_run_id = (select id from latest_run)
+                ) as is_active
            from cars c
           inner join searches s on c.search_id = s.id
           inner join sellers se on c.seller_id = se.id

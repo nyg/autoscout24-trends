@@ -1,21 +1,20 @@
 'use client'
 
-import { ArrowDownIcon, ArrowRightIcon, ArrowUpIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react'
 import { use, useMemo, useState } from 'react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useFormatter } from '@/lib/formatter-context'
 
 
 // --- Sorting ---
 
-function compareRows(a, b, key, direction) {
-   let valA = a[key]
-   let valB = b[key]
+function compareRows(a, b, col, direction) {
+   let valA = a[col.sortKey]
+   let valB = b[col.sortKey]
 
    const nullA = valA == null
    const nullB = valB == null
@@ -30,9 +29,9 @@ function compareRows(a, b, key, direction) {
    }
 
    let result
-   if (key === 'last_change_date') {
+   if (col.sortType === 'date') {
       result = new Date(valA) - new Date(valB)
-   } else if (key === 'title') {
+   } else if (col.sortType === 'text') {
       result = String(valA).localeCompare(String(valB))
    } else {
       result = Number(valA) - Number(valB)
@@ -41,46 +40,99 @@ function compareRows(a, b, key, direction) {
 }
 
 const COLUMNS = [
-   { key: 'title', label: 'Title', align: 'left' },
-   { key: 'first_price', label: 'First price', align: 'right' },
-   { key: 'price', label: 'Current price', align: 'right' },
-   { key: 'change_abs', label: 'Change', align: 'right' },
-   { key: 'change_count', label: '# Changes', align: 'right' },
-   { key: 'last_change_date', label: 'Last change', align: 'right' },
-   { key: 'history', label: 'History', align: 'left', noSort: true },
+   { key: 'title',          label: 'Title',        align: 'left',   sortKey: 'title',                  sortType: 'text' },
+   { key: 'year',           label: 'Year',         align: 'right',  sortKey: 'first_registration_date', sortType: 'date' },
+   { key: 'mileage',        label: 'Mileage',      align: 'right',  sortKey: 'mileage',                sortType: 'numeric' },
+   { key: 'price',          label: 'Price',        align: 'right',  sortKey: 'price',                  sortType: 'numeric' },
+   { key: 'change_abs',     label: 'Change',       align: 'right',  sortKey: 'change_pct',             sortType: 'numeric' },
+   { key: 'change_count',   label: '# Changes',   align: 'right',  sortKey: 'change_count',           sortType: 'numeric' },
+   { key: 'last_change',    label: 'Last change',  align: 'right',  sortKey: 'last_change_date',       sortType: 'date' },
+   { key: 'listed_since',   label: 'Listed since', align: 'right',  sortKey: 'created_date',           sortType: 'date' },
+   { key: 'seller',         label: 'Seller',       align: 'right',  sortKey: 'seller_name',            sortType: 'text' },
+   { key: 'is_active',      label: 'Active',       align: 'center', sortKey: 'is_active',              sortType: 'numeric' },
+   { key: 'history',        label: 'History',      align: 'left',   noSort: true },
 ]
-
-
-// --- Price badge ---
-
-function PriceBadge({ entry, formatter }) {
-   return (
-      <Tooltip delay={200}>
-         <TooltipTrigger className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-xs tabular-nums font-medium cursor-default">
-            {formatter.asDecimal(entry.price)}
-         </TooltipTrigger>
-         <TooltipContent side="bottom">
-            {formatter.asMediumDate(new Date(entry.date))}
-         </TooltipContent>
-      </Tooltip>
-   )
-}
 
 
 // --- History cell ---
 
 function HistoryCell({ history, formatter }) {
    return (
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="space-y-0.5 text-xs tabular-nums">
          {history.map((entry, i) => (
-            <span key={i} className="inline-flex items-center gap-1">
-               <PriceBadge entry={entry} formatter={formatter} />
-               {i < history.length - 1 && (
-                  <ArrowRightIcon className="size-3 text-muted-foreground shrink-0" />
-               )}
-            </span>
+            <div key={i} className="flex gap-1.5 whitespace-nowrap">
+               <span className="text-muted-foreground">{formatter.asMediumDate(new Date(entry.date))}:</span>
+               <span className="font-medium">{formatter.asDecimal(entry.price)}</span>
+            </div>
          ))}
       </div>
+   )
+}
+
+
+// --- Row renderer ---
+
+function PriceHistoryRow({ row, formatter }) {
+   const isDown = row.change_abs < 0
+   const isUp = row.change_abs > 0
+   const changeColor = isDown
+      ? 'text-green-600 dark:text-green-400'
+      : isUp
+         ? 'text-red-600 dark:text-red-400'
+         : 'text-muted-foreground'
+   const changeSign = isUp ? '+' : ''
+
+   return (
+      <TableRow>
+         <TableCell>
+            <a
+               href={row.url}
+               target="_blank"
+               rel="noopener noreferrer"
+               className="hover:underline line-clamp-1 max-w-72 block"
+               title={row.title}
+            >
+               {row.title}
+            </a>
+         </TableCell>
+         <TableCell className="text-right tabular-nums">
+            {row.first_registration_date ? formatter.asShortDate(row.first_registration_date) : '-'}
+         </TableCell>
+         <TableCell className="text-right tabular-nums">
+            {row.mileage != null ? formatter.asDecimal(row.mileage) : '-'}
+         </TableCell>
+         <TableCell className="text-right tabular-nums font-medium">
+            {formatter.asDecimal(row.price)}
+         </TableCell>
+         <TableCell className={`text-right tabular-nums ${changeColor}`}>
+            <span className="block">{changeSign}{formatter.asDecimal(row.change_abs)}</span>
+            {row.change_pct != null && (
+               <span className="block text-xs">{changeSign}{row.change_pct.toFixed(1)}%</span>
+            )}
+         </TableCell>
+         <TableCell className="text-right tabular-nums">{row.change_count}</TableCell>
+         <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
+            {formatter.asMediumDate(new Date(row.last_change_date))}
+         </TableCell>
+         <TableCell className="text-right tabular-nums text-sm text-muted-foreground">
+            {row.created_date ? formatter.asMediumDate(new Date(row.created_date)) : '-'}
+         </TableCell>
+         <TableCell className="text-right text-sm">
+            <div>{row.seller_name ?? '-'}</div>
+            {(row.zip_code || row.city) && (
+               <div className="text-muted-foreground text-xs">{row.zip_code} {row.city}</div>
+            )}
+         </TableCell>
+         <TableCell className="text-center">
+            <span
+               className={`inline-block size-2 rounded-full ${row.is_active ? 'bg-green-500' : 'bg-muted-foreground/30'}`}
+               title={row.is_active ? 'Active' : 'Not active'}
+            />
+         </TableCell>
+         <TableCell>
+            <HistoryCell history={row.price_history} formatter={formatter} />
+         </TableCell>
+      </TableRow>
    )
 }
 
@@ -90,7 +142,7 @@ function HistoryCell({ history, formatter }) {
 export default function PriceHistory({ data }) {
    const rows = use(data)
    const formatter = useFormatter()
-   const [sort, setSort] = useState({ key: 'last_change_date', direction: 'desc' })
+   const [sort, setSort] = useState({ key: 'last_change', direction: 'desc' })
 
    const enriched = useMemo(() => rows.map(row => ({
       ...row,
@@ -100,7 +152,11 @@ export default function PriceHistory({ data }) {
    })), [rows])
 
    const sorted = useMemo(() => {
-      return [...enriched].sort((a, b) => compareRows(a, b, sort.key, sort.direction))
+      const col = COLUMNS.find(c => c.key === sort.key)
+      if (!col || col.noSort) {
+         return enriched
+      }
+      return [...enriched].sort((a, b) => compareRows(a, b, col, sort.direction))
    }, [enriched, sort])
 
    const handleSort = (key) => {
@@ -122,7 +178,7 @@ export default function PriceHistory({ data }) {
                      {COLUMNS.map(col => (
                         <TableHead
                            key={col.key}
-                           className={`${col.align === 'right' ? 'text-right' : ''} ${!col.noSort ? 'cursor-pointer hover:bg-muted/50' : ''} select-none transition-colors`}
+                           className={`${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''} ${!col.noSort ? 'cursor-pointer hover:bg-muted/50' : ''} select-none transition-colors`}
                            onClick={!col.noSort ? () => handleSort(col.key) : undefined}
                         >
                            <span className="inline-flex items-center gap-1">
@@ -138,55 +194,9 @@ export default function PriceHistory({ data }) {
                   </TableRow>
                </TableHeader>
                <TableBody>
-                  {sorted.map(row => {
-                     const isDown = row.change_abs < 0
-                     const isUp = row.change_abs > 0
-                     const changeColor = isDown
-                        ? 'text-green-600 dark:text-green-400'
-                        : isUp
-                           ? 'text-red-600 dark:text-red-400'
-                           : 'text-muted-foreground'
-                     const changeSign = isUp ? '+' : ''
-
-                     return (
-                        <TableRow key={row.vehicle_id}>
-                           <TableCell>
-                              <a
-                                 href={row.url}
-                                 target="_blank"
-                                 rel="noopener noreferrer"
-                                 className="hover:underline line-clamp-1 max-w-72 block"
-                                 title={row.title}
-                              >
-                                 {row.title}
-                              </a>
-                           </TableCell>
-                           <TableCell className="text-right tabular-nums text-muted-foreground">
-                              {formatter.asDecimal(row.first_price)}
-                           </TableCell>
-                           <TableCell className="text-right tabular-nums font-medium">
-                              {formatter.asDecimal(row.price)}
-                           </TableCell>
-                           <TableCell className={`text-right tabular-nums ${changeColor}`}>
-                              <span className="block">{changeSign}{formatter.asDecimal(row.change_abs)}</span>
-                              {row.change_pct != null && (
-                                 <span className="block text-xs">
-                                    {changeSign}{row.change_pct.toFixed(1)}%
-                                 </span>
-                              )}
-                           </TableCell>
-                           <TableCell className="text-right tabular-nums">
-                              {row.change_count}
-                           </TableCell>
-                           <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
-                              {formatter.asMediumDate(new Date(row.last_change_date))}
-                           </TableCell>
-                           <TableCell>
-                              <HistoryCell history={row.price_history} formatter={formatter} />
-                           </TableCell>
-                        </TableRow>
-                     )
-                  })}
+                  {sorted.map(row => (
+                     <PriceHistoryRow key={row.vehicle_id} row={row} formatter={formatter} />
+                  ))}
                </TableBody>
             </Table>
          </CardContent>
