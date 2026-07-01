@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["setuptools==76.1.0"]
+requires = ["setuptools==77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
