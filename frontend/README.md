@@ -51,7 +51,7 @@ Start the development server:
 pnpm dev
 ```
 
-The server starts on port 3000, or on the next free port when another server already uses it on any address. Set `PORT` or pass `--port` to pin a port.
+The server starts on a random free port and prints its URL. Pass `--port` to pin one, for example `pnpm dev --port 3000`.
 
 ## Updating shadcn/ui Components
 
