@@ -51,6 +51,8 @@ Start the development server:
 pnpm dev
 ```
 
+The server starts on port 3000, or on the next free port when another server already uses it on any address. Set `PORT` or pass `--port` to pin a port.
+
 ## Updating shadcn/ui Components
 
 This frontend uses the shadcn CLI with the config in `components.json`:

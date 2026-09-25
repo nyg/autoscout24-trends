@@ -38,6 +38,7 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 
 ## Developer workflows
 - Frontend commands are the standard ones from `frontend/package.json`: `pnpm dev`, `pnpm build`, `pnpm lint`.
+- `pnpm dev` passes `--port $(node scripts/free-port.mjs)` to `next dev`. The script returns the first port from 3000 that is free on `::`, `0.0.0.0`, `127.0.0.1` and `::1`, or `PORT` unchanged when it is set. Next's own fallback is not enough: it only retries on `EADDRINUSE`, and on macOS its wildcard bind succeeds next to a server listening on loopback only (Vite's default `[::1]`), so `localhost` keeps reaching the other server. `pnpm dev --port <n>` still wins because the last `--port` is the one Next uses.
 - The crawler is usually run from `crawler/` with `scrapy crawl search -a search_id=<id>`.
 - `crawler/run-spiders.sh` is the operational path for batch runs: it runs `uv sync` (creating `.venv` if missing) then crawls every active search from the `searches` database table. Requires `uv` installed on the host.
 - Crawler settings load env vars automatically via `load_dotenv()` in `crawler/autoscout/settings.py`, so `.env` is expected in `crawler/`.
