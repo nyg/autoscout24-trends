@@ -13,13 +13,17 @@ function scaleBytes(bytes) {
 const formatDate = (formatter, date) =>
    formatter.format(date).replace(' ', '\u00A0') // non-breaking space
 
+const formatNumber = (formatter, numberSymbols, number) =>
+   formatter.formatToParts(number).map(({ type, value }) => numberSymbols[type] ?? value).join('')
+
 
 /**
  * Create locale-bound formatters.
  * On the server the locale comes from Accept-Language; on the client
- * the same value is reused via context so SSR and hydration match.
+ * the same value and the server's number symbols are reused via context
+ * so SSR and hydration match.
  */
-export function createFormatters(locale) {
+export function createFormatters(locale, numberSymbols) {
    const sd = new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit' })
    const md = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' })
    const smy = new Intl.DateTimeFormat(locale, { year: '2-digit', month: 'short' })
@@ -28,13 +32,13 @@ export function createFormatters(locale) {
    const oneDec = new Intl.NumberFormat(locale, { style: 'decimal', minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
    return {
-      asDecimal: (number) => dec.format(number),
+      asDecimal: (number) => formatNumber(dec, numberSymbols, number),
       asBytes: (bytes) => {
          if (!bytes) {
             return '0 B'
          }
          const { value, unit } = scaleBytes(bytes)
-         return `${value < 10 ? oneDec.format(value) : dec.format(value)} ${unit}`
+         return `${formatNumber(value < 10 ? oneDec : dec, numberSymbols, value)} ${unit}`
       },
       asShortDate: (timestamp) => formatDate(sd, timestamp),
       asMediumDate: (timestamp) => formatDate(md, timestamp),
@@ -47,6 +51,14 @@ export function createFormatters(locale) {
          return new Date(timestamp).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
       },
    }
+}
+
+
+export function resolveNumberSymbols(locale) {
+   const parts = new Intl.NumberFormat(locale).formatToParts(1234567.8)
+   return Object.fromEntries(parts
+      .filter(({ type }) => type === 'group' || type === 'decimal')
+      .map(({ type, value }) => [type, value]))
 }
 
 
