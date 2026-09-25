@@ -140,12 +140,12 @@ This is the canonical repo guide for humans and coding agents. Keep repository-s
 - Requires **Maps JavaScript API** and **Places API (New)** enabled in Google Cloud Console.
 
 ## Locale formatting (`format.js` + `formatter-context.js`)
-- The root layout reads the `Accept-Language` HTTP header via `parseAcceptLanguage()` and wraps the app in `<FormatterProvider locale={…}>`.
-- `FormatterProvider` (client component) calls `createFormatters(locale)` once and exposes the result via React Context.
+- The root layout reads the `Accept-Language` HTTP header via `parseAcceptLanguage()` and wraps the app in `<FormatterProvider locale={…} numberSymbols={…}>`.
+- `FormatterProvider` (client component) calls `createFormatters(locale, numberSymbols)` once and exposes the result via React Context.
 - All client components — tables and charts alike — call `useFormatter()` to get `{ asDecimal, asBytes, asShortDate, asMediumDate, asShortMonthYearDate, asShortDayMonthDate, asTime }`. No locale prop-drilling, no module-level formatter singletons.
-- Counts and byte sizes go through `asDecimal` / `asBytes` rather than being interpolated raw, so digit grouping and the decimal separator follow the viewer's locale (`3,240` in en-US, `3’240` in de-CH, `3 240` and `1,2 GB` in fr-FR). `asBytes` also keeps the unit selection in one place; a helper that formats bytes without the locale formatter is a regression, which is why there is no standalone `formatBytes` export.
+- Counts and byte sizes go through `asDecimal` / `asBytes` rather than being interpolated raw, so digit grouping and the decimal separator follow the viewer's locale (`3,240` in en-US, `3'240` in de-CH, `3 240` and `1,2 GB` in fr-FR). `asBytes` also keeps the unit selection in one place; a helper that formats bytes without the locale formatter is a regression, which is why there is no standalone `formatBytes` export.
 - `asShortDayMonthDate` formats a timestamp as short month + day (no year), e.g. "Jun 27" — used in date-axis charts.
-- Because the same locale is used for SSR and client rendering, there are no hydration mismatches.
+- The same locale string on both sides is not enough to avoid hydration mismatches: Node and the browser ship different ICU/CLDR data. `fr-CH` groups `2169` as `2'169` in Node 26 (ICU 78.3) but `2 169` (U+202F) in Chrome 152: CLDR 48.2 switched Swiss French from the French narrow no-break space to the apostrophe de-CH and it-CH already used (CLDR-13986), and Chrome still ships the older data. The root layout therefore calls `resolveNumberSymbols(locale)` on the server and passes the resulting `{ group, decimal }` to `FormatterProvider`, and `asDecimal` / `asBytes` substitute those symbols into `formatToParts` output, so the browser renders the server's separators. Date and time formatters still use the browser's `Intl` directly; they matched Node for the Swiss, US, UK, French and German locales as of September 2026, and a future divergence would show up as the same hydration error and needs the same treatment.
 
 ## Project-specific conventions
 - Frontend formatting is intentionally non-default: 3-space indentation, single quotes, no semicolons (`frontend/eslint.config.mjs`). Match existing style exactly.

@@ -6,8 +6,8 @@ import { createFormatters } from '@/lib/format'
 
 const FormatterContext = createContext(null)
 
-export function FormatterProvider({ locale, children }) {
-   const fmt = useMemo(() => createFormatters(locale), [locale])
+export function FormatterProvider({ locale, numberSymbols, children }) {
+   const fmt = useMemo(() => createFormatters(locale, numberSymbols), [locale, numberSymbols])
    return (
       <FormatterContext value={fmt}>
          {children}
