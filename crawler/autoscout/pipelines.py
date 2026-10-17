@@ -15,22 +15,8 @@ from requests.adapters import HTTPAdapter
 from scrapy.crawler import Crawler
 from scrapy.statscollectors import StatsCollector
 
+from .db import get_shared_connection
 from .items import CarItem, SellerItem
-
-
-def get_shared_connection(crawler: Crawler) -> psycopg.Connection:
-    """Return the shared DB connection owned by SearchRunExtension.
-
-    The connection is created in SearchRunExtension.spider_opened and stored
-    on the crawler instance so that pipelines can reuse it without opening
-    a second connection.
-    """
-    connection = getattr(crawler, 'db_connection', None)
-    if connection is None:
-        raise RuntimeError(
-            'Shared DB connection not available. '
-            'Ensure SearchRunExtension is enabled and has run spider_opened.')
-    return connection
 
 
 class ScreenshotPipeline:

@@ -183,8 +183,18 @@ class SearchSpider(Spider):
 
     def handle_error(self, failure: Failure) -> None:
         """Handle request errors by logging the failed URL and reason, and storing it for summary on spider close."""
+        if self._is_gone_listing(failure):
+            self.logger.info(f'Listing gone: {failure.request.url}')
+            self.crawler.stats.inc_value('cars/gone')
+            return
         reason = failure.value.response.status if failure.check(HttpError) else repr(failure.value)
         self.failed_requests.append({'url': failure.request.url, 'reason': reason})
+
+    @staticmethod
+    def _is_gone_listing(failure: Failure) -> bool:
+        return (isinstance(failure.request, CarPageRequest)
+                and failure.check(HttpError) is not None
+                and failure.value.response.status == 404)
 
     def closed(self, reason: str) -> None:
         """Log a summary of failed URLs when the spider finishes, if there are any."""
