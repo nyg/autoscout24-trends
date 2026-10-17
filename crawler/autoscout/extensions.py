@@ -1,10 +1,14 @@
-import os
 from typing import Any
 
-import psycopg
 from psycopg.types.json import Jsonb
 from scrapy import signals
 from scrapy.crawler import Crawler
+
+from .db import close_shared_connection, get_shared_connection, open_shared_connection
+
+# A car page that 404s is a listing taken offline between the search page and its detail fetch, at most one per run so far.
+# A larger share is more likely a broken detail URL, which must still fail the run rather than pass with no cars.
+MAX_GONE_SHARE = 0.05
 
 
 class SearchRunExtension:
@@ -20,7 +24,6 @@ class SearchRunExtension:
 
     def __init__(self, crawler: Crawler) -> None:
         self.crawler = crawler
-        self.connection: psycopg.Connection | None = None
         self.search_run_id: int | None = None
 
     @classmethod
@@ -32,10 +35,9 @@ class SearchRunExtension:
 
     def spider_opened(self) -> None:
         """Create a shared DB connection and a search_runs row, then publish search_run_id to Scrapy stats."""
-        self.connection = psycopg.connect(os.environ['PGSQL_URL'], connect_timeout=self.crawler.settings.getint('PGSQL_CONNECT_TIMEOUT'))
-        self.crawler.db_connection = self.connection
-        with self.connection.transaction():
-            with self.connection.cursor() as cursor:
+        connection = open_shared_connection(self.crawler)
+        with connection.transaction():
+            with connection.cursor() as cursor:
                 (self.search_run_id,) = cursor.execute(
                     'INSERT INTO search_runs (search_id, started_at) VALUES (%s, %s) RETURNING id',
                     (self.crawler.spider.search_id, self.crawler.stats.get_value('start_time'))
@@ -50,17 +52,20 @@ class SearchRunExtension:
 
             cars_scraped = stats.get('db/cars_inserted', 0)
             cars_found = self.crawler.spider.total_car_count
+            cars_gone = stats.get('cars/gone', 0)
             failed_request_count = len(self.crawler.spider.failed_requests)
             request_count = stats.get('response_received_count', 0)
             finish_reason = stats.get('finish_reason', 'unknown')
             spider_exception_count = stats.get('spider_exceptions/count', 0)
             photo_stage_failures = stats.get('photos/car_failed', 0) + stats.get('photos/schema_missing', 0)
-            success = (cars_found == cars_scraped and not failed_request_count
+            success = (cars_found == cars_scraped + cars_gone and cars_gone <= max(1, cars_found * MAX_GONE_SHARE)
+                       and not failed_request_count
                        and not spider_exception_count and not photo_stage_failures)
             self.crawler.stats.set_value('run_success', success)
 
-            with self.connection.transaction():
-                with self.connection.cursor() as cursor:
+            connection = get_shared_connection(self.crawler)
+            with connection.transaction():
+                with connection.cursor() as cursor:
                     cursor.execute('''
                         UPDATE search_runs
                            SET finished_at = %s,
@@ -86,7 +91,5 @@ class SearchRunExtension:
         except Exception as e:
             self.crawler.spider.logger.error(f'Failed to update search run: {e}', exc_info=True)
         finally:
-            if self.connection:
-                self.connection.close()
-                self.crawler.db_connection = None
-                self.crawler.spider.logger.info('Shared database connection closed')
+            close_shared_connection(self.crawler)
+            self.crawler.spider.logger.info('Shared database connection closed')

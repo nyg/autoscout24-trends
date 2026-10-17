@@ -17,7 +17,7 @@ template = Template(lstrip_blocks=True, trim_blocks=True, source=dedent('''
 
     {% for run in runs %}
     {{ '✓' if run.success else '✗' }} {{ run.search_name }}
-      Cars: {{ run.cars_scraped }}/{{ run.cars_found }} scraped
+      Cars: {{ run.cars_scraped }}/{{ run.cars_found }} scraped{% if run.cars_gone %} ({{ run.cars_gone }} gone){% endif %}
       Requests: {{ run.request_count }} ({{ run.failed_request_count }} failed)
       Finish reason: {{ run.finish_reason }}
       Duration: {{ run.duration }}
@@ -62,6 +62,7 @@ def send_batch_summary_email(batch_started_at: datetime, search_ids: list[int]) 
 
                 rows = cur.execute('''
                     SELECT s.name, sr.success, sr.cars_found, sr.cars_scraped,
+                           (sr.stats->>'cars/gone')::int,
                            sr.request_count, sr.failed_request_count,
                            sr.finish_reason, sr.started_at, sr.finished_at
                       FROM search_runs sr
@@ -81,20 +82,21 @@ def send_batch_summary_email(batch_started_at: datetime, search_ids: list[int]) 
                 'success': success,
                 'cars_found': found or 0,
                 'cars_scraped': scraped or 0,
+                'cars_gone': gone or 0,
                 'request_count': req or 0,
                 'failed_request_count': failed_req or 0,
                 'finish_reason': reason or 'unknown',
                 'duration': _format_duration(started, finished),
             }
-            for name, success, found, scraped, req, failed_req, reason, started, finished in rows
+            for name, success, found, scraped, gone, req, failed_req, reason, started, finished in rows
         ]
 
         successful = sum(1 for r in runs if r['success'])
         total_found = sum(r['cars_found'] for r in runs)
         total_scraped = sum(r['cars_scraped'] for r in runs)
 
-        first_start = rows[0][7]
-        last_finish = rows[-1][8]
+        first_start = rows[0][8]
+        last_finish = rows[-1][9]
 
         body = template.render(
             runs=runs,
