@@ -29,11 +29,13 @@ Install system dependencies:
 sudo apt install chromium xvfb
 ```
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and sync dependencies:
+Install Python 3.14 with [pyenv](https://github.com/pyenv/pyenv), then [uv](https://docs.astral.sh/uv/getting-started/installation/), and sync dependencies:
 
 ```bash
-uv sync
+uv sync --no-managed-python
 ```
+
+`--no-managed-python` makes uv use pyenv's Python and fail rather than download its own. `run-spiders.sh` passes it too, and puts pyenv's shims on `PATH` (from `$PYENV_ROOT`, default `~/.local/share/pyenv`) so that it also works from cron.
 
 Create a PostgreSQL database and initialize the schema:
 
