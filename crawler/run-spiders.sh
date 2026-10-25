@@ -24,6 +24,9 @@ export NVM_DIR="${NVM_DIR:-$HOME/.local/share/nvm}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# pyenv's shims read .python-version from the working directory, and cron starts in $HOME.
+cd "$SCRIPT_DIR"
+
 echo "Installing/updating dependencies"
 uv sync --project "$SCRIPT_DIR" --no-managed-python
 

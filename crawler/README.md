@@ -37,6 +37,8 @@ uv sync --no-managed-python
 
 `--no-managed-python` makes uv use pyenv's Python and fail rather than download its own. `run-spiders.sh` passes it too, and puts pyenv's shims on `PATH` (from `$PYENV_ROOT`, default `~/.local/share/pyenv`) so that it also works from cron.
 
+`.python-version` pins the crawler to 3.14, whatever pyenv's global version is: `pythonmonkey`, `pydantic-core` and `orjson`, among others, have no 3.15 wheels for aarch64 at their locked versions. pyenv and uv both read it, so the newest installed 3.14.x is used.
+
 Create a PostgreSQL database and initialize the schema:
 
 ```bash
