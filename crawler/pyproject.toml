@@ -14,7 +14,7 @@ dependencies = [
     "resend==2.50.0",
     "scrapy==2.19.0",
     "scrapy-seleniumbase-cdp==2.0.4",
-    "seleniumbase==4.56.4",
+    "seleniumbase==4.56.5",
 ]
 
 [build-system]
