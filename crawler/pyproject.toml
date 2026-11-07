@@ -13,7 +13,7 @@ dependencies = [
     "requests==2.34.2",
     "resend==2.50.0",
     "scrapy==2.19.0",
-    "scrapy-seleniumbase-cdp==2.0.4",
+    "scrapy-seleniumbase-cdp==2.0.5",
     "seleniumbase==4.56.5",
 ]
 

@@ -182,7 +182,7 @@ requires-dist = [
     { name = "requests", specifier = "==2.34.2" },
     { name = "resend", specifier = "==2.50.0" },
     { name = "scrapy", specifier = "==2.19.0" },
-    { name = "scrapy-seleniumbase-cdp", specifier = "==2.0.4" },
+    { name = "scrapy-seleniumbase-cdp", specifier = "==2.0.5" },
     { name = "seleniumbase", specifier = "==4.56.5" },
 ]
 
@@ -1903,16 +1903,16 @@ wheels = [
 
 [[package]]
 name = "scrapy-seleniumbase-cdp"
-version = "2.0.4"
+version = "2.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mycdp" },
     { name = "scrapy" },
     { name = "seleniumbase" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/33/94657c60510f43e8036656d8269e8198ec130c3c2086a11cbf1c5570bfe4/scrapy_seleniumbase_cdp-2.0.4.tar.gz", hash = "sha256:6a7e65846033a608431951b6ce0cba7b6c62d71a212655b1eb523c8c964c95ec", size = 15955, upload-time = "2026-05-02T20:28:10.04Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ef/01/43e8763e97d3931e715f4b666ba7ef7b4746c29725398f2a03ce194c422e/scrapy_seleniumbase_cdp-2.0.5.tar.gz", hash = "sha256:26f8bc5154f14ebda629c56a99e6290a3324f9353d566601933f01cc4eac2dad", size = 16310, upload-time = "2026-11-07T17:46:18.317Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/dc/f0c4431c3e9cb2bfa42e8bf06caba2f98cebaa10cad4a670fa9959ef79f1/scrapy_seleniumbase_cdp-2.0.4-py3-none-any.whl", hash = "sha256:6e7d0ef3aa281361b4d8f3ecd66efdb2d18f24314d2e217133c263c7aacc311e", size = 11925, upload-time = "2026-05-02T20:28:08.506Z" },
+    { url = "https://files.pythonhosted.org/packages/52/36/266cccb0f3d8b9c42d376bad6cc626b27b530fc91800025ad68994cb07cc/scrapy_seleniumbase_cdp-2.0.5-py3-none-any.whl", hash = "sha256:7400f7a7db5dc072ca8f5f987a09cad18caa5a38d5b2db3ef82f21fd94ee0543", size = 12093, upload-time = "2026-11-07T17:46:17.005Z" },
 ]
 
 [[package]]
