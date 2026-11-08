@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This is the canonical repo guide for humans and coding agents. Keep repository-specific architecture, workflows, conventions, and integration pitfalls here. `CLAUDE.md` is a one-line pointer at this file (`@AGENTS.md`); do not duplicate repo facts there or in any other agent instruction file.
+This is the canonical repo guide for humans and coding agents. Keep repository-specific architecture, workflows, conventions, and integration pitfalls here. Do not duplicate repo facts in any other agent instruction file.
 
 ## Repo map
 - This repo has two coupled parts: `crawler/` scrapes AutoScout24 into PostgreSQL, and `frontend/` reads the same DB directly to render charts/tables.
