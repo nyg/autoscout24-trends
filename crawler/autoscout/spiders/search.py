@@ -30,7 +30,7 @@ class SearchPageRequest(SeleniumBaseRequest):
 
     def __init__(self, spider: SearchSpider | None = None, **kwargs) -> None:
         if spider:
-            kwargs.update(callback=spider.parse, errback=spider.handle_error, wait_for_element='h1')
+            kwargs.update(callback=spider.parse, errback=spider.handle_error, wait_for_element='h1', captcha_only_when_blocked=True)
         super().__init__(**kwargs)
 
 
@@ -42,6 +42,7 @@ class CarPageRequest(SeleniumBaseRequest):
             kwargs.update(callback=spider.parse_car,
                           errback=spider.handle_error,
                           wait_for_element='h1',
+                          captcha_only_when_blocked=True,
                           script=ACCEPT_COOKIES_AND_EXPAND_FIELDS,
                           screenshot=spider.screenshots_enabled)
         super().__init__(**kwargs)
