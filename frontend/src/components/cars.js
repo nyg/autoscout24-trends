@@ -135,7 +135,7 @@ function compareCars(a, b, sortKey, sortType, direction) {
       return -1
    }
 
-   let result = 0
+   let result
    if (sortType === 'numeric') {
       result = Number(valA) - Number(valB)
    } else if (sortType === 'date') {
