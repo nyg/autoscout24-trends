@@ -120,8 +120,8 @@ function getVisibleColumnsServerSnapshot() {
 // --- Sorting ---
 
 function compareCars(a, b, sortKey, sortType, direction) {
-   let valA = a[sortKey]
-   let valB = b[sortKey]
+   const valA = a[sortKey]
+   const valB = b[sortKey]
 
    const nullA = valA == null || valA === ''
    const nullB = valB == null || valB === ''
@@ -135,7 +135,7 @@ function compareCars(a, b, sortKey, sortType, direction) {
       return -1
    }
 
-   let result = 0
+   let result
    if (sortType === 'numeric') {
       result = Number(valA) - Number(valB)
    } else if (sortType === 'date') {

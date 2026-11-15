@@ -13,8 +13,8 @@ import { useFormatter } from '@/lib/formatter-context'
 // --- Sorting ---
 
 function compareRows(a, b, col, direction) {
-   let valA = a[col.sortKey]
-   let valB = b[col.sortKey]
+   const valA = a[col.sortKey]
+   const valB = b[col.sortKey]
 
    const nullA = valA == null
    const nullB = valB == null
