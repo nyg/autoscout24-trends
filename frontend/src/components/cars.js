@@ -120,8 +120,8 @@ function getVisibleColumnsServerSnapshot() {
 // --- Sorting ---
 
 function compareCars(a, b, sortKey, sortType, direction) {
-   let valA = a[sortKey]
-   let valB = b[sortKey]
+   const valA = a[sortKey]
+   const valB = b[sortKey]
 
    const nullA = valA == null || valA === ''
    const nullB = valB == null || valB === ''

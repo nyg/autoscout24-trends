@@ -102,7 +102,7 @@ export async function deleteSearch(prevState, formData) {
          }
       }
 
-      let r2Keys = []
+      const r2Keys = []
 
       await pgSql.begin(async pgSql => {
          const screenshotIds = (await pgSql`
